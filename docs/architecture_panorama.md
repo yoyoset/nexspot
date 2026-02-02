@@ -1,12 +1,12 @@
-# HyperLens: 项目架构全景图 (Project Architecture Panorama)
+# NexSpot: 项目架构全景图 (Project Architecture Panorama)
 
-HyperLens is a high-performance, modular screenshot engine designed for Windows. Its core design philosophy is **"Native Performance meets Web Flexibility"**.
-HyperLens 是一款专为 Windows 打造的高性能、模块化截图引擎。其核心设计理念是 **“原生性能与 Web 灵活性并重”**。
+NexSpot is a high-performance, modular screenshot engine designed for Windows. Its core design philosophy is **"Native Performance meets Web Flexibility"**.
+NexSpot 是一款专为 Windows 打造的高性能、模块化截图引擎。其核心设计理念是 **“原生性能与 Web 灵活性并重”**。
 
 ## 1. 总体架构分层 (System Architecture Layers)
 
-The architecture of HyperLens is divided into three main layers, collaborating through state sharing and command passing.
-HyperLens 的架构分为三个主要层级，通过状态共享与指令传递进行协作。
+The architecture of NexSpot is divided into three main layers, collaborating through state sharing and command passing.
+NexSpot 的架构分为三个主要层级，通过状态共享与指令传递进行协作。
 
 ```mermaid
 graph TD
@@ -42,11 +42,11 @@ graph TD
 
 ## 2. 模块结构 (Module Tree)
 
-The following is the physical code structure of the HyperLens Rust side (based on `tree /f`):
-以下是 HyperLens Rust 侧的物理代码结构（基于 `tree /f`）：
+The following is the physical code structure of the NexSpot Rust side (based on `tree /f`):
+以下是 NexSpot Rust 侧的物理代码结构（基于 `tree /f`）：
 
 ```text
-F:\MY AI\HYPERLENS\SRC-TAURI\SRC
+F:\MY AI\NEXSPOT\SRC-TAURI\SRC
 │  lib.rs                  # App Entry, Tauri Commands / 应用程序入口、Tauri 命令
 │  main.rs                 # Bootstrapper / 引导程序
 │
@@ -81,8 +81,8 @@ F:\MY AI\HYPERLENS\SRC-TAURI\SRC
 
 ## 3. 核心 `OverlayState` 定义 (Core OverlayState Definition)
 
-`OverlayState` is the "Single Source of Truth" (SSOT) for HyperLens. It is stored in an `Arc<Mutex<OverlayState>>` to ensure consistency between rendering and interaction.
-`OverlayState` 是 HyperLens 的“单一事实来源”(SSOT)。它存储在 `Arc<Mutex<OverlayState>>` 中，保证了渲染与交互的一致性。
+`OverlayState` is the "Single Source of Truth" (SSOT) for NexSpot. It is stored in an `Arc<Mutex<OverlayState>>` to ensure consistency between rendering and interaction.
+`OverlayState` 是 NexSpot 的“单一事实来源”(SSOT)。它存储在 `Arc<Mutex<OverlayState>>` 中，保证了渲染与交互的一致性。
 
 ```rust
 // src-tauri/src/service/native_overlay/state.rs
@@ -115,8 +115,8 @@ pub struct OverlayState {
 
 ## 4. 状态流转逻辑 (State Flow)
 
-The life cycle of HyperLens is triggered by hotkeys, goes through selection interactions, and ends with save or cancel.
-HyperLens 的生命周期由热键触发，经过选区交互，最后以保存或取消结束。
+The life cycle of NexSpot is triggered by hotkeys, goes through selection interactions, and ends with save or cancel.
+NexSpot 的生命周期由热键触发，经过选区交互，最后以保存或取消结束。
 
 ```mermaid
 stateDiagram-v2

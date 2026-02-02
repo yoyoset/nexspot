@@ -230,7 +230,7 @@ pub fn run() {
                     if mixed {
                         let _ = app.notification().builder()
                             .title("Mixed DPI Detected")
-                            .body("Multi-monitor setup detection.\nHyperLens will rely on Windows scaling.")
+                            .body("Multi-monitor setup detection.\nNexSpot will rely on Windows scaling.")
                             .show();
                     }
                 }

@@ -1724,31 +1724,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyper-lens"
-version = "0.2.1"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "global-hotkey",
- "image",
- "log",
- "rayon",
- "serde",
- "serde_json",
- "simplelog",
- "tauri",
- "tauri-build",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "thiserror 1.0.69",
- "windows",
- "windows-capture",
-]
-
-[[package]]
 name = "hyper-util"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2432,6 +2407,31 @@ name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
+
+[[package]]
+name = "nexspot"
+version = "0.2.1"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "global-hotkey",
+ "image",
+ "log",
+ "rayon",
+ "serde",
+ "serde_json",
+ "simplelog",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "thiserror 1.0.69",
+ "windows",
+ "windows-capture",
+]
 
 [[package]]
 name = "nodrop"

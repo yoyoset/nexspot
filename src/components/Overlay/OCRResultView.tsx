@@ -49,7 +49,7 @@ const OCRResultView: React.FC<OCRResultViewProps> = ({ text, onClose }) => {
             </div>
 
             <div className="px-4 py-2 bg-accent/5 flex justify-between items-center">
-                <span className="text-[9px] text-accent/40 font-mono italic">HyperLens OCR Core // Fast Inference</span>
+                <span className="text-[9px] text-accent/40 font-mono italic">NexSpot OCR Core // Fast Inference</span>
                 <button
                     onClick={copyToClipboard}
                     className="text-[9px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded border border-accent/20 hover:bg-accent/20 transition-all"

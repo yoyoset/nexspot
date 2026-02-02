@@ -30,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenSettings }) => {
             {/* Left Column: Main Capture - Spans 2 cols, full height */}
             <BentoCard
                 colSpan={2}
-                title="HyperLens Capture"
+                title="NexSpot Capture"
                 description="Instant, zero-latency screenshot engine."
                 icon={<Camera className="w-6 h-6" />}
                 onClick={handleCapture}
@@ -86,7 +86,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenSettings }) => {
                         <div className="p-2 rounded-lg bg-accent/20 text-accent group-hover:bg-accent group-hover:text-white transition-colors">
                             <Sparkles className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-bold text-text-main group-hover:text-white transition-colors">Hyper AI</span>
+                        <span className="text-sm font-bold text-text-main group-hover:text-white transition-colors">Nex AI</span>
                     </div>
                     <span className="text-[10px] text-accent/50 group-hover:text-accent font-mono">BETA</span>
                 </div>

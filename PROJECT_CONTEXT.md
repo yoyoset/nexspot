@@ -1,4 +1,4 @@
-# PROJECT_CONTEXT.md: HyperLens 长期记忆与决策白皮书
+# PROJECT_CONTEXT.md: NexSpot 长期记忆与决策白皮书
 
 本项目旨在打造一款 **“WeChat-级”** 高性能 Windows 截图工具。本文件固化了项目至今的关键设计决策与技术细节，作为后续 AI 编程的持久化上下文。
 
@@ -49,10 +49,10 @@
 
 ## 4. 关键文件索引 (Core File Index)
 
-* [src-tauri/src/service/native_overlay/state.rs](file:///f:/my%20ai/HyperLens/src-tauri/src/service/native_overlay/state.rs) - **数据结构定义**。
-* [src-tauri/src/service/native_overlay/interaction.rs](file:///f:/my%20ai/HyperLens/src-tauri/src/service/native_overlay/interaction.rs) - **状态机转换逻辑**。
-* [src-tauri/src/service/native_overlay/render/mod.rs](file:///f:/my%20ai/HyperLens/src-tauri/src/service/native_overlay/render/mod.rs) - **原生 GDI 绘图管线**。
-* [docs/architecture_panorama.md](file:///f:/my%20ai/HyperLens/docs/architecture_panorama.md) - **中英双语架构全景图**。
+* [src-tauri/src/service/native_overlay/state.rs](file:///f:/my%20ai/NexSpot/src-tauri/src/service/native_overlay/state.rs) - **数据结构定义**。
+* [src-tauri/src/service/native_overlay/interaction.rs](file:///f:/my%20ai/NexSpot/src-tauri/src/service/native_overlay/interaction.rs) - **状态机转换逻辑**。
+* [src-tauri/src/service/native_overlay/render/mod.rs](file:///f:/my%20ai/NexSpot/src-tauri/src/service/native_overlay/render/mod.rs) - **原生 GDI 绘图管线**。
+* [docs/architecture_panorama.md](file:///f:/my%20ai/NexSpot/docs/architecture_panorama.md) - **中英双语架构全景图**。
 
 ---
 
