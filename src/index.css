@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+    --color-bg-main: #0a0a0a;
+    --color-bg-card: #121212;
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
+    --color-border-hover: rgba(255, 255, 255, 0.15);
+    --color-accent: #3b82f6;
+    /* Modern Blue */
+    --color-accent-glow: rgba(59, 130, 246, 0.5);
+    --color-text-main: rgba(255, 255, 255, 0.9);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+}
+
+:root {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color-scheme: dark;
+    color: var(--color-text-main);
+    background-color: transparent;
+    /* Main window is transparent, internal containers are colored */
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    place-content: center;
+    min-width: 320px;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Linear Style Components */
+.bento-card {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bento-card:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+.glow-text {
+    text-shadow: 0 0 20px var(--color-accent-glow);
+}
+
+.glow-border {
+    box-shadow: 0 0 0 1px var(--color-accent-glow);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border-subtle);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-hover);
+}

@@ -1,37 +1,44 @@
-import { useState } from "react";
-import SelectionOverlay from "./components/Capture/SelectionOverlay";
-import SettingsModal from "./components/Settings/SettingsModal";
-import Dashboard from "./components/Capture/Dashboard";
+import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import SettingsPanel from "./components/Settings/SettingsPanel";
+import OCRResultView from "./components/Overlay/OCRResultView";
+import Dashboard from "./components/Dashboard/Dashboard";
 import "./App.css";
 
 function App() {
-  // Determine mode based on URL path (set by Tauri when creating windows)
-  const getInitialMode = () => {
-    const path = window.location.pathname;
-    if (path === "/overlay") return "overlay";
-    if (path === "/settings") return "settings";
-    return "dashboard";
-  };
+    const [showSettings, setShowSettings] = useState(false);
+    const [ocrResult, setOcrResult] = useState<string | null>(null);
 
-  const [mode] = useState<"dashboard" | "overlay" | "settings">(getInitialMode);
+    return (
+        <main className="w-full h-full relative overflow-hidden bg-bg-main">
+            {/* Dashboard is always rendered to maintain context */}
+            <Dashboard onOpenSettings={() => setShowSettings(true)} />
 
-  // No event listeners here - each window type knows its role from the URL
-  // This prevents cross-window event leakage
+            {/* Settings Overlay */}
+            <AnimatePresence>
+                {showSettings && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                        onClick={() => setShowSettings(false)} // Click outside to close
+                    >
+                        <div onClick={e => e.stopPropagation()}>
+                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-  if (mode === "overlay") {
-    return <SelectionOverlay />;
-  }
-
-  if (mode === "settings") {
-    return <SettingsModal />;
-  }
-
-  // Dashboard mode - main window background
-  return (
-    <div className="container">
-      <Dashboard />
-    </div>
-  );
+            {/* OCR Result Overlay */}
+            <AnimatePresence>
+                {ocrResult && (
+                    <OCRResultView text={ocrResult} onClose={() => setOcrResult(null)} />
+                )}
+            </AnimatePresence>
+        </main>
+    );
 }
 
 export default App;

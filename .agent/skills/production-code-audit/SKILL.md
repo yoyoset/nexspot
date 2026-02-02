@@ -39,7 +39,6 @@ Autonomously analyze the entire codebase to understand its architecture, pattern
 **Scan line-by-line for all issues:**
 
 **Architecture Issues:**
-
 - Circular dependencies
 - Tight coupling
 - God classes (>500 lines or >20 methods)
@@ -48,7 +47,6 @@ Autonomously analyze the entire codebase to understand its architecture, pattern
 - Violation of design patterns
 
 **Security Vulnerabilities:**
-
 - SQL injection (string concatenation in queries)
 - XSS vulnerabilities (unescaped output)
 - Hardcoded secrets (API keys, passwords in code)
@@ -59,7 +57,6 @@ Autonomously analyze the entire codebase to understand its architecture, pattern
 - Insecure dependencies
 
 **Performance Problems:**
-
 - N+1 query problems
 - Missing database indexes
 - Synchronous operations that should be async
@@ -69,44 +66,7 @@ Autonomously analyze the entire codebase to understand its architecture, pattern
 - Unoptimized images
 - Memory leaks
 
-**Data Format & Serialization Boundaries:**
-
-- Mismatches between producer format and consumer expectation (e.g., raw bytes vs. encoded PNG)
-- Missing serialization/deserialization at API boundaries
-- Incorrect MIME types or content headers
-- Binary data passed as text or vice versa
-- JSON parsing without validation
-- Endianness issues in binary protocols
-
-**Resource Lifecycle Management:**
-
-- Handles/managers dropped prematurely (Rust: struct stored in local var then dropped)
-- Event listeners not cleaned up on unmount (React useEffect missing cleanup)
-- Database connections not returned to pool
-- File handles left open
-- Timers/intervals not cleared
-- Subscriptions not unsubscribed
-
-**Control Flow & Synchronization:**
-
-- Race conditions between async operations
-- UI shown before data is ready
-- User interaction allowed during loading states
-- Missing locks for concurrent writes (Mutex/RwLock usage)
-- Event ordering assumptions that can fail
-- Callback hell without proper error propagation
-
-**Platform-Specific Patterns:**
-
-- Windows: Incorrect HWND/GDI handle management
-- macOS: Missing @autoreleasepool in loops
-- Rust/Tauri: Incorrect use of `#[tauri::command]` async vs sync
-- Rust: Missing Send/Sync implementations for cross-thread types
-- JavaScript: Event loop blocking with sync operations
-- Path separators hardcoded (`\` vs `/` vs `path.join`)
-
 **Code Quality Issues:**
-
 - High cyclomatic complexity (>10)
 - Code duplication
 - Magic numbers
@@ -117,7 +77,6 @@ Autonomously analyze the entire codebase to understand its architecture, pattern
 - TODO/FIXME comments
 
 **Testing Gaps:**
-
 - Missing tests for critical paths
 - Low test coverage (<80%)
 - No edge case testing
@@ -125,7 +84,6 @@ Autonomously analyze the entire codebase to understand its architecture, pattern
 - Missing integration tests
 
 **Production Readiness:**
-
 - Missing environment variables
 - No logging/monitoring
 - No error tracking
@@ -414,87 +372,6 @@ Current metrics:
 🚀 Performance optimized to production standards!
 ```
 
-### Example 4: Rust/Tauri Desktop App Audit
-
-```markdown
-User: @production-code-audit audit my Tauri app
-
-AI: Scanning Rust + TypeScript codebase...
-
-**Phase 1: Discovery**
-- Stack: Tauri 2.x + React + TypeScript
-- Backend: Rust (src-tauri/)
-- Frontend: React (src/)
-- Purpose: Screenshot capture tool
-
-**Phase 2: Critical Issues Found**
-
-🔴 CRITICAL (3 issues):
-
-1. ❌ Data Format Mismatch (engine.rs:134)
-   - Returning raw RGBA bytes, frontend expects PNG
-   - `image::load_from_memory()` will fail on raw bytes
-   
-   \\`\\`\\`rust
-   // Before (BROKEN)
-   Ok((canvas.into_raw(), width, height))
-   
-   // After (FIXED)
-   let mut buffer = Vec::new();
-   canvas.write_to(&mut Cursor::new(&mut buffer), ImageFormat::Png)?;
-   Ok((buffer, width, height))
-   \\`\\`\\`
-
-2. ❌ Resource Dropped Immediately (lib.rs:164)
-   - HotkeyManager created but immediately dropped
-   - Global hotkeys will stop working
-   
-   \\`\\`\\`rust
-   // Before (BROKEN)
-   let _hk_manager = HotkeyManager::new();
-   // Dropped at end of setup()!
-   
-   // After (FIXED)
-   app.manage(AppState {
-       hotkey_manager: Mutex::new(Some(hk_manager)),
-   });
-   \\`\\`\\`
-
-3. ❌ Control Flow Race (lib.rs:171)
-   - UI shown before capture completes
-   - User sees black screen if capture fails
-   
-   \\`\\`\\`rust
-   // Before (RACE CONDITION)
-   show_overlay();        // Show immediately
-   thread::spawn(|| {     // Capture async
-       capture();         // May fail!
-   });
-   
-   // After (CORRECT ORDER)
-   thread::spawn(|| {
-       match capture() {
-           Ok(_) => show_overlay(),  // Show only on success
-           Err(e) => log_error(e),
-       }
-   });
-   \\`\\`\\`
-
-🟠 HIGH (2 issues):
-
-4. ⚠️ Missing Send/Sync (hotkey.rs)
-   - HotkeyManager contains raw pointers
-   - Cannot be stored in Tauri State without unsafe impl
-   
-5. ⚠️ Busy-Wait Polling (hotkey.rs:27)
-   - Using try_recv() + sleep wastes CPU
-   - Should use blocking recv()
-
-**FIXES APPLIED: 5/5**
-
-🔒 Desktop app is now stable and production-ready!
-```
-
 ## Best Practices
 
 ### ✅ Do This
@@ -554,24 +431,20 @@ AI: Scanning Rust + TypeScript codebase...
 ## Common Pitfalls
 
 ### Problem: Too Many Issues
-
 **Symptoms:** Team paralyzed by 200+ issues
 **Solution:** Focus on critical/high priority only, create sprints
 
 ### Problem: False Positives
-
 **Symptoms:** Flagging non-issues
 **Solution:** Understand context, verify manually, ask developers
 
 ### Problem: No Follow-Up
-
 **Symptoms:** Audit report ignored
 **Solution:** Create GitHub issues, assign owners, track in standups
 
 ## Production Audit Checklist
 
 ### Security
-
 - [ ] No SQL injection vulnerabilities
 - [ ] No hardcoded secrets
 - [ ] Authentication on protected routes
@@ -582,7 +455,6 @@ AI: Scanning Rust + TypeScript codebase...
 - [ ] Dependencies have no vulnerabilities
 
 ### Performance
-
 - [ ] No N+1 query problems
 - [ ] Database indexes on foreign keys
 - [ ] Caching implemented
@@ -590,7 +462,6 @@ AI: Scanning Rust + TypeScript codebase...
 - [ ] Bundle size < 200KB (gzipped)
 
 ### Testing
-
 - [ ] Test coverage > 80%
 - [ ] Critical paths tested
 - [ ] Edge cases covered
@@ -598,7 +469,6 @@ AI: Scanning Rust + TypeScript codebase...
 - [ ] Tests run in CI/CD
 
 ### Production Readiness
-
 - [ ] Environment variables configured
 - [ ] Error tracking setup (Sentry)
 - [ ] Structured logging implemented

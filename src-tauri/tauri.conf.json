@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "HyperLens",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "identifier": "com.yoyos.hyperlens",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -14,12 +14,19 @@
       {
         "title": "HyperLens",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "transparent": true
       }
     ],
     "security": {
       "csp": null
     }
+  },
+  "plugins": {
+    "opener": {},
+    "shell": {},
+    "notification": null,
+    "single-instance": null
   },
   "bundle": {
     "active": true,

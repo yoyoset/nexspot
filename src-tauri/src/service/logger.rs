@@ -1,57 +1,62 @@
-use chrono::Local;
-use std::fs::{File, OpenOptions};
-use std::io::Write;
-use std::sync::atomic::{AtomicBool, Ordering};
+use log::LevelFilter;
+use simplelog::{Config, WriteLogger};
+use std::fs::File;
+use std::path::PathBuf;
 use std::sync::Mutex;
+use tauri::{AppHandle, State};
 
-static LOG_ENABLED: AtomicBool = AtomicBool::new(true); // ENABLED by default for debugging
-static LOG_FILE: Mutex<Option<String>> = Mutex::new(None);
-
-pub fn init(executable_dir: &str) {
-    let mut path = std::path::PathBuf::from(executable_dir);
-    path.push("hyper-lens.log");
-
-    if let Ok(mut guard) = LOG_FILE.lock() {
-        *guard = Some(path.to_string_lossy().to_string());
-    }
+pub struct LoggerState {
+    pub enabled: Mutex<bool>,
+    pub log_path: PathBuf,
 }
 
-pub fn set_enabled(enabled: bool) {
-    LOG_ENABLED.store(enabled, Ordering::Relaxed);
-    if enabled {
-        log("Logger", "Logging enabled");
-    }
-}
+impl LoggerState {
+    pub fn new(_app_handle: &AppHandle) -> Self {
+        // Resolve log path relative to the executable
+        let log_path = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.join("hyper_lens.log")))
+            .unwrap_or_else(|| PathBuf::from("hyper_lens.log"));
 
-pub fn is_enabled() -> bool {
-    LOG_ENABLED.load(Ordering::Relaxed)
-}
-
-pub fn clear_log() -> Result<(), String> {
-    if let Ok(guard) = LOG_FILE.lock() {
-        if let Some(path) = guard.as_ref() {
-            File::create(path).map_err(|e| e.to_string())?; // Truncate
-            return Ok(());
+        Self {
+            enabled: Mutex::new(true), // Default to true for now, until persistence is added
+            log_path,
         }
     }
-    Err("Logger not initialized".to_string())
+
+    pub fn init(&self) -> anyhow::Result<()> {
+        let file = File::create(&self.log_path)?;
+
+        // We use WriteLogger which writes to the file
+        // Note: simplelog's init is global. Re-init calls will fail/be ignored, which is fine.
+        let _ = WriteLogger::init(LevelFilter::Info, Config::default(), file);
+
+        log::info!("Logger initialized at {:?}", self.log_path);
+        Ok(())
+    }
+
+    pub fn clear_logs(&self) -> anyhow::Result<()> {
+        let _ = File::create(&self.log_path)?; // This truncates
+        log::info!("Logs cleared by user.");
+        Ok(())
+    }
 }
 
-pub fn log(target: &str, message: &str) {
-    if !LOG_ENABLED.load(Ordering::Relaxed) {
-        return;
+#[tauri::command]
+pub fn clear_logs(state: State<'_, LoggerState>) -> Result<(), String> {
+    state.clear_logs().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn reveal_logs(state: State<'_, LoggerState>) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        Command::new("explorer")
+            .arg("/select,")
+            .arg(&state.log_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
     }
-
-    let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
-    let log_line = format!("[{}] [{}] {}\n", timestamp, target, message);
-
-    print!("{}", log_line);
-
-    if let Ok(guard) = LOG_FILE.lock() {
-        if let Some(path) = guard.as_ref() {
-            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
-                let _ = file.write_all(log_line.as_bytes());
-            }
-        }
-    }
+    Ok(())
 }
