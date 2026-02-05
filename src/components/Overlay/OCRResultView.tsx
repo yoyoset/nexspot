@@ -1,16 +1,15 @@
 import React from "react";
 import { Copy, X, Type } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAppStore } from "../../store/useAppStore";
 
-interface OCRResultViewProps {
-    text: string;
-    onClose: () => void;
-}
-
-const OCRResultView: React.FC<OCRResultViewProps> = ({ text, onClose }) => {
+const OCRResultView: React.FC = () => {
+    const { ocrResult: text, setOcrResult } = useAppStore();
+    const onClose = () => setOcrResult(null);
     const copyToClipboard = () => {
-        navigator.clipboard.writeText(text);
-        // Add a toast or feedback here in production
+        if (text) {
+            navigator.clipboard.writeText(text);
+        }
     };
 
     return (

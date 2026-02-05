@@ -2,13 +2,14 @@ use crate::service::native_overlay::state::OverlayState;
 use crate::service::win32;
 use windows::Win32::Foundation::{POINT, SIZE};
 
+pub mod drawing;
 pub mod magnifier;
 pub mod selection;
 pub mod toolbar;
 
 pub fn render_frame(
     hwnd: &win32::window::SafeHWND,
-    state: &OverlayState,
+    state: &mut OverlayState,
     toolbar: &mut toolbar::Toolbar,
 ) -> anyhow::Result<()> {
     if !state.is_visible {
@@ -81,16 +82,37 @@ pub fn render_frame(
         }
     }
 
-    // 4. Draw UI Elements
-    toolbar::draw_toolbar(toolbar, &hdc_mem)?;
+    // 4. Draw Drawing Objects (NEW)
+    drawing::draw_all_objects(&hdc_mem, state)?;
 
-    // Draw magnifier if selecting or resizing
-    match state.interaction_mode {
+    // 5. Draw UI Elements
+    toolbar.draw(&hdc_mem)?;
+
+    // Draw magnifier logic:
+    // 1. Always show when selecting or resizing (to help precision)
+    // 2. Otherwise, show only if mouse is OUTSIDE the selection area
+    let is_adjusting = matches!(
+        state.interaction_mode,
         crate::service::native_overlay::state::InteractionMode::Selecting
-        | crate::service::native_overlay::state::InteractionMode::Resizing(_) => {
-            magnifier::draw_magnifier(&hdc_mem, state.mouse_x, state.mouse_y, state)?;
-        }
-        _ => {}
+            | crate::service::native_overlay::state::InteractionMode::Resizing(_)
+    );
+
+    let is_outside = if let Some(sel) = state.selection {
+        state.mouse_x < sel.left
+            || state.mouse_x > sel.right
+            || state.mouse_y < sel.top
+            || state.mouse_y > sel.bottom
+    } else {
+        true // No selection yet, show it immediately
+    };
+
+    let is_over_toolbar = state.mouse_x >= toolbar.rect.left
+        && state.mouse_x < toolbar.rect.right
+        && state.mouse_y >= toolbar.rect.top
+        && state.mouse_y < toolbar.rect.bottom;
+
+    if (is_adjusting || is_outside) && !is_over_toolbar {
+        magnifier::draw_magnifier(&hdc_mem, state.mouse_x, state.mouse_y, state)?;
     }
 
     // 5. Update Layered Window

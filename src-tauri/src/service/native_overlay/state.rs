@@ -16,11 +16,18 @@ pub enum HitZone {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CaptureMode {
+    Standard,
+    Ocr,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InteractionMode {
     None,
     Selecting,         // Drawing new box
     Moving,            // Dragging entire box
     Resizing(HitZone), // Dragging a handle
+    Drawing,           // Drawing a shape (Rect, Arrow, etc.)
 }
 
 #[derive(Debug)]
@@ -37,6 +44,7 @@ pub struct OverlayState {
     // Dragging State
     pub start_x: i32,
     pub start_y: i32,
+    pub capture_mode: CaptureMode,
     // Original selection when drag started (for move/resize)
     pub drag_start_selection: Option<RECT>,
 
@@ -45,8 +53,40 @@ pub struct OverlayState {
 
     pub hbitmap_dim: Option<SafeHBITMAP>,
     pub hbitmap_bright: Option<SafeHBITMAP>,
+    pub gdi_cache: crate::service::win32::gdi::GdiCache,
     // Snap targets (Window Bounds in virtual screen coords)
     pub window_rects: Vec<RECT>,
+
+    // Drawing State
+    pub current_tool: DrawingTool,
+    pub current_color: u32, // ARGB
+    pub current_stroke: f32,
+    pub objects: Vec<DrawingObject>,
+    pub current_drawing: Option<DrawingObject>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DrawingTool {
+    None,
+    Rect,
+    Ellipse,
+    Arrow,
+    Line,
+    Brush,
+    Mosaic,
+    Text,
+    Number,
+}
+
+#[derive(Debug, Clone)]
+pub struct DrawingObject {
+    pub tool: DrawingTool,
+    pub points: Vec<(i32, i32)>,
+    pub text: Option<String>,
+    pub color: u32,
+    pub stroke_width: f32,
+    pub is_filled: bool,
+    pub is_dashed: bool,
 }
 
 impl Default for OverlayState {
@@ -63,11 +103,18 @@ impl Default for OverlayState {
             start_x: 0,
             start_y: 0,
             drag_start_selection: None,
+            capture_mode: CaptureMode::Standard,
             width: 0,
             height: 0,
             hbitmap_dim: None,
             hbitmap_bright: None,
+            gdi_cache: crate::service::win32::gdi::GdiCache::new(),
             window_rects: Vec::new(),
+            current_tool: DrawingTool::None,
+            current_color: 0xFFFF0000, // Red
+            current_stroke: 3.0,
+            objects: Vec::new(),
+            current_drawing: None,
         }
     }
 }

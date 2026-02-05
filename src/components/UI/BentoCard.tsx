@@ -22,10 +22,26 @@ const BentoCard: React.FC<BentoCardProps> = ({
     onClick,
     active = false,
 }) => {
+    // Map numerical colSpan to Tailwind classes
+    const colSpanClass = {
+        1: "col-span-1",
+        2: "col-span-2",
+        3: "col-span-3",
+        4: "col-span-4",
+        5: "col-span-5",
+        6: "col-span-6",
+        7: "col-span-7",
+        8: "col-span-8",
+        9: "col-span-9",
+        10: "col-span-10",
+        11: "col-span-11",
+        12: "col-span-12",
+    }[colSpan] || "col-span-1";
+
     return (
         <div
-            className={`bento-card relative overflow-hidden rounded-2xl p-5 flex flex-col group ${colSpan === 2 ? "col-span-2" : "col-span-1"
-                } ${onClick ? "cursor-pointer hover:bg-white/[0.02]" : ""} ${active ? "border-accent/40 shadow-[0_0_20px_rgba(59,130,246,0.1)]" : ""
+            className={`bento-card relative overflow-hidden rounded-2xl p-5 flex flex-col group ${colSpanClass} ${onClick ? "cursor-pointer hover:bg-white/[0.02]" : ""
+                } ${active ? "border-accent/40 shadow-[0_0_20px_rgba(59,130,246,0.1)]" : ""
                 } ${className}`}
             onClick={onClick}
         >

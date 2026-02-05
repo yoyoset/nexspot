@@ -1,0 +1,64 @@
+{
+    "settings": {
+        "title": "SETTINGS",
+        "tabs": {
+            "shortcuts": "Shortcuts",
+            "general": "General",
+            "engine": "Engine",
+            "aesthetics": "Aesthetics"
+        },
+        "general": {
+            "title": "General Settings",
+            "save_path": "Save Path",
+            "save_path_desc": "Select directory for screenshot storage.",
+            "browse": "Browse"
+        },
+        "engine": {
+            "title": "System Logs",
+            "enable_logs": "Enable File Logging",
+            "enable_logs_desc": "Write debug logs to hyper_lens.log",
+            "open_log": "Open Log File",
+            "clear_logs": "Clear Logs"
+        },
+        "shortcuts": {
+            "title": "Global Hotkeys",
+            "loading": "Loading shortcuts...",
+            "hint": "Changes are applied instantly.",
+            "errors": {
+                "conflict": "Conflict with {{label}}",
+                "register_failed": "Failed to register. Likely in use by another app.",
+                "empty": "Shortcut cannot be empty",
+                "startup_error": "Some shortcuts failed to register at startup:\n{{errors}}"
+            }
+        },
+        "aesthetics": {
+            "title": "Theme",
+            "coming_soon": "COMING SOON"
+        }
+    },
+    "notifications": {
+        "conflict_title": "Shortcut Conflict",
+        "register_error_title": "Registration Failed",
+        "dpi_title": "Mixed DPI Detected",
+        "dpi_body": "Multi-monitor setup detection.\nNexSpot will rely on Windows scaling."
+    },
+    "dashboard": {
+        "capture_title": "NexSpot Capture",
+        "capture_desc": "Instant, zero-latency screenshot engine.",
+        "capture_btn": "CAPTURE",
+        "settings_title": "Settings",
+        "settings_desc": "Configure shortcuts & UI",
+        "library_title": "Folder",
+        "library_desc": "Recent Snaps",
+        "library_empty": "NO HISTORY"
+    },
+    "hud": {
+        "copied": "Copied to Clipboard",
+        "saved": "Screenshot Saved",
+        "ocr_processing": "Processing OCR...",
+        "ocr_success": "Text Recognition Ready",
+        "ocr_error": "OCR Recognition Failed",
+        "error": "Action Failed",
+        "pin": "Window Pinned"
+    }
+}

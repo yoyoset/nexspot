@@ -1,7 +1,7 @@
 use crate::service::native_overlay::state::OverlayState;
 use crate::service::win32;
 use std::sync::{Arc, Mutex};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
 
 /// Capture the current selection from the bright bitmap and save it to a file asynchronously.
@@ -66,10 +66,11 @@ pub fn save_selection(state_arc: &Arc<Mutex<OverlayState>>, app: &AppHandle) -> 
             // Re-wrap to ensure Drop calls DeleteObject
             let _safe_hbm = crate::service::win32::gdi::SafeHBITMAP(raw_hbm);
 
-            let captures_dir = std::env::current_exe()
-                .ok()
-                .and_then(|p| p.parent().map(|p| p.join("captures")))
-                .unwrap_or_else(|| std::path::PathBuf::from("captures"));
+            let captures_dir = {
+                let state = app_handle.state::<crate::app_state::AppState>();
+                let config_state = state.config_state.lock().unwrap();
+                config_state.resolve_save_path(&app_handle)
+            };
 
             if !captures_dir.exists() {
                 let _ = std::fs::create_dir_all(&captures_dir);
@@ -100,6 +101,9 @@ pub fn save_selection(state_arc: &Arc<Mutex<OverlayState>>, app: &AppHandle) -> 
                 .title("Screenshot Saved")
                 .body(&format!("Saved to {}", file_path.display()))
                 .show();
+
+            use tauri::Emitter;
+            let _ = app_handle.emit("screenshot-saved", ());
         });
     }
 
@@ -179,6 +183,9 @@ pub fn copy_to_clipboard(
             .title("Copied")
             .body("Image copied to clipboard")
             .show();
+
+        use tauri::Emitter;
+        let _ = app.emit("screenshot-copied", ());
     }
 
     Ok(())

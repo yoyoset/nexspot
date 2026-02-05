@@ -43,7 +43,22 @@ impl InteractionHandler {
                 state.selection = None; // Start new
             }
             state::HitZone::Body => {
-                state.interaction_mode = state::InteractionMode::Moving;
+                // Check if we are using a tool
+                if state.current_tool != state::DrawingTool::None {
+                    state.interaction_mode = state::InteractionMode::Drawing;
+                    // Create new drawing object
+                    state.current_drawing = Some(state::DrawingObject {
+                        tool: state.current_tool,
+                        points: vec![(x, y)],
+                        text: None,
+                        color: state.current_color,
+                        stroke_width: state.current_stroke,
+                        is_filled: false,
+                        is_dashed: false,
+                    });
+                } else {
+                    state.interaction_mode = state::InteractionMode::Moving;
+                }
             }
             z => {
                 state.interaction_mode = state::InteractionMode::Resizing(z);
@@ -225,6 +240,29 @@ impl InteractionHandler {
                     state.selection = Some(r);
                 }
             }
+            state::InteractionMode::Drawing => {
+                if let Some(drawing) = &mut state.current_drawing {
+                    // For Brush, append point
+                    // For Rect/Arrow/Line/Ellipse, update 2nd point (end point)
+                    match drawing.tool {
+                        state::DrawingTool::Brush | state::DrawingTool::Mosaic => {
+                            // Distance check?
+                            let last = drawing.points.last().unwrap_or(&(0, 0));
+                            if (x - last.0).abs() > 2 || (y - last.1).abs() > 2 {
+                                drawing.points.push((x, y));
+                            }
+                        }
+                        _ => {
+                            // Replace last point or ensure we have 2 points
+                            if drawing.points.len() == 1 {
+                                drawing.points.push((x, y));
+                            } else if drawing.points.len() == 2 {
+                                drawing.points[1] = (x, y);
+                            }
+                        }
+                    }
+                }
+            }
             state::InteractionMode::None => {
                 if let Some(sel) = state.selection {
                     state.hover_zone = state::HitZone::detect(&sel, x, y);
@@ -236,6 +274,22 @@ impl InteractionHandler {
     }
 
     pub fn handle_mouse_up(state: &mut OverlayState) {
+        if let state::InteractionMode::Drawing = state.interaction_mode {
+            if let Some(drawing) = state.current_drawing.take() {
+                // If it's a valid drawing (not just a click), save it
+                if drawing.points.len() >= 2 {
+                    state.objects.push(drawing);
+                } else if matches!(drawing.tool, state::DrawingTool::Number) {
+                    // For Number, Click is enough
+                    state.objects.push(drawing);
+                }
+
+                // If the tool is NOT continuous (like Rect/Arrow), should we reset tool?
+                // Usually user wants to draw multiple arrows. Keep tool selected.
+                // But for Text?
+            }
+        }
+
         state.interaction_mode = state::InteractionMode::None;
     }
 }

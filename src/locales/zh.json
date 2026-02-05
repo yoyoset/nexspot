@@ -1,0 +1,64 @@
+{
+    "settings": {
+        "title": "设置",
+        "tabs": {
+            "shortcuts": "快捷键",
+            "general": "常规",
+            "engine": "引擎",
+            "aesthetics": "外观"
+        },
+        "general": {
+            "title": "常规设置",
+            "save_path": "保存路径",
+            "save_path_desc": "选择保存截图的目录。",
+            "browse": "浏览"
+        },
+        "engine": {
+            "title": "系统日志",
+            "enable_logs": "启用文件日志",
+            "enable_logs_desc": "将调试日志写入 hyper_lens.log",
+            "open_log": "打开日志文件",
+            "clear_logs": "清除日志"
+        },
+        "shortcuts": {
+            "title": "全局热键",
+            "loading": "正在加载快捷键...",
+            "hint": "更改即时生效。",
+            "errors": {
+                "conflict": "与 \"{{label}}\" 冲突",
+                "register_failed": "无法注册快捷键。可能被其他应用占用。",
+                "empty": "快捷键不能为空",
+                "startup_error": "以下快捷键注册失败:\n{{errors}}"
+            }
+        },
+        "aesthetics": {
+            "title": "主题",
+            "coming_soon": "敬请期待"
+        }
+    },
+    "notifications": {
+        "conflict_title": "快捷键冲突",
+        "register_error_title": "注册失败",
+        "dpi_title": "DPI 设置不一致",
+        "dpi_body": "检测到多显示器 DPI 缩放比例不同。\nNexSpot 将依赖 Windows 系统缩放。"
+    },
+    "dashboard": {
+        "capture_title": "NexSpot 截图",
+        "capture_desc": "极速、零延迟截图引擎。",
+        "capture_btn": "立即截图",
+        "settings_title": "设置",
+        "settings_desc": "配置快捷键与界面",
+        "library_title": "文件夹",
+        "library_desc": "最近截图",
+        "library_empty": "暂无历史"
+    },
+    "hud": {
+        "copied": "已复制到剪贴板",
+        "saved": "截图已保存",
+        "ocr_processing": "正在识别文字...",
+        "ocr_success": "文本识别完成",
+        "ocr_error": "文本识别失败",
+        "error": "操作失败",
+        "pin": "已固定窗口"
+    }
+}

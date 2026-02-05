@@ -1,0 +1,81 @@
+﻿cargo :     Checking nexspot v0.2.1 (F:\
+my ai\nexspot\src-tauri)
+所在位置 行:1 字符: 1
++ cargo check > build_errors.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecif 
+   ied: (    Checking ne...spot\src-ta  
+  uri):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCom 
+   mandError
+ 
+error[E0432]: unresolved import `tauri_p
+lugin_dialog`
+  --> src\commands\config.rs:20:9
+   |
+20 |     use tauri_plugin_dialog::Dialog
+Ext;
+   |         ^^^^^^^^^^^^^^^^^^^ use of 
+unresolved module or unlinked crate `tau
+ri_plugin_dialog`
+   |
+help: there is a crate or module with a 
+similar name
+   |
+20 -     use tauri_plugin_dialog::Dialog
+Ext;
+20 +     use tauri_plugin_shell::DialogE
+xt;
+   |
+
+error[E0599]: no method named `dialog` f
+ound for struct `AppHandle<R>` in the cu
+rrent scope
+  --> src\commands\config.rs:23:22
+   |
+23 |     let folder = app.dialog().file(
+).blocking_pick_folder();
+   |                      ^^^^^^ method 
+not found in `AppHandle`
+
+error[E0282]: type annotations needed
+  --> src\commands\config.rs:25:20
+   |
+25 |     Ok(folder.map(|f| f.to_string()
+))
+   |                    ^  - type must b
+e known at this point
+   |
+help: consider giving this closure param
+eter an explicit type
+   |
+25 |     Ok(folder.map(|f: /* Type */| f
+.to_string()))
+   |                     ++++++++++++
+
+error[E0433]: failed to resolve: use of 
+unresolved module or unlinked crate `tau
+ri_plugin_dialog`
+  --> src\lib.rs:22:17
+   |
+22 |         .plugin(tauri_plugin_dialog
+::init())
+   |                 ^^^^^^^^^^^^^^^^^^^
+ use of unresolved module or unlinked cr
+ate `tauri_plugin_dialog`
+   |
+help: there is a crate or module with a 
+similar name
+   |
+22 -         .plugin(tauri_plugin_dialog
+::init())
+22 +         .plugin(tauri_plugin_shell:
+:init())
+   |
+
+Some errors have detailed explanations: 
+E0282, E0432, E0433, E0599.
+For more information about an error, try
+ `rustc --explain E0282`.
+error: could not compile `nexspot` (lib)
+ due to 4 previous errors

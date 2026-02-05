@@ -1,97 +1,25 @@
 pub mod service;
+pub mod app_state;
+pub mod commands;
 
+pub use app_state::AppState;
+use crate::service::logger::{self, LoggerState};
 use crate::service::native_overlay::OverlayManager;
-use crate::service::shortcut_manager::{Shortcut, ShortcutState};
+use crate::service::config::ConfigState;
 use std::sync::Mutex;
-use tauri::{Emitter, Manager, State};
-
+use tauri::{Emitter, Manager};
 use global_hotkey::GlobalHotKeyEvent;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri_plugin_notification::NotificationExt;
 
-pub struct AppState {
-    pub overlay_manager: Mutex<OverlayManager>,
-    pub shortcut_state: Mutex<ShortcutState>,
-}
 
-#[tauri::command]
-async fn start_capture(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    println!("Native Capture Triggered");
-
-    // Prevent Recursive Capture
-    {
-        if let Ok(overlay) = state.overlay_manager.lock() {
-            if let Ok(os) = overlay.state.lock() {
-                if os.is_visible {
-                    println!("Overlay already active, ignoring capture.");
-                    return Ok(());
-                }
-            }
-        }
-    }
-
-    // 1. Get State Arc (lock briefly)
-    let state_arc = {
-        let overlay = state.overlay_manager.lock().map_err(|e| e.to_string())?;
-        overlay.state.clone()
-    };
-
-    // 2. Run Capture (Blocking, CPU heavy) on thread pool
-    let app_handle = app.clone();
-
-    // We can't easily spawn_blocking inside async fn unless we wrap it?
-    // tauri command is already async (tokio).
-    // So we can just call it? NO, `perform_capture` is synchronous/blocking.
-    // It will block the async runtime thread. That is okay for short tasks, but better to spawn_blocking if it takes time.
-    // However, Tauri 2.0 async commands run on a thread pool, allowing blocking?
-    // Ideally use spawn_blocking to be safe.
-
-    // Use std thread or tokio spawn_blocking
-    let result = tauri::async_runtime::spawn_blocking(move || {
-        crate::service::native_overlay::capture::perform_capture(&state_arc)
-    })
-    .await
-    .map_err(|e| e.to_string())?;
-
-    match result {
-        Ok((x, y, w, h)) => {
-            // 3. UI Update on Main Thread
-            let app_handle_ui = app_handle.clone();
-            app_handle
-                .run_on_main_thread(move || {
-                    let state = app_handle_ui.state::<AppState>();
-                    if let Ok(mut overlay) = state.overlay_manager.lock() {
-                        if let Err(e) = overlay.show_overlay_at(x, y, w, h) {
-                            eprintln!("Failed to show overlay: {:?}", e);
-                        }
-                    };
-                })
-                .map_err(|_| "Failed to run on main thread".to_string())?;
-
-            Ok(())
-        }
-        Err(e) => Err(format!("Capture failed: {:?}", e)),
-    }
-}
-
-#[tauri::command]
-fn get_shortcuts(state: State<'_, AppState>) -> Vec<Shortcut> {
-    let state = state.inner().shortcut_state.lock().unwrap();
-    state.shortcuts.clone()
-}
-
-#[tauri::command]
-fn update_shortcut(state: State<'_, AppState>, id: String, new_keys: String) -> Result<(), String> {
-    let mut state = state.inner().shortcut_state.lock().unwrap();
-    state.update_shortcut(&id, &new_keys)
-}
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
@@ -101,11 +29,13 @@ pub fn run() {
         .setup(|app| {
             let overlay_manager =
                 OverlayManager::new(app.handle().clone()).expect("Failed to init OverlayManager");
-            let shortcut_state = ShortcutState::new(app.handle());
+            let logger_state = LoggerState::new(app.handle());
+            let config_state = ConfigState::new(app.handle());
 
             let app_state = AppState {
                 overlay_manager: Mutex::new(overlay_manager),
-                shortcut_state: Mutex::new(shortcut_state),
+                config_state: Mutex::new(config_state),
+                logger_state,
             };
 
             app.manage(app_state);
@@ -212,14 +142,12 @@ pub fn run() {
             let app_handle = app.handle();
             let state = app_handle.state::<AppState>();
             let errors = {
-                let s_state = state.shortcut_state.lock().unwrap();
-                s_state.last_registration_errors.clone()
+                let c_state = state.config_state.lock().unwrap();
+                c_state.last_registration_errors.clone()
             };
             if !errors.is_empty() {
-                let _ = app.notification().builder()
-                    .title("Shortcut Conflict")
-                    .body(&format!("Failed to register:\n{}", errors.join("\n")))
-                    .show();
+                // Emit event to frontend for translation and display
+                let _ = app.emit("shortcut-startup-error", errors);
             }
 
             // 3. Check Mixed DPI
@@ -228,10 +156,7 @@ pub fn run() {
                     let first_dpi_x = monitors[0].dpi_x;
                     let mixed = monitors.iter().any(|m| m.dpi_x != first_dpi_x);
                     if mixed {
-                        let _ = app.notification().builder()
-                            .title("Mixed DPI Detected")
-                            .body("Multi-monitor setup detection.\nNexSpot will rely on Windows scaling.")
-                            .show();
+                        let _ = app.emit("mixed-dpi-detected", ());
                     }
                 }
             }
@@ -255,8 +180,8 @@ pub fn run() {
                          let state = app_handle_hotkey.state::<AppState>();
                          let mut matched_id = None;
                          {
-                             if let Ok(s_state) = state.shortcut_state.lock() {
-                                 for s in &s_state.shortcuts {
+                             if let Ok(c_state) = state.config_state.lock() {
+                                 for s in &c_state.config.shortcuts {
                                      if let Ok(hotkey) = s.shortcut.parse::<global_hotkey::hotkey::HotKey>() {
                                          if hotkey.id() == event.id {
                                              matched_id = Some(s.id.clone());
@@ -271,17 +196,16 @@ pub fn run() {
                          }
 
                          if let Some(id) = matched_id {
-                             if id == "capture" {
+                             if id == "capture" || id == "ocr" {
                                  let app = app_handle_hotkey.clone();
+                                 let id_clone = id.clone();
                                  tauri::async_runtime::spawn(async move {
-                                     log::info!("[Hotkey Debug] Spawned Async Task");
+                                     log::info!("[Hotkey Debug] Spawned Async Task for {}", id_clone);
                                      let state = app.state::<AppState>();
                                      
-                                     // Prevent Recursive
+                                     // 1. Check if already visible
                                      {
-                                         log::info!("[Hotkey Debug] Acquiring Lock Check...");
                                          if let Ok(overlay) = state.overlay_manager.lock() {
-                                             log::info!("[Hotkey Debug] Lock Acquired. Checking visible...");
                                              if let Ok(os) = overlay.state.lock() {
                                                  if os.is_visible {
                                                      log::warn!("[Hotkey Debug] Overlay is visible, ignoring.");
@@ -291,15 +215,23 @@ pub fn run() {
                                          }
                                      }
                                      
-                                     log::info!("[Hotkey Debug] Starting Capture Sequence");
-
+                                     // 2. Set mode and perform capture
                                      let state_arc = {
                                          let overlay = state.overlay_manager.lock().unwrap();
+                                         let mut os = overlay.state.lock().unwrap();
+                                         os.capture_mode = if id_clone == "ocr" {
+                                             crate::service::native_overlay::state::CaptureMode::Ocr
+                                         } else {
+                                             crate::service::native_overlay::state::CaptureMode::Standard
+                                         };
                                          overlay.state.clone()
                                      };
+
+                                     log::info!("[Hotkey Debug] Starting Capture Sequence ({})", id_clone);
                                      let res = tauri::async_runtime::spawn_blocking(move || {
                                          crate::service::native_overlay::capture::perform_capture(&state_arc)
                                      }).await;
+
                                      if let Ok(Ok((x, y, w, h))) = res {
                                          let app_ui = app.clone();
                                          let _ = app.run_on_main_thread(move || {
@@ -319,9 +251,16 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            start_capture,
-            get_shortcuts,
-            update_shortcut
+            commands::start_capture,
+            commands::get_shortcuts,
+            commands::update_shortcut,
+            commands::get_startup_errors,
+            commands::get_config,
+            commands::set_save_path,
+            commands::set_ocr_engine,
+            commands::select_folder,
+            logger::clear_logs,
+            logger::reveal_logs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

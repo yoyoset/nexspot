@@ -12,9 +12,12 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "NexSpot",
         "width": 800,
-        "height": 600,
+        "height": 680,
+        "minWidth": 600,
+        "minHeight": 500,
         "transparent": true
       }
     ],
@@ -23,10 +26,11 @@
     }
   },
   "plugins": {
-    "opener": {},
-    "shell": {},
+    "opener": null,
+    "shell": null,
     "notification": null,
-    "single-instance": null
+    "single-instance": null,
+    "dialog": null
   },
   "bundle": {
     "active": true,

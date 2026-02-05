@@ -10,6 +10,23 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 pub struct SafeHWND(pub(crate) HWND);
 
+/// Trait for handling Win32 window messages.
+pub trait WindowEventHandler {
+    fn on_message(
+        &mut self,
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> Option<LRESULT>;
+}
+
+/// A thin wrapper to store a trait object in GWLP_USERDATA.
+/// This avoids the "fat pointer" storage problem in 64-bit pointers.
+struct Dispatcher {
+    handler: *mut dyn WindowEventHandler,
+}
+
 pub unsafe extern "system" fn wnd_proc(
     hwnd: HWND,
     msg: u32,
@@ -22,44 +39,38 @@ pub unsafe extern "system" fn wnd_proc(
     );
 
     if ptr != 0 {
-        let manager = &mut *(ptr as *mut crate::service::native_overlay::OverlayManager);
+        let dispatcher = &mut *(ptr as *mut Dispatcher);
 
-        match msg {
-            windows::Win32::UI::WindowsAndMessaging::WM_KEYDOWN => {
-                if wparam.0 == windows::Win32::UI::Input::KeyboardAndMouse::VK_ESCAPE.0 as usize {
-                    manager.close_and_reset();
-                }
-                return LRESULT(0);
-            }
-            windows::Win32::UI::WindowsAndMessaging::WM_LBUTTONDOWN => {
-                let x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                manager.on_mouse_down(hwnd, x, y);
-                return LRESULT(0);
-            }
-            windows::Win32::UI::WindowsAndMessaging::WM_LBUTTONUP => {
-                let x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                manager.on_mouse_up(hwnd, x, y);
-                return LRESULT(0);
-            }
-            windows::Win32::UI::WindowsAndMessaging::WM_LBUTTONDBLCLK => {
-                let x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                manager.on_double_click(hwnd, x, y);
-                return LRESULT(0);
-            }
-            windows::Win32::UI::WindowsAndMessaging::WM_MOUSEMOVE => {
-                let x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                manager.on_mouse_move(hwnd, x, y);
-                return LRESULT(0);
-            }
-            _ => {}
+        // Handle cleanup
+        if msg == windows::Win32::UI::WindowsAndMessaging::WM_NCDESTROY {
+            let _ = Box::from_raw(dispatcher); // Take ownership and drop
+            windows::Win32::UI::WindowsAndMessaging::SetWindowLongPtrW(
+                hwnd,
+                windows::Win32::UI::WindowsAndMessaging::GWLP_USERDATA,
+                0,
+            );
+            return DefWindowProcW(hwnd, msg, wparam, lparam);
+        }
+
+        if let Some(res) = (*dispatcher.handler).on_message(hwnd, msg, wparam, lparam) {
+            return res;
         }
     }
 
     DefWindowProcW(hwnd, msg, wparam, lparam)
+}
+
+/// Binds a handler to a window's GWLP_USERDATA.
+/// The handler must outlive the window or be cleaned up manually.
+pub fn set_window_handler(hwnd: HWND, handler: *mut dyn WindowEventHandler) {
+    let dispatcher = Box::new(Dispatcher { handler });
+    unsafe {
+        windows::Win32::UI::WindowsAndMessaging::SetWindowLongPtrW(
+            hwnd,
+            windows::Win32::UI::WindowsAndMessaging::GWLP_USERDATA,
+            Box::into_raw(dispatcher) as isize,
+        );
+    }
 }
 
 pub fn hide_window(hwnd: &SafeHWND) {
