@@ -30,12 +30,12 @@ const GlobalHUD: React.FC<GlobalHUDProps> = ({ message, type = 'success', isVisi
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8, y: -10 }}
                         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                        className="bg-black/80 backdrop-blur-2xl border border-white/10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[200px]"
+                        className="bg-bg-card/90 backdrop-blur-2xl border border-border-subtle px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[200px]"
                     >
                         <div className="flex-shrink-0">
                             {getIcon()}
                         </div>
-                        <span className="text-white font-medium tracking-tight text-sm">
+                        <span className="text-text-main font-semibold tracking-tight text-sm">
                             {message}
                         </span>
                     </motion.div>

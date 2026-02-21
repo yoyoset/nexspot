@@ -20,10 +20,10 @@ pub fn draw_magnifier(
 
     let mut x = mouse_x + offset_x;
     let mut y = mouse_y + offset_y;
-    if x + mag_size > state.width {
+    if x + mag_size > state.x + state.width {
         x = mouse_x - mag_size - offset_x;
     }
-    if y + mag_size > state.height {
+    if y + mag_size > state.y + state.height {
         y = mouse_y - mag_size - offset_y;
     }
 
@@ -39,9 +39,15 @@ pub fn draw_magnifier(
     let brush_border = win32::gdi::create_solid_brush(0xFFFFFF)?;
     win32::gdi::frame_rect(hdc_mem, &rect, &brush_border);
 
-    if let Some(hbm_bright) = &state.hbitmap_bright {
+    if let Some(hbm_bright) = &state.gdi.hbitmap_bright {
         let hdc_src = win32::gdi::create_compatible_dc(None)?;
-        win32::gdi::select_object(
+        // CRITICAL: Align hdc_src with global logical space
+        unsafe {
+            let _ =
+                windows::Win32::Graphics::Gdi::SetWindowOrgEx(hdc_src.0, state.x, state.y, None);
+        }
+
+        let prev = win32::gdi::select_object(
             &hdc_src,
             windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_bright.0 .0),
         )?;
@@ -66,6 +72,10 @@ pub fn draw_magnifier(
                 windows::Win32::Graphics::Gdi::SRCCOPY,
             );
         }
+
+        // Cleanup hdc_src
+        win32::gdi::select_object(&hdc_src, prev)?;
+        win32::gdi::release_dc(None, hdc_src);
     }
 
     let mid_x = x + mag_size / 2;

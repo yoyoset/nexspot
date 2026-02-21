@@ -1,6 +1,6 @@
 use windows::Win32::Foundation::RECT;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ToolType {
     Rect,    // \u{EB7F}
     Arrow,   // \u{EA70}
@@ -15,8 +15,11 @@ pub enum ToolType {
     Copy,    // \u{ECD5}
     Cancel,  // \u{EB99}
     More,    // \u{EF77}
-    Ocr,     // \u{E11B}
+    Macro(String),
+    AiExecute(String),
 }
+
+pub use crate::service::native_overlay::state::PropertyChange;
 
 pub use ToolType as ToolbarCommand;
 
@@ -27,8 +30,18 @@ pub enum ButtonState {
     Pressed,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToolGroup {
+    Standard,
+    HighFidelity,
+    AI,
+    Actions,
+}
+
+#[derive(Clone)]
 pub struct ToolbarButton {
     pub tool: ToolType,
+    pub group: ToolGroup,
     pub rect: RECT,
     pub state: ButtonState,
     pub icon: String,

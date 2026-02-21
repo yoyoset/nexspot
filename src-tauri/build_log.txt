@@ -1,0 +1,25 @@
+    Checking nexspot v0.2.1 (F:\my_ai\nexspot\src-tauri)
+error[E0597]: `state_arc` does not live long enough
+   --> src\commands\capture.rs:99:29
+    |
+ 98 |         let state_arc = overlay_manager.state.clone();
+    |             --------- binding `state_arc` declared here
+ 99 |         if let Ok(mut os) = state_arc.lock() {
+    |                             ^^^^^^^^^-------
+    |                             |
+    |                             borrowed value does not live long enough
+    |                             a temporary with access to the borrow is created here ...
+...
+104 |     }
+    |     -
+    |     |
+    |     `state_arc` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type `std::result::Result<std::sync::MutexGuard<'_, overlay_state::OverlayState>, PoisonError<std::sync::MutexGuard<'_, overlay_state::OverlayState>>>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables declared by the block are dropped
+    |
+103 |         };
+    |          +
+
+For more information about this error, try `rustc --explain E0597`.
+error: could not compile `nexspot` (lib) due to 1 previous error

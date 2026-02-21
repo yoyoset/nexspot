@@ -1,18 +1,22 @@
+use super::tool_type_to_drawing_tool;
 use super::types::{ButtonState, ToolType, ToolbarButton};
 use windows::Win32::Foundation::RECT;
 
 pub fn update_toolbar_layout(
     buttons: &mut [ToolbarButton],
     rect: &mut RECT,
-    current_tool: Option<ToolType>,
+    current_tool: &Option<ToolType>,
     property_bar_visible: &mut bool,
     property_bar_rect: &mut RECT,
+    window_x: i32,
+    window_y: i32,
     window_width: i32,
     window_height: i32,
     selection: RECT,
     button_size: i32,
     margin: i32,
     spacing: i32,
+    enable_advanced_effects: bool,
 ) -> bool {
     let sel_w = selection.right - selection.left;
     let sel_h = selection.bottom - selection.top;
@@ -35,40 +39,69 @@ pub fn update_toolbar_layout(
     let mut x = selection.right - total_width;
     let mut y = selection.bottom + 10;
 
-    // Clamp X to screen
+    // Clamp X to screen (relative to current monitor window)
     let clamp_x = |mut val: i32| -> i32 {
-        if val < 0 {
-            val = 0;
+        if val < window_x {
+            val = window_x;
         }
-        if val + total_width > window_width {
-            val = window_width - total_width;
+        if val + total_width > window_x + window_width {
+            val = window_x + window_width - total_width;
         }
         val
     };
 
     x = clamp_x(x);
 
-    // Check Vertical constraints
-    if y + total_height > window_height {
+    // Check Vertical constraints (relative to current monitor window)
+    if y + total_height > window_y + window_height {
         y = selection.top - total_height - 10;
-        if y < 0 {
+        if y < window_y {
             y = selection.bottom - total_height - 10;
         }
     }
 
     // Property Bar Positioning
-    let pb_height = if current_tool.is_some() { 40 } else { 0 };
-    if pb_height > 0 {
+    if let Some(tool) = current_tool {
         *property_bar_visible = true;
-        let pb_w = 200;
+
+        // Calculate dynamic width based on tool
+        let tool_enum = tool_type_to_drawing_tool(tool);
+        let mut pb_w = 16; // Margins
+
+        if tool_enum == crate::service::native_overlay::state::DrawingTool::Text {
+            pb_w += 120 + 4; // Size selectors + divider
+        } else if tool_enum != crate::service::native_overlay::state::DrawingTool::None {
+            pb_w += 108; // 3 Thickness dots (36 * 3)
+            if matches!(
+                tool_enum,
+                crate::service::native_overlay::state::DrawingTool::Rect
+                    | crate::service::native_overlay::state::DrawingTool::Ellipse
+            ) {
+                pb_w += 36; // Fill toggle
+            }
+            if tool_enum != crate::service::native_overlay::state::DrawingTool::Mosaic {
+                pb_w += 4; // Divider
+            }
+        }
+
+        if tool_enum != crate::service::native_overlay::state::DrawingTool::Mosaic {
+            pb_w += 256; // Color Palette (8 * 32)
+        }
+
+        if enable_advanced_effects {
+            pb_w += 4 + 100 + 36; // Divider + Slider + Shadow Toggle
+        }
+
+        let pb_h = 40;
+
         let pb_x = x + (total_width / 2) - (pb_w / 2);
-        let pb_y = y - pb_height - 6;
+        let pb_y = y - pb_h - 10;
 
         *property_bar_rect = RECT {
             left: pb_x,
             top: pb_y,
             right: pb_x + pb_w,
-            bottom: pb_y + pb_height,
+            bottom: pb_y + pb_h,
         };
     } else {
         *property_bar_visible = false;

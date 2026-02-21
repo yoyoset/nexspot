@@ -1,0 +1,90 @@
+﻿cargo :     Checking nexspot v0.2.1 (F:\m
+y_ai\nexspot\src-tauri)
+所在位置 行:1 字符: 1
++ cargo check 2>&1 | Out-File -FilePath e
+rrors_split.txt -Encoding utf8 ...
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecifi 
+   ed: (    Checking ne...spot\src-taur  
+  i):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComm 
+   andError
+ 
+error[E0761]: file for module `interactio
+n` found at both "src\service\native_over
+lay\interaction.rs" and "src\service\nati
+ve_overlay\interaction\mod.rs"
+ --> src\service\native_overlay\mod.rs:6:
+1
+  |
+6 | pub mod interaction;
+  | ^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: delete or rename one of them to
+ remove the ambiguity
+
+warning: unused import: `windows::Win32::
+Foundation::HWND`
+ --> src\service\native_overlay\manager.r
+s:9:5
+  |
+9 | use windows::Win32::Foundation::HWND;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part
+ of `#[warn(unused)]`) on by default
+
+error[E0599]: no method named `on_mouse_d
+own` found for mutable reference `&mut Ov
+erlayManager` in the current scope
+  --> src\service\native_overlay\events.r
+s:41:22
+   |
+41 |                 self.on_mouse_down(_
+hwnd, x, y);
+   |                      ^^^^^^^^^^^^^ m
+ethod not found in `&mut OverlayManager`
+
+error[E0599]: no method named `on_mouse_u
+p` found for mutable reference `&mut Over
+layManager` in the current scope
+  --> src\service\native_overlay\events.r
+s:47:22
+   |
+47 |                 self.on_mouse_up(_hw
+nd, x, y);
+   |                      ^^^^^^^^^^^ met
+hod not found in `&mut OverlayManager`
+
+error[E0599]: no method named `on_double_
+click` found for mutable reference `&mut 
+OverlayManager` in the current scope
+  --> src\service\native_overlay\events.r
+s:53:22
+   |
+53 |                 self.on_double_click
+(_hwnd, x, y);
+   |                      ^^^^^^^^^^^^^^^
+ method not found in `&mut OverlayManager
+`
+
+error[E0599]: no method named `on_mouse_m
+ove` found for mutable reference `&mut Ov
+erlayManager` in the current scope
+  --> src\service\native_overlay\events.r
+s:59:22
+   |
+59 |                 self.on_mouse_move(_
+hwnd, x, y);
+   |                      ^^^^^^^^^^^^^ m
+ethod not found in `&mut OverlayManager`
+
+Some errors have detailed explanations: E
+0599, E0761.
+For more information about an error, try 
+`rustc --explain E0599`.
+warning: `nexspot` (lib) generated 1 warn
+ing
+error: could not compile `nexspot` (lib) 
+due to 5 previous errors; 1 warning emitt
+ed

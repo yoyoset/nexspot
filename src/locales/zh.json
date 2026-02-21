@@ -5,7 +5,16 @@
             "shortcuts": "快捷键",
             "general": "常规",
             "engine": "引擎",
-            "aesthetics": "外观"
+            "aesthetics": "视觉美学"
+        },
+        "performance": {
+            "title": "性能与质量",
+            "jpg_quality": "JPG 导出质量",
+            "jpg_quality_desc": "调整图片压缩率，较高数值代表更高质量与文件体积。",
+            "concurrency": "渲染并行度",
+            "concurrency_desc": "多线程渲染核心数。数值越高速度越快，但会占用更多 CPU。",
+            "snapshot_size": "默认快照尺寸",
+            "snapshot_size_desc": "设置默认快照捕捉的宽度与高度。"
         },
         "general": {
             "title": "常规设置",
@@ -20,6 +29,20 @@
             "open_log": "打开日志文件",
             "clear_logs": "清除日志"
         },
+        "advanced": {
+            "title": "高级渲染引擎",
+            "vello": "启用 Vello 渲染",
+            "vello_desc": "带来高分屏抗锯齿效果。需要现代显卡支持 (WGC L2)。",
+            "advanced_effects": "高级视觉效果",
+            "advanced_effects_desc": "在界面中启用半透明、模糊和阴影效果。"
+        },
+        "snapshot": {
+            "title": "快照选取模式",
+            "enabled": "启用快照模式",
+            "enabled_desc": "在鼠标中心立即创建固定大小的选取框。",
+            "width": "宽度",
+            "height": "高度"
+        },
         "shortcuts": {
             "title": "全局热键",
             "loading": "正在加载快捷键...",
@@ -33,7 +56,10 @@
         },
         "aesthetics": {
             "title": "主题",
-            "coming_soon": "敬请期待"
+            "coming_soon": "敬请期待",
+            "SwitchingToAdvanced": "正在切换到高级模式...",
+            "AdvancedModeConfirmTitle": "切换到高级模式？",
+            "AdvancedModeConfirmBody": "高级模式提供高性能渲染 (Vello) 和 WGC 捕捉，但初始化可能需要一点时间。是否继续？"
         }
     },
     "notifications": {
@@ -43,6 +69,11 @@
         "dpi_body": "检测到多显示器 DPI 缩放比例不同。\nNexSpot 将依赖 Windows 系统缩放。"
     },
     "dashboard": {
+        "presets": "重叠配置",
+        "new": "新建",
+        "edit": "编辑",
+        "delete": "删除",
+        "bind": "绑定热键",
         "capture_title": "NexSpot 截图",
         "capture_desc": "极速、零延迟截图引擎。",
         "capture_btn": "立即截图",
@@ -52,13 +83,75 @@
         "library_desc": "最近截图",
         "library_empty": "暂无历史"
     },
+    "nav": {
+        "dashboard": "仪表盘",
+        "activity": "活动中心",
+        "settings": "设置"
+    },
+    "activity": {
+        "title": "活动中心",
+        "live": "实时监控",
+        "recent": "最近截图",
+        "empty": "历史记录为空",
+        "empty_desc": "新的截图将在此处自动显示",
+        "pools": "存储池状态",
+        "pool_suffix": "池",
+        "enter": "进入"
+    },
+    "ai": {
+        "title": "AI 快捷指令",
+        "new": "新建",
+        "edit": "编辑",
+        "delete": "删除",
+        "bind": "绑定",
+        "save": "保存",
+        "cancel": "取消",
+        "empty": "暂无 AI 快捷指令",
+        "field_name": "动作名称",
+        "field_prompt": "输入 AI 提示词...",
+        "default_name": "新 AI 动作"
+    },
+    "workflows": {
+        "title": "预设管理",
+        "desc": "配置你的截图预设与快捷键。",
+        "new": "新建预设",
+        "edit": "编辑预设",
+        "system_presets": "系统内置",
+        "other_presets": "其他预设",
+        "empty": "暂无自定义预设",
+        "delete_confirm": "确定要删除此预设吗？",
+        "disabled": "已禁用",
+        "label": "名称",
+        "shortcut": "快捷键",
+        "engine": "渲染引擎",
+        "engine_gdi": "GDI (稳健兼容)",
+        "engine_vello": "Vello (高性能/抗锯齿)",
+        "mode": "采集模式",
+        "mode_selection": "区域选取",
+        "mode_fullscreen": "全屏截图",
+        "mode_window": "窗口捕获",
+        "mode_snapshot": "固定大小快照",
+        "width": "宽度",
+        "height": "高度",
+        "destination": "输出配置",
+        "target_folder": "保存路径",
+        "global_default": "使用全局默认路径",
+        "select_folder": "选择目录",
+        "change_folder": "更改目录",
+        "copy_to_clipboard": "快速复制到剪贴板",
+        "save_to_file": "自动保存到文件",
+        "active": "添加至仪表盘快捷启动",
+        "naming": "命名与格式",
+        "naming_placeholder": "例如: capture_%Y%m%d",
+        "format": "图片格式",
+        "presets": {
+            "capture_selection": "区域截图",
+            "snapshot": "快照缓存"
+        }
+    },
     "hud": {
         "copied": "已复制到剪贴板",
         "saved": "截图已保存",
-        "ocr_processing": "正在识别文字...",
-        "ocr_success": "文本识别完成",
-        "ocr_error": "文本识别失败",
-        "error": "操作失败",
-        "pin": "已固定窗口"
+        "pinned": "已固定窗口"
     }
 }

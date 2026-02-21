@@ -1,15 +1,27 @@
 use windows::Win32::Graphics::Gdi::{
-    BitBlt, CreateCompatibleDC, DeleteDC, SelectObject, SetBkMode, StretchBlt, BACKGROUND_MODE,
-    HDC, HGDIOBJ, ROP_CODE,
+    BitBlt, CreateCompatibleDC, DeleteDC, GetPixel, SelectObject, SetBkMode, StretchBlt,
+    BACKGROUND_MODE, HDC, HGDIOBJ, ROP_CODE,
 };
 
-pub struct SafeHDC(pub(crate) HDC);
+pub enum Disposer {
+    Delete,
+    Release(Option<windows::Win32::Foundation::HWND>),
+}
+
+pub struct SafeHDC(pub(crate) HDC, pub(crate) Disposer);
 
 impl Drop for SafeHDC {
     fn drop(&mut self) {
         if !self.0.is_invalid() {
             unsafe {
-                let _ = DeleteDC(self.0);
+                match &self.1 {
+                    Disposer::Delete => {
+                        let _ = DeleteDC(self.0);
+                    }
+                    Disposer::Release(hwnd) => {
+                        windows::Win32::Graphics::Gdi::ReleaseDC(*hwnd, self.0);
+                    }
+                }
             }
         }
     }
@@ -21,7 +33,7 @@ pub fn create_compatible_dc(hdc: Option<&SafeHDC>) -> anyhow::Result<SafeHDC> {
         if h.is_invalid() {
             anyhow::bail!("Failed to create compatible DC");
         }
-        Ok(SafeHDC(h))
+        Ok(SafeHDC(h, Disposer::Delete))
     }
 }
 
@@ -30,6 +42,10 @@ pub fn select_object(hdc: &SafeHDC, obj: HGDIOBJ) -> anyhow::Result<HGDIOBJ> {
         let prev = SelectObject(hdc.0, obj);
         Ok(prev)
     }
+}
+
+pub fn get_pixel(hdc: &SafeHDC, x: i32, y: i32) -> u32 {
+    unsafe { GetPixel(hdc.0, x, y).0 }
 }
 
 pub fn bit_blt(
@@ -81,7 +97,7 @@ pub fn get_dc(hwnd: Option<windows::Win32::Foundation::HWND>) -> anyhow::Result<
         if h.is_invalid() {
             anyhow::bail!("Failed to get DC");
         }
-        Ok(SafeHDC(h))
+        Ok(SafeHDC(h, Disposer::Release(hwnd)))
     }
 }
 

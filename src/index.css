@@ -1,15 +1,46 @@
 @import "tailwindcss";
 
-@theme {
+:root {
+    /* Default Accent */
+    --color-accent: #3b82f6;
+    --color-accent-glow: color-mix(in srgb, var(--color-accent) 40%, transparent);
+
+    /* Light Theme (Default) - Airy & Clean */
+    --color-bg-main: #ffffff;
+    --color-bg-card: #f9fafb;
+    --color-bg-subtle: #f3f4f6;
+    --color-bg-sidebar: #f8fafc;
+    --color-border-subtle: rgba(15, 23, 42, 0.06);
+    --color-border-hover: rgba(15, 23, 42, 0.12);
+    --color-text-main: #0f172a;
+    --color-text-muted: #64748b;
+    --color-bg-overlay: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme='dark'] {
     --color-bg-main: #0a0a0a;
     --color-bg-card: #121212;
+    --color-bg-subtle: rgba(255, 255, 255, 0.03);
+    --color-bg-sidebar: rgba(0, 0, 0, 0.2);
     --color-border-subtle: rgba(255, 255, 255, 0.08);
     --color-border-hover: rgba(255, 255, 255, 0.15);
-    --color-accent: #3b82f6;
-    /* Modern Blue */
-    --color-accent-glow: rgba(59, 130, 246, 0.5);
     --color-text-main: rgba(255, 255, 255, 0.9);
     --color-text-muted: rgba(255, 255, 255, 0.5);
+}
+
+/* Tailwind v4 CSS variable mapping */
+@theme {
+    --color-bg-main: var(--color-bg-main);
+    --color-bg-card: var(--color-bg-card);
+    --color-bg-subtle: var(--color-bg-subtle);
+    --color-bg-sidebar: var(--color-bg-sidebar);
+    --color-border-subtle: var(--color-border-subtle);
+    --color-border-hover: var(--color-border-hover);
+    --color-accent: var(--color-accent);
+    --color-accent-glow: var(--color-accent-glow);
+    --color-text-main: var(--color-text-main);
+    --color-text-muted: var(--color-text-muted);
+    --color-bg-overlay: var(--color-bg-overlay);
 }
 
 :root {
@@ -19,8 +50,8 @@
 
     color-scheme: dark;
     color: var(--color-text-main);
-    background-color: transparent;
-    /* Main window is transparent, internal containers are colored */
+    background-color: var(--color-bg-main);
+    /* Set solid background for native window */
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -57,6 +88,27 @@ body {
 
 .glow-border {
     box-shadow: 0 0 0 1px var(--color-accent-glow);
+}
+
+.shadow-glow-emerald {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 /* Custom Scrollbar */

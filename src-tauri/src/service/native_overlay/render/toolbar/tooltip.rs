@@ -8,8 +8,8 @@ pub fn draw_tooltip(hdc: &SafeHDC, btn: &ToolbarButton) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // Select a small UI font
-    let hfont = gdi::create_font(14, 400, "Microsoft YaHei")?;
+    // Select a UI font
+    let hfont = gdi::create_font(18, 400, "Microsoft YaHei")?;
     let old_font = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(hfont.0 .0))?;
 
     // Measure text
@@ -30,12 +30,7 @@ pub fn draw_tooltip(hdc: &SafeHDC, btn: &ToolbarButton) -> anyhow::Result<()> {
     let th = rect.bottom - rect.top + padding_v * 2;
 
     let tx = btn.rect.left + (btn.rect.right - btn.rect.left) / 2 - tw / 2;
-    let mut ty = btn.rect.top - th - 12;
-
-    // If tooltip is going OOB at top, show below?
-    if ty < 0 {
-        ty = btn.rect.bottom + 12;
-    }
+    let ty = btn.rect.bottom + 12; // Always show below to avoid overlapping property bar
 
     let tooltip_rect = RECT {
         left: tx,

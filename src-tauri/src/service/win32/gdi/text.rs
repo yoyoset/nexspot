@@ -13,6 +13,11 @@ pub fn text_out(hdc: &SafeHDC, x: i32, y: i32, text: &str) -> anyhow::Result<()>
 
 pub fn set_text_color(hdc: &SafeHDC, color: u32) {
     unsafe {
-        let _ = SetTextColor(hdc.0, COLORREF(color));
+        // Convert ARGB (0xAARRGGBB) to COLORREF (0x00BBGGRR)
+        let r = (color >> 16) & 0xFF;
+        let g = (color >> 8) & 0xFF;
+        let b = color & 0xFF;
+        let color_ref = (b << 16) | (g << 8) | r;
+        let _ = SetTextColor(hdc.0, COLORREF(color_ref));
     }
 }

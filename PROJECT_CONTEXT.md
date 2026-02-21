@@ -49,10 +49,10 @@
 
 ## 4. 关键文件索引 (Core File Index)
 
-* [src-tauri/src/service/native_overlay/state.rs](file:///f:/my%20ai/NexSpot/src-tauri/src/service/native_overlay/state.rs) - **数据结构定义**。
-* [src-tauri/src/service/native_overlay/interaction.rs](file:///f:/my%20ai/NexSpot/src-tauri/src/service/native_overlay/interaction.rs) - **状态机转换逻辑**。
-* [src-tauri/src/service/native_overlay/render/mod.rs](file:///f:/my%20ai/NexSpot/src-tauri/src/service/native_overlay/render/mod.rs) - **原生 GDI 绘图管线**。
-* [docs/architecture_panorama.md](file:///f:/my%20ai/NexSpot/docs/architecture_panorama.md) - **中英双语架构全景图**。
+* [src-tauri/src/service/native_overlay/state.rs](file:///f:/my_ai/nexspot/src-tauri/src/service/native_overlay/state.rs) - **数据结构定义**。
+* [src-tauri/src/service/native_overlay/interaction.rs](file:///f:/my_ai/nexspot/src-tauri/src/service/native_overlay/interaction.rs) - **状态机转换逻辑**。
+* [src-tauri/src/service/native_overlay/render/mod.rs](file:///f:/my_ai/nexspot/src-tauri/src/service/native_overlay/render/mod.rs) - **原生 GDI 绘图管线**。
+* [docs/architecture_panorama.md](file:///f:/my_ai/nexspot/docs/architecture_panorama.md) - **中英双语架构全景图**。
 
 ---
 

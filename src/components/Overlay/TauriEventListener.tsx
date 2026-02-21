@@ -14,8 +14,6 @@ export const TauriEventListener = () => {
         let unlistenDpi: () => void;
         let unlistenSaved: () => void;
         let unlistenCopied: () => void;
-        let unlistenOcrResult: () => void;
-        let unlistenOcrError: () => void;
 
         const setupListeners = async () => {
             // 1. Initial State Sync
@@ -47,15 +45,6 @@ export const TauriEventListener = () => {
                 }
             });
 
-            unlistenOcrResult = await listen<string>('ocr-result', (event) => {
-                useAppStore.getState().setOcrResult(event.payload);
-                showHUD(t('hud.ocr_success'), 'copy');
-            });
-
-            unlistenOcrError = await listen<string>('ocr-error', (event) => {
-                showHUD(t('hud.ocr_error') + ": " + event.payload, 'error');
-            });
-
             unlistenSaved = await listen('screenshot-saved', () => {
                 showHUD(t('hud.saved'), 'save');
             });
@@ -72,8 +61,6 @@ export const TauriEventListener = () => {
             if (unlistenDpi) unlistenDpi();
             if (unlistenSaved) unlistenSaved();
             if (unlistenCopied) unlistenCopied();
-            if (unlistenOcrResult) unlistenOcrResult();
-            if (unlistenOcrError) unlistenOcrError();
         };
     }, [t, showHUD, setStartupErrors]);
 

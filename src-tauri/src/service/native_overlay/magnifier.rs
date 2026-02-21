@@ -43,7 +43,7 @@ pub fn draw_magnifier(
 
     // 3. Draw zoomed content
     // We need to copy from hbitmap_bright (the clean image) directly
-    if let Some(hbm_bright) = &state.hbitmap_bright {
+    if let Some(hbm_bright) = &state.gdi.hbitmap_bright {
         let hdc_src = win32::gdi::create_compatible_dc(None)?;
         win32::gdi::select_object(
             &hdc_src,

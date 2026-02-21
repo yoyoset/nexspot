@@ -1,6 +1,11 @@
+pub mod ai;
 pub mod config;
+pub mod hotkey;
+pub mod l10n;
 pub mod logger;
 pub mod native_overlay;
 pub mod notification;
-pub mod ocr;
+pub mod pin;
+pub mod tray;
 pub mod win32;
+pub mod workflow;

@@ -4,10 +4,15 @@ version = "0.2.1"
 description = "A High-Performance Windows Screenshot Tool"
 authors = ["Antigravity"]
 edition = "2021"
+default-run = "nexspot"
 
 [lib]
 name = "nexspot_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "test_monitor"
+path = "src/bin/test_monitor.rs"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -31,6 +36,15 @@ rayon = "1.10"
 log = "0.4"
 simplelog = "0.12"
 tauri-plugin-dialog = "2.2.0"
+vello = { git = "https://github.com/linebender/vello.git" }
+parley = "0.2"
+pollster = "0.3"
+raw-window-handle = "0.6"
+tokio = { version = "1.49.0", features = ["sync", "rt", "macros"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures = "0.3"
+async-trait = "0.1"
+# wgpu is provided by vello
 
 [dependencies.windows]
 version = "0.61.3"
@@ -45,7 +59,17 @@ features = [
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_Graphics_Dwm",
     "Foundation",
+    "Foundation_Numerics",
     "Graphics_Imaging",
     "Media_Ocr",
     "Storage_Streams",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_System_Com",
+    "Win32_Graphics_Direct2D_Common",
+    "Graphics_Capture",
+    "Win32_Graphics_GdiPlus",
+    "Win32_System_WinRT_Graphics_Capture",
+    "Win32_UI_Controls",
 ]

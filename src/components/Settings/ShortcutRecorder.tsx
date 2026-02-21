@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Keyboard as KeyboardIcon, Check, X, AlertTriangle, RotateCw } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface ShortcutRecorderProps {
     value?: string;
@@ -19,30 +20,73 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
     statusMessage,
 }) => {
     const [isRecording, setIsRecording] = useState(false);
-    const [currentKeys, setCurrentKeys] = useState<Set<string>>(new Set());
-    // Ref to handle focus/blur
+    const [capturedShortcut, setCapturedShortcut] = useState<string>("");
     const containerRef = useRef<HTMLDivElement>(null);
+    const recordingState = useRef<{
+        modifiers: Set<string>;
+        mainKey: string;
+    }>({ modifiers: new Set(), mainKey: "" });
 
-    // Normalize key names
-    const normalizeKey = (key: string) => {
+    // Standardize key names for backend (global-hotkey compatibility)
+    const getStandardKeyName = (key: string) => {
+        // Modifiers
+        if (key === "Control") return "Control";
+        if (key === "Alt") return "Alt";
+        if (key === "Shift") return "Shift";
+        if (key === "Meta") return "Super"; // Win key
+
+        // Function keys
+        if (key.match(/^F\d+$/)) return key;
+
+        // Special keys
         if (key === " ") return "Space";
-        if (key.length === 1) return key.toUpperCase();
+        if (key === "Enter") return "Enter";
+        if (key === "Escape") return "Escape";
+        if (key === "Backspace") return "Backspace";
+        if (key === "Delete") return "Delete";
+        if (key === "Tab") return "Tab";
+        if (key === "ArrowUp") return "Up";
+        if (key === "ArrowDown") return "Down";
+        if (key === "ArrowLeft") return "Left";
+        if (key === "ArrowRight") return "Right";
+
+        // Alphanumeric keys
+        if (key.length === 1) {
+            return key.toUpperCase();
+        }
+
         return key;
     };
 
-    // Format keys for display
-    const formatKeys = (keys: Set<string>) => {
-        const sorted = Array.from(keys).sort((a, b) => {
-            const modifiers = ["Ctrl", "Alt", "Shift", "Meta"];
-            const aIsMod = modifiers.includes(a);
-            const bIsMod = modifiers.includes(b);
-            if (aIsMod && !bIsMod) return -1;
-            if (!aIsMod && bIsMod) return 1;
-            return a.localeCompare(b);
-        });
-        // Windows/Linux uses +, macOS usually represents these with symbols but + is fine for cross-platform
-        return sorted.join(" + ");
+    const updateDisplay = () => {
+        const { modifiers, mainKey } = recordingState.current;
+        const parts = Array.from(modifiers);
+
+        // Sorting modifiers for consistent display
+        const order = ["Control", "Shift", "Alt", "Super"];
+        parts.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
+        if (mainKey && !parts.includes(mainKey)) {
+            parts.push(mainKey);
+        }
+        setCapturedShortcut(parts.join("+"));
     };
+
+    // Suspend/Resume Global Hotkeys
+    useEffect(() => {
+        if (isRecording) {
+            invoke("suspend_hotkeys").catch(console.error);
+        } else {
+            invoke("resume_hotkeys").catch(console.error);
+        }
+
+        // Cleanup if component unmounts while recording
+        return () => {
+            if (isRecording) {
+                invoke("resume_hotkeys").catch(console.error);
+            }
+        };
+    }, [isRecording]);
 
     useEffect(() => {
         if (!isRecording) return;
@@ -50,60 +94,78 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
         const handleKeyDown = (e: KeyboardEvent) => {
             e.preventDefault();
             e.stopPropagation();
+            if (e.repeat) return;
 
-            const newKeys = new Set(currentKeys);
+            // Update modifiers based on the event state directly
+            const nextModifiers = new Set<string>();
+            if (e.ctrlKey) nextModifiers.add("Control");
+            if (e.altKey) nextModifiers.add("Alt");
+            if (e.shiftKey) nextModifiers.add("Shift");
+            if (e.metaKey) nextModifiers.add("Super");
 
-            // Map modifiers
-            if (e.ctrlKey) newKeys.add("Ctrl");
-            if (e.altKey) newKeys.add("Alt");
-            if (e.shiftKey) newKeys.add("Shift");
-            if (e.metaKey) newKeys.add("Meta");
+            recordingState.current.modifiers = nextModifiers;
 
-            // Add main key if it's not a modifier
+            // Update main key if it's not a modifier
             if (!["Control", "Alt", "Shift", "Meta"].includes(e.key)) {
-                newKeys.add(normalizeKey(e.key));
+                recordingState.current.mainKey = getStandardKeyName(e.key);
             }
 
-            setCurrentKeys(newKeys);
+            updateDisplay();
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
             e.preventDefault();
             e.stopPropagation();
 
-            // Heuristic for "completion": if a non-modifier key is released
-            if (currentKeys.size > 0 && !["Control", "Alt", "Shift", "Meta"].includes(e.key)) {
-                onChange(formatKeys(currentKeys));
+            const isModifier = ["Control", "Alt", "Shift", "Meta"].includes(e.key);
+
+            // If a non-modifier key is released, we commit the CURRENT CHORD
+            if (!isModifier && capturedShortcut) {
+                onChange(capturedShortcut);
                 setIsRecording(false);
+            }
+            // If it's a modifier release, we update the state
+            else if (isModifier) {
+                const nextModifiers = new Set<string>();
+                if (e.ctrlKey) nextModifiers.add("Control");
+                if (e.altKey) nextModifiers.add("Alt");
+                if (e.shiftKey) nextModifiers.add("Shift");
+                if (e.metaKey) nextModifiers.add("Super");
+                recordingState.current.modifiers = nextModifiers;
+
+                // If ALL keys are released and we have a shortcut (likely a single key or modifier-only), commit it
+                if (nextModifiers.size === 0 && !recordingState.current.mainKey && capturedShortcut) {
+                    onChange(capturedShortcut);
+                    setIsRecording(false);
+                }
             }
         };
 
-        // If clicking outside, cancel recording
         const handleClickOutside = (e: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
                 setIsRecording(false);
-                setCurrentKeys(new Set());
+                setCapturedShortcut("");
             }
         };
 
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-        window.addEventListener("mousedown", handleClickOutside);
+        window.addEventListener("keydown", handleKeyDown, true);
+        window.addEventListener("keyup", handleKeyUp, true);
+        window.addEventListener("mousedown", handleClickOutside, true);
 
         return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-            window.removeEventListener("mousedown", handleClickOutside);
+            window.removeEventListener("keydown", handleKeyDown, true);
+            window.removeEventListener("keyup", handleKeyUp, true);
+            window.removeEventListener("mousedown", handleClickOutside, true);
         };
-    }, [isRecording, currentKeys, onChange]);
+    }, [isRecording, capturedShortcut, onChange]);
 
     return (
         <div className={`flex flex-col gap-1 ${className}`} ref={containerRef}>
             <div className="flex items-center gap-2">
                 <div
-                    className={`relative flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all
+                    className={`relative flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all h-[38px]
                         ${isRecording
-                            ? "bg-accent/10 border-accent text-accent ring-2 ring-accent/20"
+                            ? "bg-purple-500/10 border-purple-500 text-purple-400 ring-2 ring-purple-500/20"
                             : status === 'error'
                                 ? "bg-red-500/10 border-red-500/30 text-white"
                                 : "bg-white/5 border-white/10 text-text-main"
@@ -112,44 +174,41 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
                 >
                     <KeyboardIcon className={`w-4 h-4 ${isRecording ? "animate-pulse" : "opacity-40"}`} />
 
-                    <span className="font-mono flex-1 text-center font-bold tracking-wide">
+                    <span className="font-mono flex-1 text-center font-bold tracking-tight">
                         {isRecording ? (
-                            currentKeys.size > 0 ? formatKeys(currentKeys) : "Type shortcut..."
+                            capturedShortcut || "Type shortcut..."
                         ) : (
-                            value || <span className="opacity-30 italic">{placeholder}</span>
+                            value || <span className="opacity-30 italic font-medium">{placeholder}</span>
                         )}
                     </span>
 
-                    {/* Status Indicator / Actions */}
                     {isRecording ? (
-                        <div className="text-[10px] uppercase font-bold text-accent animate-pulse">REC</div>
+                        <div className="text-[9px] uppercase font-black text-purple-500 animate-pulse bg-purple-500/10 px-1 rounded">REC</div>
                     ) : (
-                        <div className="flex gap-1">
-                            {status === 'success' && <Check className="w-4 h-4 text-green-500" />}
-                            {status === 'error' && <AlertTriangle className="w-4 h-4 text-red-500" />}
+                        <div className="flex gap-1 shrink-0">
+                            {status === 'success' && <Check className="w-3.5 h-3.5 text-green-500" />}
+                            {status === 'error' && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
                         </div>
                     )}
                 </div>
 
-                {/* Re-record / Action Button */}
                 <button
                     onClick={() => {
-                        setIsRecording(!isRecording);
-                        if (!isRecording) setCurrentKeys(new Set());
+                        const next = !isRecording;
+                        setIsRecording(next);
+                        if (next) setCapturedShortcut("");
                     }}
-                    className={`p-2 rounded-lg border border-white/10 hover:bg-white/10 transition-colors
-                         ${isRecording ? 'bg-red-500/20 border-red-500/50 text-red-500 hover:bg-red-500/30' : 'text-text-muted hover:text-white'}
+                    className={`p-2 rounded-lg border border-white/10 hover:bg-white/10 transition-colors shrink-0
+                         ${isRecording ? 'bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30' : 'text-text-muted hover:text-white'}
                     `}
-                    title={isRecording ? "Cancel Recording" : "Record New Shortcut"}
                 >
                     {isRecording ? <X className="w-4 h-4" /> : <RotateCw className="w-4 h-4" />}
                 </button>
             </div>
 
-            {/* Context feedback message */}
             {statusMessage && (
-                <div className={`text-[10px] pl-1 ${status === 'error' ? 'text-red-400' :
-                        status === 'success' ? 'text-green-400' : 'text-text-muted'
+                <div className={`text-[10px] pl-1 font-medium ${status === 'error' ? 'text-red-400' :
+                    status === 'success' ? 'text-green-400' : 'text-text-muted/60'
                     }`}>
                     {statusMessage}
                 </div>

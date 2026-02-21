@@ -7,6 +7,7 @@ use windows::Win32::Graphics::Gdi::{
 pub fn save_bitmap_to_file(
     hbitmap: windows::Win32::Graphics::Gdi::HBITMAP,
     path: &Path,
+    quality: u8,
 ) -> anyhow::Result<()> {
     unsafe {
         // 1. Get BITMAP info
@@ -39,7 +40,6 @@ pub fn save_bitmap_to_file(
         };
 
         // 3. Get Bits
-        // We need a DC to call GetDIBits. Any screen DC works.
         let hdc = windows::Win32::Graphics::Gdi::GetDC(None);
         if hdc.is_invalid() {
             anyhow::bail!("Failed to get DC for saving");
@@ -64,33 +64,58 @@ pub fn save_bitmap_to_file(
         }
 
         // 4. Save using image crate
-        // Pixels are BGRA (Windows default for 32-bit), image::save_buffer expects RGBA or we can save as BGRA if supported?
-        // image crate `save_buffer` with ColorType::Rgba8 expects R-G-B-A.
-        // Windows returns B-G-R-A likely.
-        // Let's swap generic BGRA -> RGBA.
+        let extension = path
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("png")
+            .to_lowercase();
 
-        // Parallel swap if possible, or simple loop
-        for chunk in pixels.chunks_exact_mut(4) {
-            let b = chunk[0];
-            let r = chunk[2];
-            chunk[0] = r;
-            chunk[2] = b;
+        if extension == "jpg" || extension == "jpeg" {
+            // JPEG needs RGB, so we convert BGRA to RGB
+            let mut rgb_pixels = Vec::with_capacity((width * height * 3) as usize);
+            for chunk in pixels.chunks_exact(4) {
+                rgb_pixels.push(chunk[2]); // R
+                rgb_pixels.push(chunk[1]); // G
+                rgb_pixels.push(chunk[0]); // B
+            }
+
+            let mut file = std::fs::File::create(path)?;
+            let mut encoder =
+                image::codecs::jpeg::JpegEncoder::new_with_quality(&mut file, quality);
+            encoder.encode_image(
+                &image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(
+                    width as u32,
+                    height as u32,
+                    rgb_pixels,
+                )
+                .unwrap(),
+            )?;
+        } else {
+            // Manual swap BGRA -> RGBA
+            for chunk in pixels.chunks_exact_mut(4) {
+                let b = chunk[0];
+                let r = chunk[2];
+                chunk[0] = r;
+                chunk[2] = b;
+            }
+
+            image::save_buffer(
+                path,
+                &pixels,
+                width as u32,
+                height as u32,
+                image::ColorType::Rgba8,
+            )?;
         }
-
-        image::save_buffer(
-            path,
-            &pixels,
-            width as u32,
-            height as u32,
-            image::ColorType::Rgba8,
-        )?;
 
         Ok(())
     }
 }
 
-pub fn bitmap_to_png_bytes(
+pub fn bitmap_to_bytes(
     hbitmap: windows::Win32::Graphics::Gdi::HBITMAP,
+    format: image::ImageFormat,
+    quality: u8,
 ) -> anyhow::Result<Vec<u8>> {
     unsafe {
         // 1. Get BITMAP info
@@ -145,24 +170,43 @@ pub fn bitmap_to_png_bytes(
             anyhow::bail!("Failed to get DI bits");
         }
 
-        // 4. BGRA -> RGBA
-        for chunk in pixels.chunks_exact_mut(4) {
-            let b = chunk[0];
-            let r = chunk[2];
-            chunk[0] = r;
-            chunk[2] = b;
-        }
-
-        // 5. Encode as PNG
+        // 4. Encode
         let mut buffer = std::io::Cursor::new(Vec::new());
-        image::write_buffer_with_format(
-            &mut buffer,
-            &pixels,
-            width as u32,
-            height as u32,
-            image::ColorType::Rgba8,
-            image::ImageFormat::Png,
-        )?;
+        if format == image::ImageFormat::Jpeg {
+            let mut rgb_pixels = Vec::with_capacity((width * height * 3) as usize);
+            for chunk in pixels.chunks_exact(4) {
+                rgb_pixels.push(chunk[2]); // R
+                rgb_pixels.push(chunk[1]); // G
+                rgb_pixels.push(chunk[0]); // B
+            }
+            let mut encoder =
+                image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buffer, quality);
+            encoder.encode_image(
+                &image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(
+                    width as u32,
+                    height as u32,
+                    rgb_pixels,
+                )
+                .unwrap(),
+            )?;
+        } else {
+            // Manual swap BGRA -> RGBA
+            for chunk in pixels.chunks_exact_mut(4) {
+                let b = chunk[0];
+                let r = chunk[2];
+                chunk[0] = r;
+                chunk[2] = b;
+            }
+
+            image::write_buffer_with_format(
+                &mut buffer,
+                &pixels,
+                width as u32,
+                height as u32,
+                image::ColorType::Rgba8,
+                format,
+            )?;
+        }
 
         Ok(buffer.into_inner())
     }

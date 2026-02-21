@@ -80,3 +80,17 @@ pub fn line_to(hdc: &SafeHDC, x: i32, y: i32) -> anyhow::Result<()> {
         }
     }
 }
+
+pub fn polygon(hdc: &SafeHDC, points: &[(i32, i32)]) -> anyhow::Result<()> {
+    let pts: Vec<windows::Win32::Foundation::POINT> = points
+        .iter()
+        .map(|(x, y)| windows::Win32::Foundation::POINT { x: *x, y: *y })
+        .collect();
+    unsafe {
+        if windows::Win32::Graphics::Gdi::Polygon(hdc.0, &pts).as_bool() {
+            Ok(())
+        } else {
+            anyhow::bail!("Polygon failed");
+        }
+    }
+}

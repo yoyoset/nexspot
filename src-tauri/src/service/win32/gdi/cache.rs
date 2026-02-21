@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use windows::Win32::Graphics::Gdi::PEN_STYLE;
 
 /// Cache for GDI objects to avoid frequent system calls.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GdiCache {
     pens: HashMap<(u32, i32, u32), SafePen>, // (style, width, color)
     brushes: HashMap<u32, SafeBrush>,        // color

@@ -7,6 +7,15 @@
             "engine": "Engine",
             "aesthetics": "Aesthetics"
         },
+        "performance": {
+            "title": "Performance & Quality",
+            "jpg_quality": "JPG Export Quality",
+            "jpg_quality_desc": "Adjust image compression. Higher values mean better quality but larger files.",
+            "concurrency": "Rendering Concurrency",
+            "concurrency_desc": "Number of threads for rendering. Higher values are faster but consume more CPU.",
+            "snapshot_size": "Default Snapshot Size",
+            "snapshot_size_desc": "Set the default width and height for snapshot captures."
+        },
         "general": {
             "title": "General Settings",
             "save_path": "Save Path",
@@ -19,6 +28,20 @@
             "enable_logs_desc": "Write debug logs to hyper_lens.log",
             "open_log": "Open Log File",
             "clear_logs": "Clear Logs"
+        },
+        "advanced": {
+            "title": "Advanced Engine",
+            "vello": "Use Vello Renderer",
+            "vello_desc": "Brings High-DPI antialiasing. Requires modern GPU (WGC L2).",
+            "advanced_effects": "Advanced Visual Effects",
+            "advanced_effects_desc": "Enable translucency, blur, and shadows in the UI."
+        },
+        "snapshot": {
+            "title": "Snapshot Mode",
+            "enabled": "Enable Snapshot Mode",
+            "enabled_desc": "Rapid fixed-size capture centered on cursor.",
+            "width": "Width",
+            "height": "Height"
         },
         "shortcuts": {
             "title": "Global Hotkeys",
@@ -33,7 +56,10 @@
         },
         "aesthetics": {
             "title": "Theme",
-            "coming_soon": "COMING SOON"
+            "coming_soon": "COMING SOON",
+            "SwitchingToAdvanced": "Switching to Advanced Mode...",
+            "AdvancedModeConfirmTitle": "Switch to Advanced Mode?",
+            "AdvancedModeConfirmBody": "Advanced Mode provides high-performance rendering (Vello) and WGC capture, but initialization may take a moment. Carry on?"
         }
     },
     "notifications": {
@@ -43,6 +69,11 @@
         "dpi_body": "Multi-monitor setup detection.\nNexSpot will rely on Windows scaling."
     },
     "dashboard": {
+        "presets": "PRESETS",
+        "new": "NEW",
+        "edit": "EDIT",
+        "delete": "DELETE",
+        "bind": "BIND",
         "capture_title": "NexSpot Capture",
         "capture_desc": "Instant, zero-latency screenshot engine.",
         "capture_btn": "CAPTURE",
@@ -52,13 +83,75 @@
         "library_desc": "Recent Snaps",
         "library_empty": "NO HISTORY"
     },
+    "nav": {
+        "dashboard": "Dashboard",
+        "activity": "Activity Hub",
+        "settings": "Settings"
+    },
+    "activity": {
+        "title": "Activity Hub",
+        "live": "Live Monitoring",
+        "recent": "Recent Captures",
+        "empty": "History is currently empty",
+        "empty_desc": "New captures will appear here automatically",
+        "pools": "Storage Pools",
+        "pool_suffix": "Pool",
+        "enter": "Enter"
+    },
+    "ai": {
+        "title": "AI Shortcuts",
+        "new": "NEW",
+        "edit": "EDIT",
+        "delete": "DELETE",
+        "bind": "BIND",
+        "save": "Save",
+        "cancel": "Cancel",
+        "empty": "No AI Shortcuts Configured",
+        "field_name": "Action Name",
+        "field_prompt": "Enter Prompt for AI...",
+        "default_name": "New AI Action"
+    },
+    "workflows": {
+        "title": "Preset Management",
+        "desc": "Configure your capture presets and shortcuts.",
+        "new": "New Preset",
+        "edit": "Edit Preset",
+        "system_presets": "System Built-in",
+        "other_presets": "Other Presets",
+        "empty": "No custom presets yet",
+        "delete_confirm": "Are you sure you want to delete this preset?",
+        "disabled": "DISABLED",
+        "label": "Name",
+        "shortcut": "Shortcut",
+        "engine": "Rendering Engine",
+        "engine_gdi": "GDI (Robust Compatibility)",
+        "engine_vello": "Vello (Performance/Antialiasing)",
+        "mode": "Capture Mode",
+        "mode_selection": "Area Selection",
+        "mode_fullscreen": "Fullscreen Capture",
+        "mode_window": "Window Capture",
+        "mode_snapshot": "Fixed Size Snippet",
+        "width": "Width",
+        "height": "Height",
+        "destination": "Output Configuration",
+        "target_folder": "Save Path",
+        "global_default": "Using global default path",
+        "select_folder": "Select Directory",
+        "change_folder": "Change Directory",
+        "copy_to_clipboard": "Quick Copy to Clipboard",
+        "save_to_file": "Auto Save to File",
+        "active": "Show in Dashboard",
+        "naming": "Naming & Format",
+        "naming_placeholder": "e.g. capture_%Y%m%d",
+        "format": "Image Format",
+        "presets": {
+            "capture_selection": "Capture Selection",
+            "snapshot": "Snapshot Cache"
+        }
+    },
     "hud": {
         "copied": "Copied to Clipboard",
         "saved": "Screenshot Saved",
-        "ocr_processing": "Processing OCR...",
-        "ocr_success": "Text Recognition Ready",
-        "ocr_error": "OCR Recognition Failed",
-        "error": "Action Failed",
-        "pin": "Window Pinned"
+        "pinned": "Window Pinned"
     }
 }
