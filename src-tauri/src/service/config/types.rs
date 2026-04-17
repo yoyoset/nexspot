@@ -13,16 +13,23 @@ unsafe impl Sync for SafeGlobalHotKeyManager {}
 #[derive(Debug, Clone)]
 pub enum HotkeyAction {
     Workflow(CaptureWorkflow),
-    AIShortcut(AIShortcut),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AIShortcut {
-    pub id: String,
-    pub name: String,
-    pub prompt: String,
-    pub shortcut: Option<String>,
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
+pub enum AestheticStyle {
+    Default,
+    Neon,
+    PaperCut,
+    Sketch,
+    Glass,
 }
+
+impl Default for AestheticStyle {
+    fn default() -> Self {
+        AestheticStyle::Default
+    }
+}
+
 
 // Duplicate AppConfig removed
 
@@ -52,13 +59,6 @@ fn default_format() -> String {
     "png".to_string()
 }
 
-fn default_ai_api_url() -> String {
-    "https://api.openai.com/v1/chat/completions".to_string()
-}
-
-fn default_ai_model() -> String {
-    "gpt-3.5-turbo".to_string()
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "config")]
@@ -89,8 +89,12 @@ pub struct AppConfig {
     pub save_path: String,
     pub language: String,
     pub font_family: String,
+    #[serde(default = "default_true")]
     pub vello_enabled: bool,
+    #[serde(default = "default_true")]
     pub vello_advanced_effects: bool,
+    #[serde(default)]
+    pub vello_aesthetic_style: AestheticStyle,
 
     // Legacy Snapshot Config (Migrate to Workflow)
     pub snapshot_enabled: bool,
@@ -100,16 +104,6 @@ pub struct AppConfig {
     pub selection_engine: String, // "gdi" or "vello"
     pub snapshot_engine: String,  // "gdi" or "vello"
 
-    // AI Configuration
-    #[serde(default = "default_ai_api_url")]
-    pub ai_api_url: String,
-    #[serde(default = "default_ai_model")]
-    pub ai_model: String,
-    #[serde(default)]
-    pub ai_api_key: String,
-
-    #[serde(default)]
-    pub ai_shortcuts: Vec<AIShortcut>,
 
     // Appearance Configuration
     #[serde(default = "default_theme")]
@@ -123,10 +117,15 @@ pub struct AppConfig {
     #[serde(default = "default_concurrency")]
     pub concurrency: usize,
 
-    #[serde(skip)]
+
+    #[serde(default = "default_format")]
+    pub default_export_format: String, // "png" or "jpg"
+
+    #[serde(skip_deserializing)]
     #[serde(default)]
     pub registration_errors: Vec<String>,
 }
+
 
 fn default_jpg_quality() -> u8 {
     90
@@ -142,6 +141,10 @@ fn default_theme() -> String {
 
 fn default_accent_color() -> String {
     "#3b82f6".to_string()
+}
+
+fn default_true() -> bool {
+    true
 }
 
 pub fn default_workflows() -> Vec<CaptureWorkflow> {
@@ -180,7 +183,7 @@ pub fn default_workflows() -> Vec<CaptureWorkflow> {
                 naming_template: "snapshot_%Y-%m-%d_%H-%M-%S".to_string(),
                 format: "png".to_string(),
             },
-            enabled: false, // Disabled by default to avoid conflict expectation
+            enabled: true, // Default to true so it works out of the box
             is_system: true,
         },
     ]

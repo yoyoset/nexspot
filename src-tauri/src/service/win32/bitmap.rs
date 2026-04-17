@@ -211,3 +211,56 @@ pub fn bitmap_to_bytes(
         Ok(buffer.into_inner())
     }
 }
+
+pub fn bitmap_to_rgba_image(
+    hbitmap: windows::Win32::Graphics::Gdi::HBITMAP,
+) -> anyhow::Result<image::RgbaImage> {
+    unsafe {
+        let mut bmp = BITMAP::default();
+        GetObjectW(
+            windows::Win32::Graphics::Gdi::HGDIOBJ(hbitmap.0),
+            std::mem::size_of::<BITMAP>() as i32,
+            Some(&mut bmp as *mut _ as *mut c_void),
+        );
+
+        let width = bmp.bmWidth;
+        let height = bmp.bmHeight;
+
+        let mut bi = BITMAPINFO {
+            bmiHeader: BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: width,
+                biHeight: -height,
+                biPlanes: 1,
+                biBitCount: 32,
+                biCompression: BI_RGB.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let hdc = windows::Win32::Graphics::Gdi::GetDC(None);
+        let mut pixels: Vec<u8> = vec![0; (width * height * 4) as usize];
+        GetDIBits(
+            hdc,
+            hbitmap,
+            0,
+            height as u32,
+            Some(pixels.as_mut_ptr() as *mut c_void),
+            &mut bi,
+            DIB_RGB_COLORS,
+        );
+        windows::Win32::Graphics::Gdi::ReleaseDC(None, hdc);
+
+        // Swap BGRA to RGBA
+        for chunk in pixels.chunks_exact_mut(4) {
+            let b = chunk[0];
+            let r = chunk[2];
+            chunk[0] = r;
+            chunk[2] = b;
+        }
+
+        image::RgbaImage::from_raw(width as u32, height as u32, pixels)
+            .ok_or_else(|| anyhow::anyhow!("Failed to create RgbaImage from raw pixels"))
+    }
+}

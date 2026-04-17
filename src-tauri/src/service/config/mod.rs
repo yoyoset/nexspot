@@ -8,4 +8,4 @@ pub mod types;
 
 pub use error::ConfigError;
 pub use manager::ConfigState;
-pub use types::{AIShortcut, AppConfig, SafeGlobalHotKeyManager};
+pub use types::{AppConfig, SafeGlobalHotKeyManager};

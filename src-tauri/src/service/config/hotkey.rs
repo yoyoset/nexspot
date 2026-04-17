@@ -1,5 +1,5 @@
-use super::error::ConfigError;
-use super::types::{AIShortcut, AppConfig, HotkeyAction};
+use super::ConfigError;
+use super::types::{AppConfig, HotkeyAction};
 use global_hotkey::hotkey::HotKey;
 use global_hotkey::GlobalHotKeyManager;
 use std::collections::HashMap;
@@ -13,33 +13,35 @@ fn normalize_hotkey(s: &str) -> String {
         .map(|p| match p.as_str() {
             "ctrl" | "control" => "control".to_string(),
             "win" | "meta" | "super" => "super".to_string(),
-            // Function keys: f1, f2...
+            // Function keys: F1, F2... (Use uppercase for F for better compatibility)
             f if f.starts_with('f') && f.len() > 1 && f[1..].chars().all(|c| c.is_numeric()) => {
-                f.to_string()
+                f.to_uppercase()
             }
-            // Numeric keys: global-hotkey expects digit0...
-            d if d.len() == 1 && d.chars().next().unwrap().is_numeric() => format!("digit{}", d),
-            // Alphanumeric keys: global-hotkey expects keya...
-            a if a.len() == 1 && a.chars().next().unwrap().is_alphabetic() => format!("key{}", a),
+            // Numeric keys: global-hotkey expects Digit0...
+            d if d.len() == 1 && d.chars().next().unwrap().is_numeric() => format!("Digit{}", d),
+            // Alphanumeric keys: global-hotkey expects KeyA...
+            a if a.len() == 1 && a.chars().next().unwrap().is_alphabetic() => {
+                format!("Key{}", a.to_uppercase())
+            }
             // Special keys
-            "space" => "space".to_string(),
-            "enter" | "return" => "return".to_string(),
-            "escape" | "esc" => "escape".to_string(),
-            "backspace" => "backspace".to_string(),
-            "delete" | "del" => "delete".to_string(),
-            "insert" | "ins" => "insert".to_string(),
-            "home" => "home".to_string(),
-            "end" => "end".to_string(),
-            "pageup" | "pgup" => "pageup".to_string(),
-            "pagedown" | "pgdn" => "pagedown".to_string(),
-            "tab" => "tab".to_string(),
-            "up" => "up".to_string(),
-            "down" => "down".to_string(),
-            "left" => "left".to_string(),
-            "right" => "right".to_string(),
-            "printscreen" | "prtsc" => "printscreen".to_string(),
-            "scrolllock" => "scrolllock".to_string(),
-            "pause" => "pause".to_string(),
+            "space" => "Space".to_string(),
+            "enter" | "return" => "Enter".to_string(),
+            "escape" | "esc" => "Escape".to_string(),
+            "backspace" => "Backspace".to_string(),
+            "delete" | "del" => "Delete".to_string(),
+            "insert" | "ins" => "Insert".to_string(),
+            "home" => "Home".to_string(),
+            "end" => "End".to_string(),
+            "pageup" | "pgup" => "PageUp".to_string(),
+            "pagedown" | "pgdn" => "PageDown".to_string(),
+            "tab" => "Tab".to_string(),
+            "up" => "Up".to_string(),
+            "down" => "Down".to_string(),
+            "left" => "Left".to_string(),
+            "right" => "Right".to_string(),
+            "printscreen" | "prtsc" => "PrintScreen".to_string(),
+            "scrolllock" => "ScrollLock".to_string(),
+            "pause" => "Pause".to_string(),
             other => other.to_string(),
         })
         .collect();
@@ -57,13 +59,6 @@ fn check_global_conflict(config: &AppConfig, normalized: &str, exclude_id: &str)
         .find(|w| w.id != exclude_id && normalize_hotkey(&w.shortcut) == normalized)
     {
         return Some(w.label.clone());
-    }
-    // Check AI shortcuts
-    if let Some(s) = config.ai_shortcuts.iter().find(|s| {
-        s.id != exclude_id
-            && s.shortcut.as_deref().map(|sk| normalize_hotkey(sk)) == Some(normalized.to_string())
-    }) {
-        return Some(s.name.clone());
     }
     None
 }
@@ -133,22 +128,6 @@ pub fn update_shortcut(
     }
 }
 
-pub fn add_ai_shortcut(
-    _manager: &GlobalHotKeyManager,
-    config: &mut AppConfig,
-    shortcut: AIShortcut,
-) -> Result<bool, ConfigError> {
-    // 1. Check ID uniqueness
-    if config.ai_shortcuts.iter().any(|s| s.id == shortcut.id) {
-        return Err(ConfigError::Conflict(format!(
-            "ID {} already exists",
-            shortcut.id
-        )));
-    }
-
-    config.ai_shortcuts.push(shortcut);
-    Ok(true)
-}
 
 pub fn add_workflow(
     manager: &GlobalHotKeyManager,
@@ -210,36 +189,6 @@ pub fn remove_workflow(
     Ok(true)
 }
 
-pub fn remove_ai_shortcut(
-    _manager: &GlobalHotKeyManager,
-    config: &mut AppConfig,
-    id: &str,
-) -> Result<bool, ConfigError> {
-    let idx = config
-        .ai_shortcuts
-        .iter()
-        .position(|s| s.id == id)
-        .ok_or(ConfigError::NotFound)?;
-    config.ai_shortcuts.remove(idx);
-    Ok(true)
-}
-
-pub fn update_ai_shortcut(
-    _manager: &GlobalHotKeyManager,
-    config: &mut AppConfig,
-    id: &str,
-    mut new_shortcut: AIShortcut,
-) -> Result<bool, ConfigError> {
-    let idx = config
-        .ai_shortcuts
-        .iter()
-        .position(|s| s.id == id)
-        .ok_or(ConfigError::NotFound)?;
-
-    new_shortcut.id = id.to_string();
-    config.ai_shortcuts[idx] = new_shortcut;
-    Ok(true)
-}
 
 pub fn register_all(
     manager: &GlobalHotKeyManager,
@@ -249,11 +198,12 @@ pub fn register_all(
     errors.clear();
     let mut map = HashMap::new();
 
+    // CRITICAL: Unregister all first to avoid "Already Registered" errors
+    // when re-syncing hotkeys (Self-Conflict).
+    unregister_all(manager, config);
+
     // Register Workflows
     for w in &config.workflows {
-        // NOTE: We try to register even if disabled in memory,
-        // to check for external occupation, but user wants 'Red/Green'
-        // and simplified 'always enabled' logic.
         if w.enabled {
             if let Ok(hotkey) = normalize_hotkey(&w.shortcut).parse::<HotKey>() {
                 match manager.register(hotkey) {
@@ -261,19 +211,21 @@ pub fn register_all(
                         map.insert(hotkey.id(), HotkeyAction::Workflow(w.clone()));
                     }
                     Err(global_hotkey::Error::AlreadyRegistered(_)) => {
-                        map.insert(hotkey.id(), HotkeyAction::Workflow(w.clone()));
+                        log::warn!(
+                            "Hotkey occupied by external app: {} ({})",
+                            w.label,
+                            w.shortcut
+                        );
+                        errors.push(w.id.clone());
                     }
                     Err(e) => {
                         log::error!("Init error: {} ({}): {:?}", w.label, w.shortcut, e);
-                        // Store the ID:Label pair for precise UI feedback
-                        errors.push(format!("{}:{}", w.id, w.label));
+                        errors.push(w.id.clone());
                     }
                 }
             }
         }
     }
-    // AI Shortcuts are now macros in the toolbar, NOT global hotkeys.
-    // They don't need to be registered in the system-wide hotkey manager.
     map
 }
 
@@ -282,8 +234,5 @@ pub fn unregister_all(manager: &GlobalHotKeyManager, config: &AppConfig) {
         if let Ok(hotkey) = normalize_hotkey(&w.shortcut).parse::<HotKey>() {
             let _ = manager.unregister(hotkey);
         }
-    }
-    for _ in &config.ai_shortcuts {
-        // AI Shortcuts are no longer registered as hotkeys
     }
 }

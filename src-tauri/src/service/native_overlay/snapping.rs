@@ -13,22 +13,27 @@ pub fn snap_coordinate(val: i32, targets: &[i32], threshold: i32) -> i32 {
     best
 }
 
-pub fn collect_snap_lines(state: &OverlayState) -> (Vec<i32>, Vec<i32>) {
-    let mut snap_x = Vec::new();
-    let mut snap_y = Vec::new();
+pub fn update_snap_lines(state: &mut OverlayState) {
+    // Clear existing cache without losing capacity
+    state.gdi.snap_x_cache.clear();
+    state.gdi.snap_y_cache.clear();
+
     if !state.window_rects.is_empty() {
-        let ox = state.x;
-        let oy = state.y;
+        let ox = state.capture_x;
+        let oy = state.capture_y;
         for r in &state.window_rects {
-            snap_x.push(r.left - ox);
-            snap_x.push(r.right - ox);
-            snap_y.push(r.top - oy);
-            snap_y.push(r.bottom - oy);
+            state.gdi.snap_x_cache.push(r.left - ox);
+            state.gdi.snap_x_cache.push(r.right - ox);
+            state.gdi.snap_y_cache.push(r.top - oy);
+            state.gdi.snap_y_cache.push(r.bottom - oy);
         }
-        snap_x.push(0);
-        snap_x.push(state.width);
-        snap_y.push(0);
-        snap_y.push(state.height);
+        
+        // Boundaries
+        state.gdi.snap_x_cache.push(0);
+        state.gdi.snap_x_cache.push(state.width);
+        state.gdi.snap_y_cache.push(0);
+        state.gdi.snap_y_cache.push(state.height);
     }
-    (snap_x, snap_y)
+    
+    state.snapping_dirty = false;
 }

@@ -25,12 +25,16 @@ pub fn save(config_path: &Path, config: &AppConfig) -> anyhow::Result<()> {
 
 pub fn resolve_save_path(app: &AppHandle, config: &AppConfig) -> PathBuf {
     let path = &config.save_path;
-    if path.is_empty() || path == "captures" {
+    if path.is_empty() {
         app.path()
             .app_data_dir()
             .unwrap_or_default()
             .join("captures")
     } else {
+        // If it's a relative path starting with 'captures' or similar, 
+        // we might want it in the app data dir, but if the user specifically
+        // typing a string, let's respect it as relative to the CWD for developers.
+        // For now, we keep the absolute resolve but allow standard PathBuf behavior.
         PathBuf::from(path)
     }
 }

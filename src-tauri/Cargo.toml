@@ -37,13 +37,15 @@ log = "0.4"
 simplelog = "0.12"
 tauri-plugin-dialog = "2.2.0"
 vello = { git = "https://github.com/linebender/vello.git" }
-parley = "0.2"
+parley = { git = "https://github.com/linebender/parley.git" }
 pollster = "0.3"
 raw-window-handle = "0.6"
 tokio = { version = "1.49.0", features = ["sync", "rt", "macros"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 futures = "0.3"
 async-trait = "0.1"
+icu_segmenter = { version = "2.1.2", features = ["compiled_data", "lstm"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
 # wgpu is provided by vello
 
 [dependencies.windows]

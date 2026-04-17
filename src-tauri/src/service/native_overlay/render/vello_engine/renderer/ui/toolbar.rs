@@ -1,63 +1,55 @@
 use super::icons::draw_button_icon;
 use crate::service::native_overlay::render::toolbar::types::{ButtonState, ToolType};
 use crate::service::native_overlay::render::toolbar::Toolbar;
-use crate::service::native_overlay::state::{DrawingTool, OverlayState};
+use crate::service::native_overlay::state::OverlayState;
 use vello::kurbo::{Affine, Rect, RoundedRect, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
 pub fn draw_toolbar_ui(scene: &mut Scene, state: &OverlayState, toolbar: &Toolbar) {
-    log::info!(
-        "[Vello Debug] Draw Toolbar UI. Visible: {}, Rect: {:?}",
-        toolbar.visible,
-        toolbar.rect
-    );
     if !toolbar.visible {
         return;
     }
 
-    if toolbar.is_loading {
-        log::info!("[Vello Debug] Drawing Loading State");
-        // Draw background even when loading to cover the GDI "ghost" bar
-        let bg_rect = Rect::new(
-            toolbar.rect.left as f64,
-            toolbar.rect.top as f64,
-            toolbar.rect.right as f64,
-            toolbar.rect.bottom as f64,
-        );
-        let bg_brush = Brush::Solid(Color::from_rgba8(20, 20, 20, 255));
-        let border_brush = Brush::Solid(Color::from_rgba8(0, 160, 255, 200));
-        let border_stroke = Stroke::new(1.5);
-        let rounded_bg = RoundedRect::from_rect(bg_rect, 12.0);
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            &bg_brush,
-            None,
-            &rounded_bg,
-        );
-        scene.stroke(
-            &border_stroke,
-            Affine::IDENTITY,
-            &border_brush,
-            None,
-            &rounded_bg,
-        );
+    // --- 1. Draw Main Toolbar ---
+    draw_bar(
+        scene,
+        state,
+        &toolbar.main_buttons,
+        &toolbar.rect,
+        toolbar.is_loading,
+        toolbar.property_bar_visible,
+        &toolbar.property_bar_rect,
+        toolbar.current_tool.as_ref(),
+    );
+}
+
+fn draw_bar(
+    scene: &mut Scene,
+    state: &OverlayState,
+    buttons: &[crate::service::native_overlay::render::toolbar::types::ToolbarButton],
+    rect: &windows::Win32::Foundation::RECT,
+    is_loading: bool,
+    property_bar_visible: bool,
+    property_bar_rect: &windows::Win32::Foundation::RECT,
+    current_tool_type: Option<&ToolType>,
+) {
+    if rect.left == rect.right {
         return;
     }
 
-    // 1. Draw Toolbar Background
+    // Draw Background (Zinc-950)
     let bg_rect = Rect::new(
-        toolbar.rect.left as f64,
-        toolbar.rect.top as f64,
-        toolbar.rect.right as f64,
-        toolbar.rect.bottom as f64,
+        rect.left as f64,
+        rect.top as f64,
+        rect.right as f64,
+        rect.bottom as f64,
     );
-    let bg_brush = Brush::Solid(Color::from_rgba8(20, 20, 20, 255));
-    let border_brush = Brush::Solid(Color::from_rgba8(0, 160, 255, 200));
-    let border_stroke = Stroke::new(1.5);
+    let bg_brush = Brush::Solid(Color::from_rgba8(24, 24, 27, 255));
+    let border_brush = Brush::Solid(Color::from_rgba8(39, 39, 42, 255));
+    let border_stroke = Stroke::new(1.0);
+    let rounded_bg = RoundedRect::from_rect(bg_rect, 3.0);
 
-    let rounded_bg = RoundedRect::from_rect(bg_rect, 12.0);
     scene.fill(
         Fill::NonZero,
         Affine::IDENTITY,
@@ -65,6 +57,30 @@ pub fn draw_toolbar_ui(scene: &mut Scene, state: &OverlayState, toolbar: &Toolba
         None,
         &rounded_bg,
     );
+    
+    // Top Highlight Line (8% White)
+    // Top Highlight Line
+    let highlight_brush = Brush::Solid(Color::from_rgba8(255, 255, 255, 20));
+    let highlight_rect = Rect::new(
+        bg_rect.x0 + 3.0,
+        bg_rect.y0 + 1.0,
+        bg_rect.x1 - 3.0,
+        bg_rect.y0 + 2.0,
+    );
+    scene.fill(Fill::NonZero, Affine::IDENTITY, &highlight_brush, None, &highlight_rect);
+
+    // Bottom Shadow Line (20% Black)
+    // Bottom Shadow Line
+    let shadow_brush = Brush::Solid(Color::from_rgba8(0, 0, 0, 50));
+    let shadow_rect = Rect::new(
+        bg_rect.x0 + 3.0,
+        bg_rect.y1 - 2.0,
+        bg_rect.x1 - 3.0,
+        bg_rect.y1 - 1.0,
+    );
+    scene.fill(Fill::NonZero, Affine::IDENTITY, &shadow_brush, None, &shadow_rect);
+
+    // Outer Border (Zinc-800)
     scene.stroke(
         &border_stroke,
         Affine::IDENTITY,
@@ -73,16 +89,19 @@ pub fn draw_toolbar_ui(scene: &mut Scene, state: &OverlayState, toolbar: &Toolba
         &rounded_bg,
     );
 
-    // 1.5 Draw Property Bar if visible
-    // 1.5 Draw Property Bar if visible
-    if toolbar.property_bar_visible {
-        if let Some(tool_type) = &toolbar.current_tool {
+    if is_loading {
+        return;
+    }
+
+    // Draw Property Bar
+    if property_bar_visible {
+        if let Some(tool_type) = current_tool_type {
             let tool = crate::service::native_overlay::render::toolbar::tool_type_to_drawing_tool(
                 tool_type,
             );
             super::property_bar::draw_property_bar(
                 scene,
-                &toolbar.property_bar_rect,
+                property_bar_rect,
                 tool,
                 state.current_color,
                 state.current_font_size,
@@ -91,39 +110,31 @@ pub fn draw_toolbar_ui(scene: &mut Scene, state: &OverlayState, toolbar: &Toolba
                 state.current_opacity,
                 state.current_glow,
                 state.current_shadow,
+                state.current_style,
                 state.enable_advanced_effects,
             );
         }
     }
 
-    // 2. Draw Buttons
-    for (i, btn) in toolbar.buttons.iter().enumerate() {
-        log::info!(
-            "[Vello Debug] Drawing Button {}: {:?} at {:?}",
-            i,
-            btn.tool,
-            btn.rect
-        );
-
-        let is_active = match (&state.current_tool, &btn.tool) {
-            (DrawingTool::Rect, ToolType::Rect) => true,
-            (DrawingTool::Ellipse, ToolType::Ellipse) => true,
-            (DrawingTool::Arrow, ToolType::Arrow) => true,
-            (DrawingTool::Line, ToolType::Line) => true,
-            (DrawingTool::Brush, ToolType::Brush) => true,
-            (DrawingTool::Mosaic, ToolType::Mosaic) => true,
-            (DrawingTool::Text, ToolType::Text) => true,
-            (DrawingTool::Number, ToolType::Number) => true,
+    // Draw Buttons
+    for btn in buttons {
+        let is_active = match (current_tool_type, &btn.tool) {
+            (Some(ToolType::Rect), ToolType::Rect) => true,
+            (Some(ToolType::Ellipse), ToolType::Ellipse) => true,
+            (Some(ToolType::Arrow), ToolType::Arrow) => true,
+            (Some(ToolType::Line), ToolType::Line) => true,
+            (Some(ToolType::Brush), ToolType::Brush) => true,
+            (Some(ToolType::Mosaic), ToolType::Mosaic) => true,
+            (Some(ToolType::Text), ToolType::Text) => true,
+            (Some(ToolType::Number), ToolType::Number) => true,
             _ => false,
         };
 
         if btn.state != ButtonState::Normal || is_active {
-            let btn_color = if btn.state == ButtonState::Pressed {
-                Color::from_rgba8(85, 85, 85, 255)
-            } else if is_active {
-                Color::from_rgba8(68, 68, 68, 255)
+            let btn_color = if btn.state == ButtonState::Pressed || is_active {
+                Color::from_rgba8(63, 63, 70, 255) // Zinc-700
             } else {
-                Color::from_rgba8(58, 58, 58, 255)
+                Color::from_rgba8(39, 39, 42, 255) // Zinc-800
             };
             let btn_rect = Rect::new(
                 btn.rect.left as f64,
@@ -131,7 +142,7 @@ pub fn draw_toolbar_ui(scene: &mut Scene, state: &OverlayState, toolbar: &Toolba
                 btn.rect.right as f64,
                 btn.rect.bottom as f64,
             );
-            let rounded_btn = RoundedRect::from_rect(btn_rect, 8.0);
+            let rounded_btn = RoundedRect::from_rect(btn_rect, 2.0);
             scene.fill(
                 Fill::NonZero,
                 Affine::IDENTITY,
@@ -139,6 +150,23 @@ pub fn draw_toolbar_ui(scene: &mut Scene, state: &OverlayState, toolbar: &Toolba
                 None,
                 &rounded_btn,
             );
+
+            // Active Marker (Blue-500)
+            if is_active {
+                let marker_rect = Rect::new(
+                    btn_rect.x0 + 2.0,
+                    btn_rect.y0 + 10.0,
+                    btn_rect.x0 + 4.0,
+                    btn_rect.y1 - 10.0,
+                );
+                scene.fill(
+                    Fill::NonZero,
+                    Affine::IDENTITY,
+                    &Brush::Solid(Color::from_rgba8(59, 130, 246, 255)),
+                    None,
+                    &marker_rect,
+                );
+            }
         }
 
         draw_button_icon(scene, btn, is_active);

@@ -1,16 +1,45 @@
-use crate::service::native_overlay::render::vello_engine::renderer::utils::points_to_rect;
 use crate::service::native_overlay::state::DrawingObject;
 use vello::kurbo::Affine;
-use vello::peniko::{Brush, Color, Fill};
-use vello::Scene;
 
-pub fn render_mosaic(scene: &mut Scene, obj: &DrawingObject) {
-    if obj.points.len() < 2 {
-        return;
+use super::{VelloRenderContext, VelloToolRenderer};
+
+pub struct MosaicRenderer;
+
+impl VelloToolRenderer for MosaicRenderer {
+    fn render(&self, ctx: &mut VelloRenderContext, obj: &DrawingObject) {
+        let scene = &mut ctx.scene;
+
+        if obj.mosaic_blocks.is_empty() {
+            return;
+        }
+
+        // The block_size stored in the object should match the one used during sampling.
+        let block_size = match obj.stroke_width as i32 {
+            0..=3 => 6.0,
+            4..=7 => 10.0,
+            _ => 16.0,
+        };
+
+        for ((gx, gy), color_u32) in &obj.mosaic_blocks {
+            let x = *gx as f64 * block_size;
+            let y = *gy as f64 * block_size;
+
+            let rect = vello::kurbo::Rect::new(x, y, x + block_size, y + block_size);
+            
+            let color = vello::peniko::Color::from_rgba8(
+                ((color_u32 >> 16) & 0xFF) as u8,
+                ((color_u32 >> 8) & 0xFF) as u8,
+                (color_u32 & 0xFF) as u8,
+                ((color_u32 >> 24) & 0xFF) as u8,
+            );
+
+            scene.fill(
+                vello::peniko::Fill::NonZero,
+                Affine::IDENTITY,
+                color,
+                None,
+                &rect,
+            );
+        }
     }
-
-    let rect = points_to_rect(obj.points[0], obj.points[1]);
-    // Simplified mosaic: a semi-transparent grid or pattern
-    let mosaic_brush = Brush::Solid(Color::from_rgba8(128, 128, 128, 180));
-    scene.fill(Fill::NonZero, Affine::IDENTITY, &mosaic_brush, None, &rect);
 }

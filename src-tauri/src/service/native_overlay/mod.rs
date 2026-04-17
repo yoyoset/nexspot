@@ -9,6 +9,7 @@ pub mod manager;
 pub mod modes;
 pub mod render;
 pub mod save;
+pub mod scrolling;
 pub mod snapping;
 pub mod state;
 

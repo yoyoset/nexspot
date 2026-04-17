@@ -9,22 +9,22 @@ pub fn draw_background(scene: &mut Scene, rect: &windows::Win32::Foundation::REC
         rect.right as f64,
         rect.bottom as f64,
     );
-    let rounded_bg = RoundedRect::from_rect(bg_rect, 8.0);
+    let rounded_bg = RoundedRect::from_rect(bg_rect, 2.0);
 
-    // Acrylic/Glass Background
+    // Industrial Dark Background (Zinc-950)
     scene.fill(
         vello::peniko::Fill::NonZero,
         Affine::IDENTITY,
-        Color::from_rgba8(30, 30, 30, 240),
+        Color::from_rgba8(9, 9, 11, 245), // Zinc-950 equivalent
         None,
         &rounded_bg,
     );
 
-    // Subtle Border
+    // Industrial Border (Zinc-800)
     scene.stroke(
         &Stroke::new(1.0),
         Affine::IDENTITY,
-        Color::from_rgba8(255, 255, 255, 30),
+        Color::from_rgba8(39, 39, 42, 255), // Zinc-800
         None,
         &rounded_bg,
     );
@@ -34,8 +34,8 @@ pub fn draw_divider(scene: &mut Scene, x: f64, top: f64, bottom: f64) {
     scene.stroke(
         &Stroke::new(1.0),
         Affine::IDENTITY,
-        Color::from_rgba8(255, 255, 255, 50),
+        Color::from_rgba8(39, 39, 42, 255), // Zinc-800
         None,
-        &vello::kurbo::Line::new(Point::new(x, top + 10.0), Point::new(x, bottom - 10.0)),
+        &vello::kurbo::Line::new(Point::new(x, top + 8.0), Point::new(x, bottom - 8.0)),
     );
 }

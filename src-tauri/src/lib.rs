@@ -7,7 +7,7 @@ use crate::service::logger::{self, LoggerState};
 use crate::service::native_overlay::OverlayManager;
 use crate::service::pin::PinState;
 pub use app_state::AppState;
-use std::sync::{Mutex, RwLock};
+use std::sync::{Mutex, RwLock, Arc};
 #[cfg(target_os = "windows")]
 use tauri::{Emitter, Manager};
 
@@ -26,7 +26,7 @@ pub fn run() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::ThemeChanged(theme) = event {
                 let state = window.state::<AppState>();
-                let config = state.config_state.lock().unwrap();
+                let config = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
                 if config.config.theme == "system" {
                     #[cfg(target_os = "windows")]
                     {
@@ -44,17 +44,29 @@ pub fn run() {
         .setup(|app| {
             let logger_state = LoggerState::new(app.handle());
             let mut config_state = ConfigState::new(app.handle());
+            
+            // Initialize Activity Feed Persistence
+            let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
+            let activity_state = crate::service::activity::ActivityState::new(app_data_dir);
 
             let font_family = config_state.config.font_family.clone();
             let vello_enabled = config_state.config.vello_enabled;
-            let overlay_manager =
-                OverlayManager::new(app.handle().clone(), font_family, vello_enabled)
-                    .expect("Failed to init OverlayManager");
+            let overlay_manager = OverlayManager::new(
+                app.handle().clone(),
+                font_family,
+                vello_enabled,
+            )
+            .expect("Failed to init OverlayManager");
             let hotkey_map = config_state.register_all();
 
+            let _ = logger_state.init();
+            log::info!("==== Nexspot Startup (v0.2.1) ====");
+            log::info!("GPU: RTX 3060 detected? Check Vello status...");
+
             let app_state = AppState {
-                overlay_manager: Mutex::new(overlay_manager),
+                overlay_manager: Arc::new(Mutex::new(overlay_manager)),
                 config_state: Mutex::new(config_state),
+                activity_state,
                 logger_state,
                 hotkey_map: RwLock::new(hotkey_map),
             };
@@ -65,7 +77,7 @@ pub fn run() {
             // Now set the user data pointer for the Win32 window
             let state = app.state::<AppState>();
             {
-                let mut overlay = state.overlay_manager.lock().unwrap();
+                let mut overlay = state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
                 let ptr = &mut *overlay as *mut OverlayManager;
                 overlay.set_user_data(ptr);
             }
@@ -83,8 +95,8 @@ pub fn run() {
                 {
                     if let Ok(hwnd) = window.hwnd() {
                         let config = app.state::<crate::AppState>();
-                        let config = config.config_state.lock().unwrap();
-                        let theme = &config.config.theme;
+                        let config_guard = config.config_state.lock().unwrap_or_else(|e| e.into_inner());
+                        let theme = config_guard.config.theme.clone();
 
                         let is_dark = if theme == "system" {
                             window
@@ -105,9 +117,9 @@ pub fn run() {
 
             // 2. Check Shortcuts Conflicts
             let app_handle = app.handle();
-            let state = app_handle.state::<AppState>();
+            let state = app_handle.state::<crate::AppState>();
             let errors = {
-                let c_state = state.config_state.lock().unwrap();
+                let c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
                 c_state.last_registration_errors.clone()
             };
             if !errors.is_empty() {
@@ -138,39 +150,59 @@ pub fn run() {
             // 5. Hotkey Listener
             crate::service::hotkey::spawn_hotkey_listener(app.handle().clone());
 
+            // 6. Start Vello Pre-heat (if enabled)
+            if vello_enabled {
+                OverlayManager::init_vello_async(app.handle().clone());
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::start_capture,
             commands::trigger_capture,
+            crate::service::ocr::execute_ocr,
+            crate::service::ocr::get_last_ocr_result,
+            crate::service::native_overlay::scrolling::start_scrolling,
+            crate::service::native_overlay::scrolling::stop_scrolling,
+            crate::service::native_overlay::scrolling::get_last_scrolled_image,
+            crate::service::native_overlay::scrolling::save_scrolled_image_to,
+            crate::service::native_overlay::scrolling::copy_image_to_clipboard,
             commands::get_config,
             commands::set_save_path,
             commands::set_font_family,
             commands::set_vello_enabled,
             commands::set_vello_advanced_effects,
+            commands::config::set_vello_aesthetic_style,
             commands::set_theme,
             commands::set_accent_color,
             commands::set_jpg_quality,
             commands::set_concurrency,
+            commands::set_default_export_format,
+            commands::set_language,
             commands::set_snapshot_enabled,
             commands::set_snapshot_size,
             commands::set_selection_engine,
             commands::set_snapshot_engine,
+            commands::config::emergency_reset_to_gdi,
             commands::add_workflow,
             commands::remove_workflow,
             commands::update_workflow,
-            commands::is_vello_ready,
-            commands::config::add_ai_shortcut,
-            commands::config::remove_ai_shortcut,
-            commands::config::update_ai_shortcut,
+            commands::get_vello_status,
             commands::config::suspend_hotkeys,
             commands::config::resume_hotkeys,
             commands::config::refresh_hotkeys,
             commands::select_folder,
             commands::open_folder,
             commands::pin::create_text_pin,
-            commands::pin::get_pin_content,
-            commands::ai::stream_ai_response,
+            commands::pin::get_all_pins,
+            commands::pin::remove_pin,
+            commands::pin::clear_all_pins,
+            commands::pin::toggle_pin_always_on_top,
+            commands::pin::is_pin_always_on_top,
+            commands::pin::set_pin_window_size,
+            commands::pin::set_pin_min_size,
+            commands::pin::save_pin_as,
+            crate::service::activity::get_activity,
             logger::clear_logs,
             logger::reveal_logs
         ])

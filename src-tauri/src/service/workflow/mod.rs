@@ -6,16 +6,15 @@ use tauri::Manager;
 pub async fn execute_capture_workflow<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     workflow: CaptureWorkflow,
-    ai_prompt: Option<String>,
 ) {
     let workflow_id = workflow.id.clone();
 
     // 0. Global Check: Prevent overlapping triggers
     {
         let app_state = app.state::<AppState>();
-        let manager = app_state.overlay_manager.lock().unwrap();
+        let manager = app_state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
 
-        let mut os = manager.state.lock().unwrap();
+        let mut os = manager.state.write().unwrap_or_else(|e| e.into_inner());
         if os.is_visible || os.is_capturing {
             log::info!(
                 "[Workflow] Overlay active or capturing, ignoring workflow {}.",
@@ -34,7 +33,7 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
             overlay.close_and_reset();
         }
     }
-    // Small sleep to ensure OS window state sync AFTER releasing lock (Reduced for performance)
+    // Small sleep to ensure OS window state sync AFTER releasing lock
     std::thread::sleep(std::time::Duration::from_millis(10));
 
     // 2. Decode Capture Action & Engine
@@ -44,18 +43,52 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
             engine,
             width,
             height,
+            allow_resize,
             ..
         } => (
-            CaptureMode::Standard,
+            CaptureMode::Snapshot {
+                allow_resize: *allow_resize,
+            },
             engine.as_str(),
             Some((*width, *height)),
         ),
         CaptureAction::Fullscreen { engine } => (CaptureMode::Standard, engine.as_str(), None),
-        CaptureAction::Window { engine } => (CaptureMode::Standard, engine.as_str(), None),
+        CaptureAction::Window { engine } => (CaptureMode::FixedWindow, engine.as_str(), None),
     };
 
     let use_snapshot_mode = snapshot_dim.is_some();
     let engine_enum = if target_engine == "vello" {
+        let (v_ready, v_err) = if let Ok(mgr) = app.state::<AppState>().overlay_manager.lock().map_err(|e| e.into_inner()) {
+            match &mgr.vello_status {
+                crate::service::native_overlay::state::VelloStatus::Ready => (true, None),
+                crate::service::native_overlay::state::VelloStatus::Failed(e) => {
+                    (false, Some(e.clone()))
+                }
+                crate::service::native_overlay::state::VelloStatus::Pending => {
+                    (false, Some("Vello engine is initializing...".to_string()))
+                }
+            }
+        } else {
+            (false, Some("System lock failed".to_string()))
+        };
+
+        if !v_ready {
+            let err_msg = v_err.unwrap_or_else(|| "Vello engine not ready".to_string());
+            log::warn!("[Workflow] Blocked Vello capture: {}", err_msg);
+
+            // ERROR: Reset capturing flag before returning
+            {
+                if let Ok(manager) = app.state::<AppState>().overlay_manager.lock() {
+                    if let Ok(mut os) = manager.state.write() {
+                        os.is_capturing = false;
+                    }
+                }
+            }
+
+            use tauri::Emitter;
+            let _ = app.emit("vello://error", err_msg);
+            return;
+        }
         CaptureEngine::Wgc
     } else {
         CaptureEngine::Gdi
@@ -64,14 +97,13 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
     // 3. Prepare Overlay State
     let (state_arc_for_capture, wgc_state) = {
         let state = app.state::<AppState>();
-        let overlay = state.overlay_manager.lock().unwrap();
-        let mut os = overlay.state.lock().unwrap();
+        let overlay = state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+        let mut os = overlay.state.write().unwrap_or_else(|e| e.into_inner());
 
         os.active_workflow = Some(workflow.clone());
         os.capture_mode = target_mode;
         os.capture_engine = engine_enum;
         os.is_snapshot_mode = use_snapshot_mode;
-        os.pending_ai_prompt = ai_prompt;
 
         (
             overlay.state.clone(),
@@ -90,10 +122,10 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
         let app_ui = app.clone();
         let _ = app.run_on_main_thread(move || {
             let app_state = app_ui.state::<AppState>();
-            if let Ok(mut overlay) = app_state.overlay_manager.lock() {
-                // 使用新重构的模式处理器计算选区
+            if let Ok(mut overlay) = app_state.overlay_manager.lock().map_err(|e| e.into_inner()) {
+                // Get necessary state via read lock
                 let (mouse_x, mouse_y, window_rects) = {
-                    let s = overlay.state.lock().unwrap();
+                    let s = overlay.state.read().unwrap_or_else(|e| e.into_inner());
                     (s.mouse_x, s.mouse_y, s.window_rects.clone())
                 };
 
@@ -121,7 +153,7 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
                     handler.prepare_selection(x, y, w, h, mouse_x, mouse_y, &window_rects);
 
                 {
-                    let mut s = overlay.state.lock().unwrap();
+                    let mut s = overlay.state.write().unwrap_or_else(|e| e.into_inner());
                     s.selection = selection;
                 }
 
@@ -131,19 +163,22 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
                         workflow.action
                     );
                 }
-                let _ = overlay.show_overlay_at(x, y, w, h);
+                if let Err(e) = overlay.show_overlay_at(x, y, w, h) {
+                    log::error!("[Workflow] UI display failed: {:?}", e);
+                    overlay.close_and_reset(); // Reset state on failure
+                }
 
-                // FINISHED: Clear capturing flag
-                if let Ok(mut os) = overlay.state.lock() {
+                // FINISHED: Clear capturing flag ALWAYS
+                if let Ok(mut os) = overlay.state.write() {
                     os.is_capturing = false;
                 }
             };
         });
     } else {
         // ERROR or CANCELLED: Clear capturing flag
-        if let Some(app_state) = app.try_state::<AppState>() {
-            if let Ok(manager) = app_state.overlay_manager.lock() {
-                if let Ok(mut os) = manager.state.lock() {
+        if let Some(state) = app.try_state::<AppState>() {
+            if let Ok(manager) = state.overlay_manager.lock().map_err(|e| e.into_inner()) {
+                if let Ok(mut os) = manager.state.write().map_err(|e| e.into_inner()) {
                     os.is_capturing = false;
                 }
             }

@@ -1,25 +1,33 @@
-use crate::service::native_overlay::render::vello_engine::renderer::utils::argb_to_vello;
 use crate::service::native_overlay::state::DrawingObject;
-use vello::kurbo::{Affine, BezPath, Stroke};
-use vello::peniko::Brush;
-use vello::Scene;
+use vello::kurbo::BezPath;
 
-pub fn render_brush(scene: &mut Scene, obj: &DrawingObject) {
-    if obj.points.len() < 2 {
-        return;
-    }
+use super::{VelloRenderContext, VelloToolRenderer};
 
-    let color = argb_to_vello(obj.color);
-    let brush = Brush::Solid(color);
-    let mut stroke = Stroke::new(obj.stroke_width as f64);
-    if obj.is_dashed {
-        stroke = stroke.with_dashes(10.0, [10.0, 5.0]);
-    }
+pub struct BrushRenderer;
 
-    let mut path = BezPath::new();
-    path.move_to((obj.points[0].0 as f64, obj.points[0].1 as f64));
-    for p in &obj.points[1..] {
-        path.line_to((p.0 as f64, p.1 as f64));
+impl VelloToolRenderer for BrushRenderer {
+    fn render(&self, ctx: &mut VelloRenderContext, obj: &DrawingObject) {
+        if obj.points.len() < 2 {
+            return;
+        }
+
+        let scene = &mut ctx.scene;
+        let mut path = BezPath::new();
+        let pts = &obj.points;
+        path.move_to((pts[0].0 as f64, pts[0].1 as f64));
+
+        if pts.len() == 2 {
+            path.line_to((pts[1].0 as f64, pts[1].1 as f64));
+        } else {
+            for i in 1..pts.len() - 1 {
+                let p_curr = (pts[i].0 as f64, pts[i].1 as f64);
+                let p_next = (pts[i + 1].0 as f64, pts[i + 1].1 as f64);
+                let mid = ((p_curr.0 + p_next.0) / 2.0, (p_curr.1 + p_next.1) / 2.0);
+                path.quad_to(p_curr, mid);
+            }
+            // Last segment
+            path.line_to((pts[pts.len() - 1].0 as f64, pts[pts.len() - 1].1 as f64));
+        }
+        crate::service::native_overlay::render::vello_engine::renderer::utils::styles::apply_aesthetic_style(scene, &path, obj);
     }
-    scene.stroke(&stroke, Affine::IDENTITY, &brush, None, &path);
 }

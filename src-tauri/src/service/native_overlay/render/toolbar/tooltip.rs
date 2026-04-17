@@ -1,77 +1,67 @@
 use super::types::ToolbarButton;
-use crate::service::win32::gdi::{self, SafeHDC};
-use windows::Win32::Foundation::RECT;
 
-pub fn draw_tooltip(hdc: &SafeHDC, btn: &ToolbarButton) -> anyhow::Result<()> {
+pub fn draw_tooltip(
+    graphics: &crate::service::win32::gdiplus::GraphicsWrapper,
+    btn: &ToolbarButton,
+    orientation: crate::service::native_overlay::render::toolbar::builder::Orientation,
+) -> anyhow::Result<()> {
     let text = &btn.tooltip;
     if text.is_empty() {
         return Ok(());
     }
 
-    // Select a UI font
-    let hfont = gdi::create_font(18, 400, "Microsoft YaHei")?;
-    let old_font = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(hfont.0 .0))?;
+    use crate::service::win32::gdiplus::{BrushWrapper, PenWrapper};
 
-    // Measure text
-    let mut rect = RECT::default();
-    let mut u16_text: Vec<u16> = text.encode_utf16().collect();
-    unsafe {
-        windows::Win32::Graphics::Gdi::DrawTextW(
-            hdc.0,
-            &mut u16_text,
-            &mut rect,
-            windows::Win32::Graphics::Gdi::DT_CALCRECT,
-        );
+    // 1. Measure text using GDI+
+    let font_family = "Segoe UI";
+    let font_size = 14.0;
+    let bounding_box =
+        crate::service::win32::gdiplus::measure_text(graphics, text, font_family, font_size, None)?;
+
+    let padding_h = 10.0;
+    let padding_v = 6.0;
+    let tw = bounding_box.Width + padding_h * 2.0;
+    let th = bounding_box.Height + padding_v * 2.0;
+
+    let mut tx = btn.rect.left as f32 + (btn.rect.right - btn.rect.left) as f32 / 2.0 - tw / 2.0;
+    let mut ty = btn.rect.bottom as f32 + 12.0;
+
+    if orientation
+        == crate::service::native_overlay::render::toolbar::builder::Orientation::Vertical
+    {
+        tx = btn.rect.left as f32 - tw - 12.0;
+        ty = btn.rect.top as f32 + (btn.rect.bottom - btn.rect.top) as f32 / 2.0 - th / 2.0;
     }
 
-    let padding_h = 10;
-    let padding_v = 6;
-    let tw = rect.right - rect.left + padding_h * 2;
-    let th = rect.bottom - rect.top + padding_v * 2;
+    // 2. Draw Background
+    let bg_brush = BrushWrapper::new_solid(0xE61A1A1A)?; // Slightly transparent black
+    let border_pen = PenWrapper::new(0xFF444444, 1.0)?;
 
-    let tx = btn.rect.left + (btn.rect.right - btn.rect.left) / 2 - tw / 2;
-    let ty = btn.rect.bottom + 12; // Always show below to avoid overlapping property bar
+    crate::service::win32::gdiplus::fill_rounded_rectangle(
+        graphics,
+        &bg_brush,
+        (tx, ty, tw, th),
+        6.0,
+    )?;
 
-    let tooltip_rect = RECT {
-        left: tx,
-        top: ty,
-        right: tx + tw,
-        bottom: ty + th,
-    };
+    crate::service::win32::gdiplus::draw_rounded_rectangle(
+        graphics,
+        &border_pen,
+        (tx, ty, tw, th),
+        6.0,
+    )?;
 
-    // Draw Background
-    let bg_brush = gdi::create_solid_brush(0x1a1a1a)?;
-    let border_pen = gdi::create_pen(windows::Win32::Graphics::Gdi::PS_SOLID, 1, 0x444444)?;
-    let old_p = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(border_pen.0 .0))?;
-    let old_b = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(bg_brush.0 .0))?;
+    // 3. Draw Text
+    let text_brush = BrushWrapper::new_solid(0xFFFFFFFF)?;
+    crate::service::win32::gdiplus::draw_text_centered(
+        graphics,
+        text,
+        (tx + tw / 2.0, ty + th / 2.0),
+        font_family,
+        font_size,
+        &text_brush,
+        None,
+    )?;
 
-    let _ = gdi::round_rect(
-        hdc,
-        tooltip_rect.left,
-        tooltip_rect.top,
-        tooltip_rect.right,
-        tooltip_rect.bottom,
-        6,
-        6,
-    );
-
-    gdi::select_object(hdc, old_p)?;
-    gdi::select_object(hdc, old_b)?;
-
-    // Draw Text
-    gdi::set_text_color(hdc, 0xFFFFFF);
-    unsafe {
-        let text_rect = tooltip_rect;
-        windows::Win32::Graphics::Gdi::DrawTextW(
-            hdc.0,
-            &mut u16_text,
-            &mut std::mem::transmute(text_rect),
-            windows::Win32::Graphics::Gdi::DT_CENTER
-                | windows::Win32::Graphics::Gdi::DT_VCENTER
-                | windows::Win32::Graphics::Gdi::DT_SINGLELINE,
-        );
-    }
-
-    gdi::select_object(hdc, old_font)?;
     Ok(())
 }

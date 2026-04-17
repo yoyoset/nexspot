@@ -4,7 +4,7 @@ use global_hotkey::GlobalHotKeyManager;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
-use types::{AIShortcut, AppConfig, HotkeyAction, SafeGlobalHotKeyManager};
+use types::{AppConfig, HotkeyAction, SafeGlobalHotKeyManager};
 
 pub struct ConfigState {
     pub manager: SafeGlobalHotKeyManager,
@@ -18,14 +18,19 @@ impl ConfigState {
         let config_dir = app_handle
             .path()
             .app_config_dir()
-            .unwrap_or(PathBuf::from("."));
+            .unwrap_or_else(|_| PathBuf::from("."));
 
         if !config_dir.exists() {
             let _ = std::fs::create_dir_all(&config_dir);
         }
         let config_path = config_dir.join("config.json");
 
-        let manager = GlobalHotKeyManager::new().expect("Failed to init GlobalHotKeyManager");
+        let manager = GlobalHotKeyManager::new().unwrap_or_else(|e| {
+            eprintln!("Critical Error: Failed to init GlobalHotKeyManager: {}", e);
+            // On some systems, this might fail if the event loop is not yet ready or UI is missing.
+            // But for NexSpot, it's a core requirement.
+            panic!("GlobalHotKeyManager allocation failed: {}", e);
+        });
 
         let mut state = Self {
             manager: SafeGlobalHotKeyManager(manager),
@@ -79,36 +84,13 @@ impl ConfigState {
         Ok(())
     }
 
-    pub fn add_ai_shortcut(&mut self, shortcut: AIShortcut) -> Result<(), ConfigError> {
-        let changed = hotkey::add_ai_shortcut(&self.manager.0, &mut self.config, shortcut)?;
-        if changed {
-            self.save();
-        }
-        Ok(())
-    }
-
-    pub fn remove_ai_shortcut(&mut self, id: &str) -> Result<(), ConfigError> {
-        let changed = hotkey::remove_ai_shortcut(&self.manager.0, &mut self.config, id)?;
-        if changed {
-            self.save();
-        }
-        Ok(())
-    }
-
-    pub fn update_ai_shortcut(
-        &mut self,
-        id: &str,
-        new_shortcut: AIShortcut,
-    ) -> Result<(), ConfigError> {
-        let changed =
-            hotkey::update_ai_shortcut(&self.manager.0, &mut self.config, id, new_shortcut)?;
-        if changed {
-            self.save();
-        }
-        Ok(())
-    }
 
     pub fn add_workflow(&mut self, workflow: types::CaptureWorkflow) -> Result<(), ConfigError> {
+        log::info!(
+            "[Config] Adding new workflow: ID={}, Label={}",
+            workflow.id,
+            workflow.label
+        );
         let changed = hotkey::add_workflow(&self.manager.0, &mut self.config, workflow)?;
         if changed {
             self.save();
@@ -129,7 +111,11 @@ impl ConfigState {
         id: &str,
         workflow: types::CaptureWorkflow,
     ) -> Result<(), ConfigError> {
-        // ... (existing implementation)
+        log::info!(
+            "[Config] Updating workflow: ID={}, New Label={}",
+            id,
+            workflow.label
+        );
         let idx = self
             .config
             .workflows
@@ -153,7 +139,13 @@ impl ConfigState {
         self.config.workflows[idx].label = workflow.label;
         self.config.workflows[idx].action = workflow.action;
         self.config.workflows[idx].output = workflow.output;
-        self.config.workflows[idx].enabled = true; // Force enabled
+        
+        // Lock system workflows to 'enabled: true', allow custom workflows to be disabled
+        if self.config.workflows[idx].is_system {
+            self.config.workflows[idx].enabled = true;
+        } else {
+            self.config.workflows[idx].enabled = workflow.enabled;
+        }
 
         self.save();
         Ok(())
@@ -164,10 +156,16 @@ impl ConfigState {
         self.save();
     }
 
+    pub fn set_language(&mut self, lang: String) {
+        self.config.language = lang;
+        self.save();
+    }
+
     pub fn set_accent_color(&mut self, color: String) {
         self.config.accent_color = color;
         self.save();
     }
+
 
     // Pass-through setters
     pub fn set_save_path(&mut self, path: String) {
@@ -199,6 +197,12 @@ impl ConfigState {
         self.config.concurrency = concurrency;
         self.save();
     }
+
+    pub fn set_default_export_format(&mut self, format: String) {
+        self.config.default_export_format = format;
+        self.save();
+    }
+
 
     pub fn set_snapshot_enabled(&mut self, enabled: bool) {
         self.config.snapshot_enabled = enabled;

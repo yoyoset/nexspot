@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import SettingsPanel from "./components/Settings/SettingsPanel";
 import Dashboard from "./components/Dashboard/Dashboard";
 import StartupErrorToast from "./components/Overlay/StartupErrorToast";
@@ -7,11 +8,14 @@ import GlobalHUD from "./components/Overlay/GlobalHUD";
 import { TauriEventListener } from "./components/Overlay/TauriEventListener";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
-import TextPinWindow from "./components/Pin/TextPinWindow";
+import PinCollectionWindow from "./components/Pin/PinCollectionWindow";
 import Navigator from "./components/Navigation/Navigator";
 import { AppTab } from "./types/navigation";
 import ActivityHub from "./components/Dashboard/ActivityHub";
 import WorkflowModal from "./components/Workflows/WorkflowModal";
+import EngineErrorModal from "./components/Overlay/EngineErrorModal";
+import ScrollingPreview from "./components/Overlay/ScrollingPreview";
+import OCRResultWindow from "./components/Overlay/OCRResultWindow";
 import { Workflow } from "./store/useAppStore";
 import { useConfig } from "./hooks/useConfig";
 
@@ -27,13 +31,14 @@ function App() {
 
     const { updateWorkflow, addWorkflow, removeWorkflow } = useConfig();
 
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = React.useState<AppTab>('dashboard');
 
     const handleEditWorkflow = (id?: string) => {
         if (!id || id === 'new') {
             const newWorkflow: Workflow = {
                 id: `user_${Date.now()}`,
-                label: "New Preset",
+                label: t('workflows.new_protocol'),
                 shortcut: "Alt+F1",
                 enabled: true,
                 is_system: false,
@@ -69,6 +74,9 @@ function App() {
 
             root.setAttribute('data-theme', effectiveTheme);
             root.style.setProperty('--color-accent', config.accent_color);
+            if (config.indicator_color) {
+                root.style.setProperty('--color-indicator', config.indicator_color);
+            }
 
             // Also update color-scheme for scrollbars/native inputs
             root.style.colorScheme = effectiveTheme;
@@ -83,15 +91,34 @@ function App() {
             mediaQuery.addEventListener('change', handleChange);
             return () => mediaQuery.removeEventListener('change', handleChange);
         }
-    }, [config?.theme, config?.accent_color]);
+    }, [config?.theme, config?.accent_color, config?.indicator_color]);
 
-    // Routing Check
-    const isTextPin = window.location.hash.includes("text-pin");
+    const isPinCollection = window.location.hash.includes("pin-collection");
+    const isScrollingPreview = window.location.hash.includes("scrolling-preview");
+    const isOcrResult = window.location.hash.includes("ocr-result");
 
-    if (isTextPin) {
+    if (isPinCollection) {
         return (
             <main className="w-full h-full relative overflow-hidden bg-transparent">
-                <TextPinWindow />
+                <PinCollectionWindow />
+                <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
+            </main>
+        );
+    }
+
+    if (isScrollingPreview) {
+        return (
+            <main className="w-full h-full relative overflow-hidden bg-transparent">
+                <ScrollingPreview />
+                <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
+            </main>
+        );
+    }
+
+    if (isOcrResult) {
+        return (
+            <main className="w-full h-full relative overflow-hidden bg-transparent">
+                <OCRResultWindow />
                 <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
             </main>
         );
@@ -103,14 +130,14 @@ function App() {
 
             <Navigator activeTab={activeTab} onTabChange={setActiveTab} />
 
-            <div className="flex-1 h-full relative overflow-hidden">
+            <div className="flex-1 h-full relative overflow-hidden pointer-events-auto">
                 <AnimatePresence mode="wait">
                     {activeTab === 'dashboard' && (
                         <motion.div
                             key="dashboard"
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                             className="absolute inset-0"
                         >
                             <Dashboard
@@ -153,6 +180,9 @@ function App() {
                 )}
             </AnimatePresence>
 
+            {/* Powerful Engine Error Blocking Modal */}
+            <EngineErrorModal />
+
             {/* Global HUD Feedback */}
             <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
 
@@ -162,14 +192,16 @@ function App() {
                 onClose={() => setWorkflowEditing(false)}
                 workflow={workflowEditing.workflow}
                 onSave={async (w) => {
-                    if (workflowEditing.workflow && workflowEditing.workflow.id === w.id) {
-                        const exists = config?.workflows.some(ex => ex.id === w.id);
-                        if (exists) {
-                            await updateWorkflow(w.id, w);
-                        } else {
-                            await addWorkflow(w);
-                        }
+                    const latestConfig = useAppStore.getState().config;
+                    const currentWorkflows = latestConfig?.workflows || [];
+                    const exists = currentWorkflows.some(ex => ex.id === w.id);
+
+                    if (exists) {
+                        await updateWorkflow(w.id, w);
+                    } else {
+                        await addWorkflow(w);
                     }
+                    useAppStore.getState().showHUD(t('hud.saved'), 'success');
                 }}
                 onDelete={async (id) => {
                     await removeWorkflow(id);

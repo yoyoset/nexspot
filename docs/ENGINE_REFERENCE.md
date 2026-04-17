@@ -1,16 +1,17 @@
-# NexSpot Capture Engine Reference (Frozen v0.2.1)
+# NexSpot Capture Engine Reference (Frozen v0.2.3)
 
-> **Date**: 2026-02-22  
-> **Status**: Frozen — reflects the working state after all GDI/Vello bug fixes
+> **Date**: 2026-02-25  
+> **Status**: Frozen — reflects the Dual-HWND Engine Isolation architecture + verified render semantics
 
 ---
 
 ## 1. Architecture Overview
 
-NexSpot supports two independent capture and rendering engines:
+NexSpot supports two independent capture and rendering engines, each with a **dedicated HWND** to prevent cross-contamination:
 
 | Property | GDI Engine | Vello (WGC) Engine |
 |---|---|---|
+| **Dedicated HWND** | `gdi_hwnd` (class: `HyperLensOverlayGDI`) | `vello_hwnd` (class: `HyperLensOverlayVello`) |
 | **Capture API** | Win32 `BitBlt` (full virtual desktop) | Windows Graphics Capture (per-monitor) |
 | **Render API** | GDI `UpdateLayeredWindow` | WGPU/DirectX via Vello |
 | **Window Style** | `WS_EX_LAYERED` | DWM Composition (non-layered) |
@@ -45,13 +46,15 @@ NexSpot supports two independent capture and rendering engines:
                     ▼
           ┌──────────────────┐
           │ show_overlay_at()│  ← manager.rs
+          │  active_hwnd()   │  ← selects correct HWND
           │ → render_frame() │
           └──────┬───────────┘
                  │
-        ┌────────┴─────────┐
-        ▼                  ▼
-  GDI Render         Vello Render
-  (Layered Window)   (WGPU Surface)
+        ┌────────┴──────────────┐
+        ▼                       ▼
+  GDI Render               Vello Render
+  (gdi_hwnd)               (vello_hwnd)
+  Layered Window           WGPU Surface
 ```
 
 ---
@@ -215,39 +218,59 @@ start_pre_heat():
 ### 4.3 Vello Render Pipeline (renderer/mod.rs)
 
 ```
-render_state_to_scene(state, toolbar, scene):
+render_state_to_scene(state, toolbar, vello_ctx, scene):
   scene.reset()
 
-  1. Background: scene.draw_image(vello.background, Affine::IDENTITY)
-     → Drawn at (0,0) local surface coords (monitor-local)
+  1. Background: scene.draw_image(vello.background, bg_transform)
+     → bg_transform = scale_non_uniform(window_w/bg_w, window_h/bg_h)
+     → Compensates for DPI or capture size mismatches
 
-  2. Global Transform Layer:
+  2. Compute Global Transform:
      global_transform = Affine::translate(-(state.x), -(state.y))
-     scene.push_layer(clip_rect=[-8000,8000], transform=global_transform)
+     → Shifts global coordinates to window-local (0,0) space
 
-  3. Inner Scene (intermediate):
+  3. Inner Scene (intermediate, drawn in GLOBAL coordinates):
      inner_scene = Scene::new()
-     → draw_selection_ui → dim mask + selection cutout
-     → draw_object (for each committed object)
+     → draw_selection_ui → 4-rect dim mask + selection cutout + handles
+     → draw_object (for each committed DrawingObject — with optional glow/shadow/opacity layers)
      → draw_magnifier
      → draw_toolbar_ui
-     → draw_tool_preview
+     → draw_tooltip_ui (Parley text layout)
+     → draw_tool_preview (brush/mosaic circle)
 
-  4. Append with Transform:
+  4. Append with Explicit Transform:
      scene.append(&inner_scene, Some(global_transform))
-     ⚠ CRITICAL: push_layer transform ONLY applies to clip path,
-       NOT to inner geometry. Must use scene.append() for actual transform.
-
-  5. Pop Layer
+     → Applies global_transform to EVERY transform in inner_scene (O(N))
+     ⚠ This is the ONLY place where global→local coordinate shifting happens.
+     ⚠ push_layer transform only applies to the clip shape, NOT child geometry.
+       Do NOT use push_layer for coordinate shifting.
 ```
 
-**Clip Rect**: Static `[-8000.0, 8000.0]` — safe under WGPU 16384 texture limit while covering all multi-monitor layouts.
+**Clip Rect**: Static `[-1000000.0, 1000000.0]` — used for glow/shadow/opacity `push_layer` calls within inner_scene. Intentionally oversized to avoid clipping any multi-monitor content.
 
-### 4.4 Window Sizing for Vello (render/mod.rs + manager.rs)
+### 4.4 Dual-HWND Window Management (manager.rs)
 
-- **render_frame**: Disables `WS_EX_LAYERED`, enables DWM transparency composition
-- **show_overlay_at**: `SetWindowPos(hwnd, x, y, w, h)` — sized to target monitor only
-- **Engine upgrade** (engine_mgmt.rs): When upgrading from GDI to Vello mid-session, `SetWindowPos` shrinks window from full VDT to single monitor dimensions
+**Architecture**: Each engine has a **dedicated, permanently assigned HWND**. They are NEVER shared.
+
+| Field | Class Name | Purpose | Created When? |
+|---|---|---|---|
+| `gdi_hwnd` | `HyperLensOverlayGDI` | GDI Layered Window rendering | Always (startup) |
+| `vello_hwnd` | `HyperLensOverlayVello` | WGPU/DXGI Swapchain rendering | Only if `vello_enabled` |
+
+**Why**: Windows DWM treats DXGI Swapchain and Layered Window as **separate compositing layers** with DXGI taking higher priority. If both engines share the same HWND, the DXGI residual frame contaminates GDI captures. No amount of GDI-level flushing (`UpdateLayeredWindow`) or DWM API calls (`DwmExtendFrameIntoClientArea`) can clear DXGI residuals from the other layer.
+
+**Key Methods**:
+
+- `active_hwnd(engine)` → returns the correct HWND for the given engine
+- `show_overlay_at()` → shows the active HWND, hides the other
+- `close_and_reset()` → hides BOTH HWNDs
+- `set_user_data()` → registers WindowEventHandler on BOTH HWNDs
+
+**Vello Window Rendering**:
+
+- `render_frame` (Vello path): Disables `WS_EX_LAYERED`, enables DWM composition via `DwmExtendFrameIntoClientArea(margins=-1)` on `vello_hwnd`
+- `show_overlay_at`: `SetWindowPos(vello_hwnd, x, y, w, h)` — sized to target monitor only
+- **Engine upgrade** (engine_mgmt.rs): Uses `vello_hwnd` for `SetWindowPos` and `VelloContext::new()`
 
 ### 4.5 Cross-Monitor Selection Constraints
 
@@ -276,12 +299,14 @@ Selection clamping enforced in `mouse_move.rs` for modes: `Selecting`, `Moving`,
 | `state.active_workflow` | → None | |
 | `self.vello_ctx` | **KEPT** | Only surfaces cleared (see §4.1) |
 | `self.wgc_stream` | **KEPT** | Streams continue running |
+| `self.gdi_hwnd` | **Hidden** | KillTimer + hide_window |
+| `self.vello_hwnd` | **Hidden** | KillTimer + hide_window |
 
 ---
 
 ## 6. Known Constraints & Gotchas
 
-1. **Vello `push_layer` does NOT transform geometry** — only transforms the clip path. All inner shapes must use `scene.append(inner_scene, Some(transform))` for proper coordinate shifting.
+1. **Vello `push_layer` does NOT transform geometry** — only transforms the clip shape. Verified in Vello source (`scene.rs:82-117`): the `transform` arg only applies to the clip path via `encode_transform` + `encode_shape`. Use `scene.append(inner_scene, Some(transform))` for actual coordinate shifting (applies transform to every inner element, O(N)).
 
 2. **Monitor indices can shift** — `Monitor::enumerate()` from `windows-capture` and `EnumDisplayMonitors` from Win32 may return different orderings. The system uses `usize` indices as keys, which stay consistent within a single `enumerate()` call but may differ between the two APIs.
 
@@ -293,6 +318,14 @@ Selection clamping enforced in `mouse_move.rs` for modes: `Selecting`, `Moving`,
 
 6. **VelloContext GPU init costs ~5-10s** — Never drop/recreate VelloContext between capture sessions. Only clear DXGI surfaces (instant, ~0ms).
 
+7. **DWM DXGI/Layered Isolation (RESOLVED)** — DWM treats DXGI Swapchain and Layered Window as **independent compositing layers** with DXGI on top. If both engines share one HWND, the DXGI residual frame contaminates GDI captures. **Resolved via Dual-HWND isolation** (v0.2.2): `gdi_hwnd` is never touched by DXGI, `vello_hwnd` is never used for GDI. Previous failed approaches: GDI flush, DWM disable, HWND recreation, WGPU transparent present.
+
+8. **Parley uses `new_for_non_complex_scripts()` for segmenters** — This excludes Japanese, Chinese, Thai, Khmer, Myanmar, and Lao from LSTM/dictionary-based segmentation. Adding `lstm` feature to `icu_segmenter` in Cargo.toml does NOT change Parley's constructor choice. If CJK segmentation errors occur, the fix must be in Parley upstream, not in feature flags.
+
+9. **Global hotkey `AlreadyRegistered` = external occupation** — `global_hotkey::Error::AlreadyRegistered` means another OS-level application (e.g., WeChat, Discord) already owns the hotkey. NexSpot will NEVER receive events for it. Must report as error, not silently succeed.
+
+10. **High-frequency logs must use `trace!`** — `WM_MOUSEMOVE`, per-frame render state, and selection rect logs fire at 60+ Hz. Using `info!` causes log file explosion and potential I/O blocking in the render loop. Always use `log::trace!()` for per-frame/per-mousemove diagnostics.
+
 ---
 
 ## 7. File Map
@@ -301,7 +334,7 @@ Selection clamping enforced in `mouse_move.rs` for modes: `Selecting`, `Moving`,
 src-tauri/src/service/
 ├── native_overlay/
 │   ├── capture.rs         — perform_capture(): GDI/WGC dispatch
-│   ├── manager.rs         — OverlayManager: lifecycle, render_frame, close_and_reset
+│   ├── manager.rs         — OverlayManager: dual-HWND lifecycle, active_hwnd(), render_frame, close_and_reset
 │   ├── engine_mgmt.rs     — upgrade_to_vello(): GDI→Vello mid-session upgrade
 │   ├── events.rs          — WM_* message handling (mouse, keyboard, timer)
 │   ├── handlers.rs        — on_mouse_down/up/move dispatchers

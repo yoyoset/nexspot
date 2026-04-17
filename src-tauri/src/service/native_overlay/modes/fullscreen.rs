@@ -14,7 +14,7 @@ impl CaptureModeHandler for FullscreenHandler {
         _mouse_y: i32,
         _window_rects: &[RECT],
     ) -> Option<RECT> {
-        // 直接选中整个区域
+        // 直接选中整个区域 (归一化为 0,0)
         Some(RECT {
             left: x,
             top: y,

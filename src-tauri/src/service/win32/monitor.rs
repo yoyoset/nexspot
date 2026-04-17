@@ -8,6 +8,7 @@ use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
 
 #[derive(Debug, Clone)]
 pub struct MonitorInfo {
+    pub hmonitor: isize,
     pub name: String,          // Device name (e.g. \\.\DISPLAY1)
     pub friendly_name: String, // Descriptive name (e.g. Dell U2412M)
     pub rect: RECT,
@@ -58,15 +59,20 @@ unsafe extern "system" fn monitor_enum_proc(
                 .trim_matches('\0')
                 .trim()
                 .to_string();
-            if !device_string.is_empty() {
-                friendly_name = device_string;
-            }
+            
+            let display_index = context.monitors.len() + 1;
+            friendly_name = if !device_string.is_empty() {
+                format!("Display {} ({})", display_index, device_string)
+            } else {
+                format!("Display {} ({})", display_index, name)
+            };
         }
 
         // MONITORINFOF_PRIMARY is 1
         let is_primary = (info.monitorInfo.dwFlags & 1) != 0;
 
         context.monitors.push(MonitorInfo {
+            hmonitor: hmonitor.0 as isize,
             name,
             friendly_name,
             rect: info.monitorInfo.rcMonitor,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Keyboard as KeyboardIcon, Check, X, AlertTriangle, RotateCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 
 interface ShortcutRecorderProps {
@@ -19,6 +20,7 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
     status = "neutral",
     statusMessage,
 }) => {
+    const { t } = useTranslation();
     const [isRecording, setIsRecording] = useState(false);
     const [capturedShortcut, setCapturedShortcut] = useState<string>("");
     const containerRef = useRef<HTMLDivElement>(null);
@@ -163,27 +165,27 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
         <div className={`flex flex-col gap-1 ${className}`} ref={containerRef}>
             <div className="flex items-center gap-2">
                 <div
-                    className={`relative flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all h-[38px]
+                    className={`relative flex-1 flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs transition-all h-8
                         ${isRecording
-                            ? "bg-purple-500/10 border-purple-500 text-purple-400 ring-2 ring-purple-500/20"
+                            ? "bg-purple-500/10 border-purple-500 text-purple-400 ring-1 ring-purple-500/20"
                             : status === 'error'
                                 ? "bg-red-500/10 border-red-500/30 text-white"
-                                : "bg-white/5 border-white/10 text-text-main"
+                                : "bg-white/5 border-white/10 text-text-main shadow-inner"
                         }
                     `}
                 >
-                    <KeyboardIcon className={`w-4 h-4 ${isRecording ? "animate-pulse" : "opacity-40"}`} />
+                    <KeyboardIcon className={`w-3.5 h-3.5 ${isRecording ? "animate-pulse text-purple-400" : "opacity-40"}`} />
 
-                    <span className="font-mono flex-1 text-center font-bold tracking-tight">
+                    <span className="font-mono flex-1 text-center font-bold tracking-tight tech-text">
                         {isRecording ? (
-                            capturedShortcut || "Type shortcut..."
+                            capturedShortcut || t('workflows.awaiting_input')
                         ) : (
-                            value || <span className="opacity-30 italic font-medium">{placeholder}</span>
+                            value || <span className="opacity-30 italic font-medium uppercase tracking-widest text-[10px]">{t('workflows.unbound')}</span>
                         )}
                     </span>
 
                     {isRecording ? (
-                        <div className="text-[9px] uppercase font-black text-purple-500 animate-pulse bg-purple-500/10 px-1 rounded">REC</div>
+                        <div className="text-[8px] uppercase font-black text-purple-500 animate-pulse bg-purple-500/10 px-1 rounded-sm border border-purple-500/20">{t('workflows.rec_mode')}</div>
                     ) : (
                         <div className="flex gap-1 shrink-0">
                             {status === 'success' && <Check className="w-3.5 h-3.5 text-green-500" />}
@@ -198,7 +200,7 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
                         setIsRecording(next);
                         if (next) setCapturedShortcut("");
                     }}
-                    className={`p-2 rounded-lg border border-white/10 hover:bg-white/10 transition-colors shrink-0
+                    className={`p-1.5 rounded-sm border border-white/10 hover:bg-white/10 transition-colors shrink-0
                          ${isRecording ? 'bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30' : 'text-text-muted hover:text-white'}
                     `}
                 >
@@ -207,10 +209,10 @@ const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({
             </div>
 
             {statusMessage && (
-                <div className={`text-[10px] pl-1 font-medium ${status === 'error' ? 'text-red-400' :
-                    status === 'success' ? 'text-green-400' : 'text-text-muted/60'
+                <div className={`text-[9px] pl-1 font-bold tech-text uppercase tracking-widest ${status === 'error' ? 'text-red-400' :
+                    status === 'success' ? 'text-green-400' : 'text-text-muted/40'
                     }`}>
-                    {statusMessage}
+                    {statusMessage === "READY" ? t('workflows.ready') : statusMessage}
                 </div>
             )}
         </div>

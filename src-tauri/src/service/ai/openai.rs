@@ -7,9 +7,28 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
+#[serde(untagged)]
+enum MessageContent {
+    Text(String),
+    Complex(Vec<ContentPart>),
+}
+
+#[derive(Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum ContentPart {
+    Text { text: String },
+    ImageUrl { image_url: ImageUrl },
+}
+
+#[derive(Serialize)]
+struct ImageUrl {
+    url: String,
+}
+
+#[derive(Serialize)]
 struct Message {
     role: String,
-    content: String,
+    content: MessageContent,
 }
 
 #[derive(Serialize)]
@@ -55,17 +74,40 @@ impl OpenAIProvider {
 
 #[async_trait]
 impl LLMProvider for OpenAIProvider {
-    async fn generate(&self, _prompt: &str) -> Result<String> {
+    async fn generate(&self, _prompt: &str, _image: Option<&str>) -> Result<String> {
         // Not implemented (using stream primarily)
         Err(anyhow!("Use stream for now"))
     }
 
-    async fn stream(&self, prompt: &str) -> Result<BoxStream<'static, Result<String>>> {
+    async fn stream(
+        &self,
+        prompt: &str,
+        image: Option<&str>,
+    ) -> Result<BoxStream<'static, Result<String>>> {
+        let content = if let Some(img_b64) = image {
+            MessageContent::Complex(vec![
+                ContentPart::Text {
+                    text: prompt.to_string(),
+                },
+                ContentPart::ImageUrl {
+                    image_url: ImageUrl {
+                        url: if img_b64.starts_with("data:") {
+                            img_b64.to_string()
+                        } else {
+                            format!("data:image/png;base64,{}", img_b64)
+                        },
+                    },
+                },
+            ])
+        } else {
+            MessageContent::Text(prompt.to_string())
+        };
+
         let request = OpenAIRequest {
             model: self.model.clone(),
             messages: vec![Message {
                 role: "user".to_string(),
-                content: prompt.to_string(),
+                content,
             }],
             stream: true,
         };
@@ -80,7 +122,24 @@ impl LLMProvider for OpenAIProvider {
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow!("API Error: {}", response.status()));
+            let status = response.status();
+            let body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+
+            // Try to parse detailed error from JSON
+            let error_msg = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&body) {
+                if let Some(msg) = json["error"]["message"].as_str() {
+                    msg.to_string()
+                } else {
+                    body
+                }
+            } else {
+                body
+            };
+
+            return Err(anyhow!("API Error ({}): {}", status, error_msg));
         }
 
         let stream = response.bytes_stream().map(|chunk| {

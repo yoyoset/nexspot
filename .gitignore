@@ -23,3 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 src-tauri/target
+src-tauri/target_*
+src-tauri/captures
+src-tauri/*.out
+
+# Debris
+*.txt
+*.log
+src-tauri/*.txt
+src-tauri/*.json
+!src-tauri/tauri.conf.json
+!src-tauri/capabilities/*.json

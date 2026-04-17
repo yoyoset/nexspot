@@ -3,12 +3,23 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "main",
+    "pin-*"
   ],
   "permissions": [
     "core:default",
     "opener:default",
     "shell:default",
-    "notification:default"
+    "notification:default",
+    "dialog:default",
+    "core:event:allow-listen",
+    "core:event:allow-emit",
+    "core:window:allow-close",
+    "core:window:allow-center",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-size",
+    "core:window:allow-set-resizable",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-set-focus"
   ]
 }

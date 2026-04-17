@@ -1,4 +1,4 @@
-use crate::service::native_overlay::snapping::{collect_snap_lines, snap_coordinate};
+use crate::service::native_overlay::snapping::{update_snap_lines, snap_coordinate};
 use crate::service::native_overlay::state::{self, OverlayState};
 
 pub fn handle_mouse_down(
@@ -8,14 +8,30 @@ pub fn handle_mouse_down(
     y: i32,
 ) {
     // 0. Check Property Bar Interaction (Drag Start)
-    if toolbar.handle_property_down(x, y, state.enable_advanced_effects) {
+    if toolbar.handle_property_down(x, y, state.enable_advanced_effects, state.capture_engine) {
         return;
     }
-    let detected_zone = if let Some(sel) = state.selection {
+    let can_resize = match state.capture_mode {
+        state::CaptureMode::Standard => true,
+        state::CaptureMode::Snapshot { allow_resize } => allow_resize,
+        state::CaptureMode::FixedWindow => false,
+    };
+
+    let mut detected_zone = if let Some(sel) = state.selection {
         state::HitZone::detect(&sel, x, y)
     } else {
         state::HitZone::None
     };
+
+    if !can_resize
+        && !matches!(
+            detected_zone,
+            state::HitZone::None | state::HitZone::Body | state::HitZone::Stroke
+        )
+    {
+        // Treat resize handles as Body (Move) if resizing is disabled
+        detected_zone = state::HitZone::Body;
+    }
 
     // 1. Hit Test for Objects
     let mut object_hit = None;
@@ -52,9 +68,11 @@ pub fn handle_mouse_down(
 
     // If Starting Selection (None zone), Snap the Start Point!
     if matches!(detected_zone, state::HitZone::None) && !is_ctrl && object_hit.is_none() {
-        let (sx, sy) = collect_snap_lines(state);
-        start_x = snap_coordinate(start_x, &sx, 25);
-        start_y = snap_coordinate(start_y, &sy, 25);
+        if state.snapping_dirty {
+            update_snap_lines(state);
+        }
+        start_x = snap_coordinate(start_x, &state.gdi.snap_x_cache, 25);
+        start_y = snap_coordinate(start_y, &state.gdi.snap_y_cache, 25);
     }
 
     state.start_x = start_x;
@@ -81,10 +99,14 @@ pub fn handle_mouse_down(
             state.interaction_mode = state::InteractionMode::TransformingObject(zone);
         } else {
             // First click: Just select it
-            state.interaction_mode = state::InteractionMode::None;
+            state.interaction_mode =
+                state::InteractionMode::TransformingObject(state::HitZone::Body);
         }
+        state.selection_pointer = Some((x, y));
         return;
     }
+
+    state.selection_pointer = None;
 
     if state.current_tool != state::DrawingTool::None {
         // --- SCENARIO A: Drawing Tool Active ---
@@ -128,6 +150,10 @@ pub fn handle_mouse_down(
             opacity: state.current_opacity,
             has_shadow: state.current_shadow,
             glow: state.current_glow,
+            style: state.current_style,
+            mosaic_blocks: std::collections::HashMap::new(),
+            mosaic_pending_points: std::collections::VecDeque::new(),
+            mosaic_last_pos: None,
         });
     } else {
         // --- SCENARIO B: No Tool Active (Pointer/Selection Mode) ---
@@ -140,11 +166,17 @@ pub fn handle_mouse_down(
                 state.selected_object_index = None;
             }
             state::HitZone::Body => {
-                // Interior: Deselect object. Start NEW selection (or do nothing).
-                // Use "Selecting" to allow redrawing crop if user drags inside.
-                state.selected_object_index = None;
-                state.interaction_mode = state::InteractionMode::Selecting;
-                // state.selection = None; // REMOVED: Keep selection for Double-Click Copy. Dragging will overwrite it.
+                // Interior: If NO tool is active, allow DRAGGING the selection.
+                // If a tool IS active, we treat it as None to protect double-click/jitter,
+                // but effectively we allow the drawing mode to take over if SCENARIO A is hit.
+                if state.current_tool == state::DrawingTool::None {
+                    state.selected_object_index = None;
+                    state.is_selection_active = true;
+                    state.interaction_mode = state::InteractionMode::Moving;
+                } else {
+                    state.selected_object_index = None;
+                    state.interaction_mode = state::InteractionMode::None;
+                }
             }
             state::HitZone::Stroke => {
                 // Border: Move the selection

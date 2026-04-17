@@ -6,6 +6,7 @@ use tauri_plugin_dialog::DialogExt;
 
 impl OverlayManager {
     pub fn on_mouse_down(&mut self, x: i32, y: i32) {
+        log::trace!("[Handler] Mouse Down at ({}, {})", x, y);
         if InputHandler::handle_mouse_down(&self.state, &mut self.toolbar, x, y) {
             let _ = self.render_frame();
         }
@@ -25,6 +26,7 @@ impl OverlayManager {
     }
 
     pub fn on_mouse_move(&mut self, x: i32, y: i32) {
+        log::trace!("[Handler] Mouse Move to ({}, {})", x, y);
         if InputHandler::handle_mouse_move(&self.state, &mut self.toolbar, x, y) {
             let _ = self.render_frame();
         }

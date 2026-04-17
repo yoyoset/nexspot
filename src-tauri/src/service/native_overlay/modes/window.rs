@@ -46,7 +46,7 @@ impl CaptureModeHandler for WindowHandler {
                 mouse_x,
                 mouse_y
             );
-            // 回退到全屏
+            // 回退到全屏 (绝对坐标)
             Some(RECT {
                 left: x,
                 top: y,

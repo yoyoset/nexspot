@@ -2,9 +2,10 @@ use crate::service::native_overlay::render::toolbar::types::{
     ButtonState, ToolType, ToolbarButton,
 };
 use crate::service::native_overlay::render::toolbar::{
-    property_bar, tool_type_to_drawing_tool, tooltip,
+    property_bar, tool_type_to_drawing_tool, tooltip, widgets,
 };
-use crate::service::win32::gdi::{self, SafeHDC};
+use crate::service::win32::gdi::SafeHDC;
+use crate::service::win32::gdiplus::GraphicsWrapper;
 use windows::Win32::Foundation::RECT;
 
 pub fn draw_toolbar(
@@ -16,7 +17,8 @@ pub fn draw_toolbar(
     property_bar_visible: bool,
     property_bar_rect: &RECT,
     spacing: i32,
-    hdc: &SafeHDC,
+    graphics: &GraphicsWrapper,
+    _hdc: &SafeHDC,
     app: &tauri::AppHandle,
     current_color: u32,
     current_font_size: f32,
@@ -24,94 +26,81 @@ pub fn draw_toolbar(
     current_is_filled: bool,
     current_opacity: f32,
     current_glow: f32,
+    orientation: crate::service::native_overlay::render::toolbar::builder::Orientation,
 ) -> anyhow::Result<()> {
     if !visible {
         return Ok(());
     }
 
     if is_loading {
-        return draw_loading_message(rect, hdc, app);
+        return draw_loading_message(rect, &graphics, app);
     }
 
-    gdi::set_bk_mode(hdc, windows::Win32::Graphics::Gdi::TRANSPARENT);
+    // 1. Draw Toolbar Background (Industrial Zinc)
+    use super::constants::gdi::*;
+    widgets::draw_rounded_container(&graphics, rect, BG_MAIN, BORDER_NORMAL, RADIUS_CONTAINER)?;
 
-    // 1. Draw Toolbar Background
-    let bg_brush = gdi::create_solid_brush(0x222222)?;
-    let border_pen = gdi::create_pen(windows::Win32::Graphics::Gdi::PS_SOLID, 1, 0x444444)?;
-    let old_p = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(border_pen.0 .0))?;
-    let old_b = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(bg_brush.0 .0))?;
-    let _ = gdi::round_rect(hdc, rect.left, rect.top, rect.right, rect.bottom, 12, 12);
-    gdi::select_object(hdc, old_b)?;
-    gdi::select_object(hdc, old_p)?;
-
-    // 2. Select Font for Icons
-    let hfont = gdi::create_font(22, 400, "remixicon")?;
-    let old_font = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(hfont.0 .0))?;
-
+    // 2. Draw Buttons
     for btn in buttons {
         let is_active = current_tool.as_ref() == Some(&btn.tool);
 
-        // Draw Button Highlights
-        if btn.state != ButtonState::Normal || is_active {
-            let color = if btn.state == ButtonState::Pressed {
-                0x555555
-            } else if is_active {
-                0x444444
-            } else {
-                0x3a3a3a
-            };
-            let brush = gdi::create_solid_brush(color)?;
-            let old_b =
-                gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(brush.0 .0))?;
-            let null_pen = gdi::create_pen(windows::Win32::Graphics::Gdi::PS_NULL, 0, 0)?;
-            let old_p =
-                gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(null_pen.0 .0))?;
-            let _ = gdi::round_rect(
-                hdc,
-                btn.rect.left,
-                btn.rect.top,
-                btn.rect.right,
-                btn.rect.bottom,
-                8,
-                8,
-            );
-            gdi::select_object(hdc, old_p)?;
-            gdi::select_object(hdc, old_b)?;
-        }
+        // Draw Button Background (Normal/Hover/Pressed/Active)
+        widgets::draw_button_widget(&graphics, btn, is_active)?;
 
         // Draw Icon
-        let icon_color = if is_active { 0x00A0FF } else { 0xFFFFFF };
-        gdi::set_text_color(hdc, icon_color);
-
-        let mut icon_u16: Vec<u16> = btn.icon.encode_utf16().collect();
-        unsafe {
-            let text_rect = btn.rect;
-            windows::Win32::Graphics::Gdi::DrawTextW(
-                hdc.0,
-                &mut icon_u16,
-                &mut std::mem::transmute(text_rect),
-                windows::Win32::Graphics::Gdi::DT_CENTER
-                    | windows::Win32::Graphics::Gdi::DT_VCENTER
-                    | windows::Win32::Graphics::Gdi::DT_SINGLELINE,
-            );
-        }
+        let icon_color = if is_active {
+            ACCENT_COLOR
+        } else {
+            TEXT_PRIMARY
+        };
+        widgets::draw_tool_icon_widget(
+            &graphics,
+            &btn.rect,
+            &btn.tool,
+            &btn.icon,
+            icon_color,
+            if let ToolType::Number = btn.tool {
+                28.0
+            } else {
+                30.0
+            },
+            current_color,
+        )?;
 
         // Draw Divider
         if btn.has_divider {
-            let div_pen = gdi::create_pen(windows::Win32::Graphics::Gdi::PS_SOLID, 1, 0x444444)?;
-            let old_p =
-                gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(div_pen.0 .0))?;
-            let div_x = btn.rect.right + (spacing / 2);
-            let _ = gdi::move_to(hdc, div_x, btn.rect.top + 8);
-            let _ = gdi::line_to(hdc, div_x, btn.rect.bottom - 8);
-            gdi::select_object(hdc, old_p)?;
+            if orientation
+                == crate::service::native_overlay::render::toolbar::builder::Orientation::Horizontal
+            {
+                let div_x = (btn.rect.right + (spacing / 2)) as f32;
+                widgets::draw_separator_widget(
+                    &graphics,
+                    div_x,
+                    (btn.rect.top + 8) as f32,
+                    div_x,
+                    (btn.rect.bottom - 8) as f32,
+                    BORDER_NORMAL,
+                )?;
+            } else {
+                let div_y = (btn.rect.bottom + (spacing / 2)) as f32;
+                widgets::draw_separator_widget(
+                    &graphics,
+                    (btn.rect.left + 8) as f32,
+                    div_y,
+                    (btn.rect.right - 8) as f32,
+                    div_y,
+                    BORDER_NORMAL,
+                )?;
+            }
         }
     }
 
-    // 3. Draw Hover Tooltip
+    // 3. Draw Hover Tooltip on Top (HDC based for now as it uses DrawTextW internally in some versions,
+    // but the GDI+ refactor should eventually cover this too)
+    // 3. Draw Hover Tooltip on Top
     for btn in buttons {
         if btn.state == ButtonState::Hover {
-            tooltip::draw_tooltip(hdc, btn)?;
+            tooltip::draw_tooltip(&graphics, btn, orientation)?;
             break;
         }
     }
@@ -121,7 +110,8 @@ pub fn draw_toolbar(
         if let Some(tool_type) = current_tool {
             let drawing_tool = tool_type_to_drawing_tool(tool_type);
             property_bar::draw_property_bar(
-                hdc,
+                app,
+                graphics,
                 property_bar_rect,
                 drawing_tool,
                 current_color,
@@ -134,40 +124,36 @@ pub fn draw_toolbar(
         }
     }
 
-    gdi::select_object(hdc, old_font)?;
     Ok(())
 }
 
-fn draw_loading_message(rect: &RECT, hdc: &SafeHDC, app: &tauri::AppHandle) -> anyhow::Result<()> {
-    use crate::service::l10n::{self, L10nKey};
-    // Draw centered loading message
-    let bg_brush = gdi::create_solid_brush(0x222222)?;
-    let border_pen = gdi::create_pen(windows::Win32::Graphics::Gdi::PS_SOLID, 1, 0x00A0FF)?;
-    let old_p = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(border_pen.0 .0))?;
-    let old_b = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(bg_brush.0 .0))?;
+fn draw_loading_message(
+    rect: &RECT,
+    graphics: &GraphicsWrapper,
+    app: &tauri::AppHandle,
+) -> anyhow::Result<()> {
+    use crate::service::l10n;
+    use crate::service::win32::gdiplus::BrushWrapper;
 
-    let _ = gdi::round_rect(hdc, rect.left, rect.top, rect.right, rect.bottom, 12, 12);
+    // 1. Draw rounded background with indicator border
+    use super::constants::gdi::*;
+    widgets::draw_rounded_container(graphics, rect, BG_MAIN, ACCENT_COLOR, RADIUS_CONTAINER)?;
 
-    gdi::set_text_color(hdc, 0xFFFFFF);
-    let hfont = gdi::create_font(18, 400, "Segoe UI")?;
-    let old_font = gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(hfont.0 .0))?;
+    // 2. Draw text
+    let text = l10n::t(app, "engine.switching_to_advanced", "Switching to Advanced Engine...");
+    let brush = BrushWrapper::new_solid(TEXT_PRIMARY)?;
+    crate::service::win32::gdiplus::draw_text_centered(
+        graphics,
+        &text,
+        (
+            (rect.left + (rect.right - rect.left) / 2) as f32,
+            (rect.top + (rect.bottom - rect.top) / 2) as f32,
+        ),
+        "Segoe UI",
+        18.0,
+        &brush,
+        None,
+    )?;
 
-    let text = l10n::t(app, L10nKey::SwitchingToAdvanced);
-    let mut text_u16: Vec<u16> = text.encode_utf16().collect();
-    unsafe {
-        let mut r = *rect;
-        windows::Win32::Graphics::Gdi::DrawTextW(
-            hdc.0,
-            &mut text_u16,
-            &mut r,
-            windows::Win32::Graphics::Gdi::DT_CENTER
-                | windows::Win32::Graphics::Gdi::DT_VCENTER
-                | windows::Win32::Graphics::Gdi::DT_SINGLELINE,
-        );
-    }
-
-    gdi::select_object(hdc, old_font)?;
-    gdi::select_object(hdc, old_b)?;
-    gdi::select_object(hdc, old_p)?;
     Ok(())
 }

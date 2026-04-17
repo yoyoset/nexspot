@@ -25,7 +25,7 @@ pub async fn start_capture(app: AppHandle) -> Result<(), String> {
         },
     };
 
-    crate::service::workflow::execute_capture_workflow(app, workflow, None).await;
+    crate::service::workflow::execute_capture_workflow(app, workflow).await;
     Ok(())
 }
 
@@ -89,15 +89,17 @@ pub async fn trigger_capture(
     };
 
     // 2. Execute
-    crate::service::workflow::execute_capture_workflow(app, workflow, None).await;
+    crate::service::workflow::execute_capture_workflow(app, workflow).await;
     Ok(())
 }
 
 #[tauri::command]
-pub fn is_vello_ready(state: State<'_, AppState>) -> bool {
+pub fn get_vello_status(
+    state: State<'_, AppState>,
+) -> crate::service::native_overlay::state::VelloStatus {
     if let Ok(mgr) = state.overlay_manager.lock() {
-        mgr.vello_ctx.is_some()
+        mgr.vello_status.clone()
     } else {
-        false
+        crate::service::native_overlay::state::VelloStatus::Failed("Mutex lock failed".to_string())
     }
 }

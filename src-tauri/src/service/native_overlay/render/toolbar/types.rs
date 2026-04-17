@@ -10,13 +10,15 @@ pub enum ToolType {
     Mosaic,  // \u{EDDF}
     Text,    // \u{F201}
     Number,  // \u{F146}
+    Undo,    // \u{EA1B}
     Pin,     // \u{F039}
     Save,    // \u{F0B3}
+    SaveAs,  // \u{EF1B}
     Copy,    // \u{ECD5}
     Cancel,  // \u{EB99}
     More,    // \u{EF77}
-    Macro(String),
-    AiExecute(String),
+    Ocr,     // \u{F327}
+    Scrolling, // \u{EEA9}
 }
 
 pub use crate::service::native_overlay::state::PropertyChange;
@@ -34,7 +36,6 @@ pub enum ButtonState {
 pub enum ToolGroup {
     Standard,
     HighFidelity,
-    AI,
     Actions,
 }
 

@@ -27,12 +27,12 @@ pub fn draw_magnifier(scene: &mut Scene, state: &OverlayState) {
     let radius = 80.0;
     let offset = 40.0;
 
-    let mag_x = if mx + radius + offset + 10.0 > state.width as f64 {
+    let mag_x = if mx + radius + offset + 10.0 > state.monitor_rect.right as f64 {
         mx - radius - offset
     } else {
         mx + offset
     };
-    let mag_y = if my + radius + offset + 10.0 > state.height as f64 {
+    let mag_y = if my + radius + offset + 10.0 > state.monitor_rect.bottom as f64 {
         my - radius - offset
     } else {
         my + offset
@@ -42,9 +42,16 @@ pub fn draw_magnifier(scene: &mut Scene, state: &OverlayState) {
 
     if let Some(bg) = &state.vello.background {
         let zoom = 2.0;
-        let transform = Affine::translate((mag_x + radius, mag_y + radius))
+        let cx = mag_x + radius;
+        let cy = mag_y + radius;
+
+        // Sample from the monitor-local background image
+        let rel_mx = mx - state.monitor_rect.left as f64;
+        let rel_my = my - state.monitor_rect.top as f64;
+
+        let transform = Affine::translate((cx, cy))
             * Affine::scale(zoom)
-            * Affine::translate((-mx, -my));
+            * Affine::translate((-rel_mx, -rel_my));
 
         let brush = Brush::Image(ImageBrush {
             image: bg.clone(),

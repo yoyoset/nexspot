@@ -14,10 +14,9 @@ i18n
             zh: { translation: zh },
             'zh-CN': { translation: zh },
         },
-        lng: 'zh', // Force Chinese as requested
-        fallbackLng: 'zh',
+        fallbackLng: 'en',
         interpolation: {
-            escapeValue: false, // React already safe from XSS
+            escapeValue: false, 
         },
         detection: {
             order: ['localStorage', 'navigator'],

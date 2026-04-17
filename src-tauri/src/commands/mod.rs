@@ -1,4 +1,3 @@
-pub mod ai;
 pub mod capture;
 pub mod config;
 pub mod pin;

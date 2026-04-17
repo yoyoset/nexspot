@@ -2,51 +2,46 @@ pub mod tools;
 pub mod traits;
 
 use crate::service::native_overlay::state::{DrawingObject, DrawingTool, OverlayState};
-use crate::service::win32::gdi::{self, SafeHDC};
+use crate::service::win32::gdi::{self, SafeHDC, GdiCache};
 use traits::DrawingToolRenderer;
 use windows::Win32::Foundation::RECT;
 
 struct ClippingGuard<'a> {
     hdc: &'a SafeHDC,
-    rgn: Option<windows::Win32::Graphics::Gdi::HRGN>,
+    saved_state: i32,
 }
 
 impl<'a> ClippingGuard<'a> {
     fn new(hdc: &'a SafeHDC, selection: Option<RECT>) -> Self {
+        let saved_state = unsafe { windows::Win32::Graphics::Gdi::SaveDC(hdc.0) };
         if let Some(sel) = selection {
-            let rgn = unsafe {
-                windows::Win32::Graphics::Gdi::CreateRectRgn(
-                    sel.left, sel.top, sel.right, sel.bottom,
-                )
-            };
-            if !rgn.is_invalid() {
-                unsafe {
-                    let _ = windows::Win32::Graphics::Gdi::SelectClipRgn(hdc.0, Some(rgn));
-                }
-                return Self {
-                    hdc,
-                    rgn: Some(rgn),
-                };
+            unsafe {
+                // IntersectClipRect uses logical coordinates.
+                // Since draw_all_objects is called with a DC that has SetWindowOrgEx offset,
+                // passing global coordinates here works perfectly as long as they are matched by GDI.
+                let _ = windows::Win32::Graphics::Gdi::IntersectClipRect(
+                    hdc.0, sel.left, sel.top, sel.right, sel.bottom,
+                );
             }
         }
-        Self { hdc, rgn: None }
+        Self { hdc, saved_state }
     }
 }
 
 impl<'a> Drop for ClippingGuard<'a> {
     fn drop(&mut self) {
-        if let Some(rgn) = self.rgn {
-            unsafe {
-                let _ = windows::Win32::Graphics::Gdi::SelectClipRgn(self.hdc.0, None);
-                let _ = windows::Win32::Graphics::Gdi::DeleteObject(
-                    windows::Win32::Graphics::Gdi::HGDIOBJ(rgn.0),
-                );
-            }
+        unsafe {
+            let _ = windows::Win32::Graphics::Gdi::RestoreDC(self.hdc.0, self.saved_state);
         }
     }
 }
 
-pub fn draw_all_objects(hdc: &SafeHDC, state: &mut OverlayState) -> anyhow::Result<()> {
+pub fn draw_all_objects(
+    hdc: &SafeHDC,
+    graphics: Option<&crate::service::win32::gdiplus::GraphicsWrapper>,
+    state: &mut OverlayState,
+    cache: &mut GdiCache,
+) -> anyhow::Result<()> {
     // 1. Setup Clipping to Selection (RAII)
     let _guard = ClippingGuard::new(hdc, state.selection);
 
@@ -66,8 +61,9 @@ pub fn draw_all_objects(hdc: &SafeHDC, state: &mut OverlayState) -> anyhow::Resu
     for obj in &state.objects {
         draw_object(
             hdc,
+            graphics,
             src_hdc_opt.as_ref().map(|(s, _)| s),
-            &mut state.gdi.cache,
+            cache,
             obj,
         )?;
     }
@@ -76,8 +72,9 @@ pub fn draw_all_objects(hdc: &SafeHDC, state: &mut OverlayState) -> anyhow::Resu
     if let Some(current) = &state.current_drawing {
         draw_object(
             hdc,
+            graphics,
             src_hdc_opt.as_ref().map(|(s, _)| s),
-            &mut state.gdi.cache,
+            cache,
             current,
         )?;
     }
@@ -86,7 +83,14 @@ pub fn draw_all_objects(hdc: &SafeHDC, state: &mut OverlayState) -> anyhow::Resu
     if let Some(idx) = state.selected_object_index {
         if let Some(obj) = state.objects.get(idx) {
             let bounds = obj.get_bounds();
-            crate::service::native_overlay::render::selection::draw_handles(hdc, &bounds, state)?;
+            crate::service::native_overlay::render::selection::draw_handles(
+                hdc,
+                &bounds,
+                state,
+                cache,
+                state.monitor_rect.left,
+                state.monitor_rect.top,
+            )?;
         }
     }
 
@@ -100,6 +104,7 @@ pub fn draw_all_objects(hdc: &SafeHDC, state: &mut OverlayState) -> anyhow::Resu
 
 fn draw_object(
     hdc: &SafeHDC,
+    graphics: Option<&crate::service::win32::gdiplus::GraphicsWrapper>,
     src_hdc: Option<&SafeHDC>,
     cache: &mut gdi::cache::GdiCache,
     obj: &DrawingObject,
@@ -123,8 +128,8 @@ fn draw_object(
         )?;
         gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(pen.0 .0))?
     } else {
-        let null_pen = gdi::create_pen(windows::Win32::Graphics::Gdi::PS_NULL, 0, 0)?;
-        gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(null_pen.0 .0))?
+        let null_pen = gdi::get_stock_object(windows::Win32::Graphics::Gdi::NULL_PEN)?;
+        gdi::select_object(hdc, null_pen)?
     };
 
     // 2. Setup Brush
@@ -132,22 +137,20 @@ fn draw_object(
         let brush = cache.get_brush(obj.color)?;
         gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(brush.0 .0))?
     } else {
-        let null_brush = unsafe {
-            windows::Win32::Graphics::Gdi::GetStockObject(windows::Win32::Graphics::Gdi::NULL_BRUSH)
-        };
-        gdi::select_object(hdc, windows::Win32::Graphics::Gdi::HGDIOBJ(null_brush.0))?
+        let null_brush = gdi::get_stock_object(windows::Win32::Graphics::Gdi::NULL_BRUSH)?;
+        gdi::select_object(hdc, null_brush)?
     };
 
     // Dispatch to specific renderer
     let result = match obj.tool {
-        DrawingTool::Rect => tools::RectRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Ellipse => tools::EllipseRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Line => tools::LineRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Arrow => tools::ArrowRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Brush => tools::BrushRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Mosaic => tools::MosaicRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Text => tools::TextRenderer.render(hdc, src_hdc, obj),
-        DrawingTool::Number => tools::NumberRenderer.render(hdc, src_hdc, obj),
+        DrawingTool::Rect => tools::RectRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Ellipse => tools::EllipseRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Line => tools::LineRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Arrow => tools::ArrowRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Brush => tools::BrushRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Mosaic => tools::MosaicRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Text => tools::TextRenderer.render(hdc, graphics, src_hdc, cache, obj),
+        DrawingTool::Number => tools::NumberRenderer.render(hdc, graphics, src_hdc, cache, obj),
         _ => Ok(()),
     };
 

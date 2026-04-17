@@ -1,93 +1,89 @@
 use super::super::traits::DrawingToolRenderer;
 use crate::service::native_overlay::state::DrawingObject;
-use crate::service::win32::gdi::{self, SafeHDC};
-use crate::service::win32::gdiplus::{self, BrushWrapper, GraphicsWrapper};
-use std::collections::HashSet;
+use crate::service::win32::gdi::SafeHDC;
 
 pub struct MosaicRenderer;
 impl DrawingToolRenderer for MosaicRenderer {
     fn render(
         &self,
         hdc: &SafeHDC,
+        graphics: Option<&crate::service::win32::gdiplus::GraphicsWrapper>,
         src_hdc: Option<&SafeHDC>,
+        cache: &mut crate::service::win32::gdi::GdiCache,
         obj: &DrawingObject,
     ) -> anyhow::Result<()> {
-        let src_hdc = match src_hdc {
-            Some(s) => s,
-            None => return Ok(()),
-        };
+        if let Some(g) = graphics {
+            self.render_gdiplus_with_src(g, src_hdc, cache, obj)
+        } else {
+            let g = crate::service::win32::gdiplus::GraphicsWrapper::new(hdc.0)?;
+            self.render_gdiplus_with_src(&g, src_hdc, cache, obj)
+        }
+    }
 
-        if obj.points.is_empty() {
+    fn render_gdiplus(
+        &self,
+        _graphics: &crate::service::win32::gdiplus::GraphicsWrapper,
+        _cache: &mut crate::service::win32::gdi::GdiCache,
+        _obj: &DrawingObject,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    fn render_gdiplus_with_src(
+        &self,
+        graphics: &crate::service::win32::gdiplus::GraphicsWrapper,
+        _src_hdc: Option<&SafeHDC>,
+        cache: &mut crate::service::win32::gdi::GdiCache,
+        obj: &DrawingObject,
+    ) -> anyhow::Result<()> {
+        if obj.mosaic_blocks.is_empty() {
             return Ok(());
         }
 
-        let block_size = 12;
-        let brush_radius = 20;
+        // --- PERFORMANCE OPTIMIZATION: USE GDI Native FillRect ---
+        let hdc = graphics.get_hdc()?;
 
-        let graphics = GraphicsWrapper::new(hdc.0)?;
-        let mut drawn_blocks = HashSet::new();
+        // Map stroke_width to block size
+        let block_size = match obj.stroke_width as i32 {
+            0..=3 => 6,
+            4..=7 => 10,
+            _ => 16,
+        };
+        let block_size_f = block_size as f32;
 
-        for i in 0..obj.points.len() {
-            let p1 = obj.points[i];
-            let mut sub_points = vec![p1];
-            if i > 0 {
-                let p0 = obj.points[i - 1];
-                let dx = (p1.0 - p0.0) as f32;
-                let dy = (p1.1 - p0.1) as f32;
-                let dist = (dx * dx + dy * dy).sqrt();
-                if dist > (block_size as f32) / 2.0 {
-                    let steps = (dist / ((block_size as f32) / 2.0)) as i32;
-                    for step in 1..steps {
-                        sub_points.push((
-                            p0.0 + (dx * step as f32 / steps as f32) as i32,
-                            p0.1 + (dy * step as f32 / steps as f32) as i32,
-                        ));
-                    }
-                }
-            }
+        // Group rects by color to minimize brush creations
+        let mut color_groups: std::collections::HashMap<
+            u32,
+            Vec<windows::Win32::Foundation::RECT>,
+        > = std::collections::HashMap::with_capacity(10);
 
-            for p in sub_points {
-                let start_gx = (p.0 - brush_radius) / block_size;
-                let end_gx = (p.0 + brush_radius) / block_size;
-                let start_gy = (p.1 - brush_radius) / block_size;
-                let end_gy = (p.1 + brush_radius) / block_size;
+        for (&(gx, gy), &color_argb) in &obj.mosaic_blocks {
+            let bx = (gx as f32 * block_size_f).round() as i32;
+            let by = (gy as f32 * block_size_f).round() as i32;
 
-                for gx in start_gx..=end_gx {
-                    for gy in start_gy..=end_gy {
-                        if drawn_blocks.contains(&(gx, gy)) {
-                            continue;
-                        }
+            let rect = windows::Win32::Foundation::RECT {
+                left: bx,
+                top: by,
+                right: bx + block_size,
+                bottom: by + block_size,
+            };
+            color_groups.entry(color_argb).or_default().push(rect);
+        }
 
-                        let cx = gx * block_size + block_size / 2;
-                        let cy = gy * block_size + block_size / 2;
-                        let dx = cx - p.0;
-                        let dy = cy - p.1;
-                        if dx * dx + dy * dy <= brush_radius * brush_radius {
-                            let color = gdi::get_pixel(src_hdc, cx, cy);
-
-                            // Convert GDI COLORREF to GDI+ ARGB
-                            let r = (color & 0x000000FF) as u32;
-                            let g = (color & 0x0000FF00) >> 8;
-                            let b = (color & 0x00FF0000) >> 16;
-                            let argb = 0xFF000000 | (r << 16) | (g << 8) | b;
-
-                            let brush = BrushWrapper::new_solid(argb)?;
-                            gdiplus::fill_rectangle(
-                                &graphics,
-                                &brush,
-                                (gx * block_size) as f32,
-                                (gy * block_size) as f32,
-                                block_size as f32,
-                                block_size as f32,
-                            )?;
-
-                            drawn_blocks.insert((gx, gy));
-                        }
-                    }
+        for (color_argb, rects) in color_groups {
+            let color_ref = crate::service::win32::gdi::to_colorref(color_argb);
+            // get_brush expects u32 colorref bits usually, let's check if get_brush(color_ref.0) works
+            let brush = cache.get_brush(color_ref.0)?;
+            
+            unsafe {
+                for rect in rects {
+                    windows::Win32::Graphics::Gdi::FillRect(hdc, &rect, brush.0);
                 }
             }
         }
 
+        graphics.release_hdc(hdc);
         Ok(())
     }
 }
+

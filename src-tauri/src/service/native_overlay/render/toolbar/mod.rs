@@ -1,10 +1,12 @@
 pub mod builder;
+pub mod constants;
 pub mod events;
 pub mod layout;
 pub mod property_bar;
 pub mod render;
 pub mod tooltip;
 pub mod types;
+pub mod widgets;
 
 pub use types::{ButtonState, PropertyChange, ToolType, ToolbarButton};
 
@@ -12,8 +14,8 @@ use crate::service::win32::gdi::SafeHDC;
 use windows::Win32::Foundation::RECT;
 
 pub struct Toolbar {
-    pub buttons: Vec<ToolbarButton>,
-    pub rect: RECT,
+    pub main_buttons: Vec<ToolbarButton>,
+    pub rect: RECT,    // Main toolbar rect
     pub current_tool: Option<ToolType>,
     pub visible: bool,
     pub margin: i32,
@@ -34,12 +36,14 @@ impl Toolbar {
         engine: crate::service::native_overlay::state::CaptureEngine,
         registry: &crate::service::native_overlay::state::ToolRegistry,
     ) {
-        self.buttons = builder::rebuild_for_mode(app, mode, engine, registry);
+        let main = builder::rebuild_for_mode(app, mode, engine, registry);
+        self.main_buttons = main;
     }
 
     pub fn draw(
         &self,
-        hdc: &SafeHDC,
+        graphics: &crate::service::win32::gdiplus::GraphicsWrapper,
+        hdc: &SafeHDC, // Still needed for some legacy GDI calls if any
         app: &tauri::AppHandle,
         current_color: u32,
         current_font_size: f32,
@@ -48,15 +52,21 @@ impl Toolbar {
         current_opacity: f32,
         current_glow: f32,
     ) -> anyhow::Result<()> {
+        if !self.visible {
+            return Ok(());
+        }
+
+        // Draw Main Toolbar
         render::draw_toolbar(
-            &self.buttons,
+            &self.main_buttons,
             &self.rect,
-            self.visible,
+            true, // Already checked self.visible
             self.is_loading,
             &self.current_tool,
             self.property_bar_visible,
             &self.property_bar_rect,
             self.spacing,
+            graphics,
             hdc,
             app,
             current_color,
@@ -65,12 +75,16 @@ impl Toolbar {
             current_is_filled,
             current_opacity,
             current_glow,
-        )
+            builder::Orientation::Horizontal,
+        )?;
+
+
+        Ok(())
     }
 
     pub fn hide(&mut self) {
         self.visible = false;
-        for btn in &mut self.buttons {
+        for btn in &mut self.main_buttons {
             btn.state = ButtonState::Normal;
         }
     }
@@ -83,9 +97,10 @@ impl Toolbar {
         window_width: i32,
         window_height: i32,
         enable_advanced_effects: bool,
+        engine: crate::service::native_overlay::state::CaptureEngine,
     ) {
         layout::update_toolbar_layout(
-            &mut self.buttons,
+            &mut self.main_buttons,
             &mut self.rect,
             &self.current_tool,
             &mut self.property_bar_visible,
@@ -99,6 +114,7 @@ impl Toolbar {
             self.margin,
             self.spacing,
             enable_advanced_effects,
+            engine,
         );
         self.visible = self.rect.right - self.rect.left > 0;
     }
@@ -107,25 +123,25 @@ impl Toolbar {
         if !self.visible {
             return false;
         }
-        events::handle_mouse_move(&mut self.buttons, x, y)
+        events::handle_mouse_move(&mut self.main_buttons, x, y)
     }
 
     pub fn handle_mouse_down(&mut self, x: i32, y: i32) -> bool {
         if !self.visible {
             return false;
         }
-        events::handle_mouse_down(&mut self.buttons, x, y)
+        events::handle_mouse_down(&mut self.main_buttons, x, y)
     }
 
     pub fn handle_mouse_up(&mut self, x: i32, y: i32) -> Option<ToolType> {
         if !self.visible {
             return None;
         }
-        events::handle_mouse_up(&mut self.buttons, x, y)
+        events::handle_mouse_up(&mut self.main_buttons, x, y)
     }
 
     pub fn handle_click(&mut self, x: i32, y: i32) -> Option<ToolType> {
-        events::handle_click(&self.buttons, x, y)
+        events::handle_click(&self.main_buttons, x, y)
     }
 
     pub fn handle_property_click(
@@ -133,6 +149,8 @@ impl Toolbar {
         x: i32,
         y: i32,
         enable_advanced_effects: bool,
+        current_is_filled: bool,
+        engine: crate::service::native_overlay::state::CaptureEngine,
     ) -> Option<PropertyChange> {
         events::handle_property_click(
             self.property_bar_visible,
@@ -141,10 +159,31 @@ impl Toolbar {
             x,
             y,
             enable_advanced_effects,
+            current_is_filled,
+            engine,
         )
     }
 
-    pub fn handle_property_down(&mut self, x: i32, y: i32, enable_advanced_effects: bool) -> bool {
+    pub fn hit_test(&self, x: i32, y: i32) -> bool {
+        if !self.visible {
+            return false;
+        }
+        
+        // Check Main Toolbar
+        if x >= self.rect.left && x < self.rect.right && y >= self.rect.top && y < self.rect.bottom {
+            return true;
+        }
+
+
+        // Check Property Bar
+        if self.property_bar_visible && x >= self.property_bar_rect.left && x < self.property_bar_rect.right && y >= self.property_bar_rect.top && y < self.property_bar_rect.bottom {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn handle_property_down(&mut self, x: i32, y: i32, enable_advanced_effects: bool, engine: crate::service::native_overlay::state::CaptureEngine) -> bool {
         let hit = events::hit_test_property_bar(
             self.property_bar_visible,
             &self.property_bar_rect,
@@ -152,6 +191,7 @@ impl Toolbar {
             x,
             y,
             enable_advanced_effects,
+            engine,
         );
 
         match hit {
@@ -167,11 +207,17 @@ impl Toolbar {
         }
     }
 
+    pub fn reset_dragging(&mut self) {
+        self.is_dragging_opacity = false;
+        self.is_dragging_glow = false;
+    }
+
     pub fn handle_property_move(
         &mut self,
         x: i32,
         y: i32,
         enable_advanced_effects: bool,
+        engine: crate::service::native_overlay::state::CaptureEngine,
     ) -> Option<PropertyChange> {
         events::handle_property_move(
             self.property_bar_visible,
@@ -181,19 +227,19 @@ impl Toolbar {
             y,
             enable_advanced_effects,
             self.is_dragging_opacity,
-            self.is_dragging_glow,
+            engine,
         )
     }
 
     pub fn new(app: &tauri::AppHandle) -> Self {
         let mut slf = Self {
-            buttons: Vec::new(),
+            main_buttons: Vec::new(),
             rect: RECT::default(),
             current_tool: None,
             visible: false,
-            margin: 10,
-            button_size: 48,
-            spacing: 6,
+            margin: 4,
+            button_size: 44,
+            spacing: 2,
             property_bar_visible: false,
             property_bar_rect: RECT::default(),
             is_loading: false,
@@ -207,6 +253,25 @@ impl Toolbar {
             &crate::service::native_overlay::state::ToolRegistry::default(),
         );
         slf
+    }
+
+    /// Create a lightweight stub for parallel rendering.
+    /// Industrial standard: Decouples layout calculation (Master) from drawing (Worker).
+    pub fn new_stub(rect: RECT) -> Self {
+        Self {
+            main_buttons: Vec::new(),
+            rect,
+            current_tool: None,
+            visible: true,
+            margin: 4,
+            button_size: 44,
+            spacing: 2,
+            property_bar_visible: false,
+            property_bar_rect: RECT::default(),
+            is_loading: false,
+            is_dragging_opacity: false,
+            is_dragging_glow: false,
+        }
     }
 }
 

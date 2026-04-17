@@ -1,6 +1,7 @@
 use vello::kurbo::{Affine, Circle, Point, Rect, RoundedRect};
 use vello::peniko::Color;
 use vello::Scene;
+use super::constants::*;
 
 pub fn draw_font_size_selectors(
     scene: &mut Scene,
@@ -15,7 +16,7 @@ pub fn draw_font_size_selectors(
         let btn_rect = Rect::new(
             *offset_x,
             rect.top as f64 + 6.0,
-            *offset_x + 32.0,
+            *offset_x + ITEM_SIZE,
             rect.bottom as f64 - 6.0,
         );
         let rounded_btn = RoundedRect::from_rect(btn_rect, 4.0);
@@ -46,6 +47,6 @@ pub fn draw_font_size_selectors(
             &circle,
         );
 
-        *offset_x += 40.0;
+        *offset_x += ITEM_SIZE + ITEM_GAP;
     }
 }

@@ -3,9 +3,20 @@ use windows::Win32::Graphics::Gdi::{
     BACKGROUND_MODE, HDC, HGDIOBJ, ROP_CODE,
 };
 
+#[derive(Debug)]
 pub enum Disposer {
     Delete,
     Release(Option<windows::Win32::Foundation::HWND>),
+    None,
+}
+
+impl std::fmt::Debug for SafeHDC {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("SafeHDC")
+            .field(&self.0)
+            .field(&self.1)
+            .finish()
+    }
 }
 
 pub struct SafeHDC(pub(crate) HDC, pub(crate) Disposer);
@@ -21,11 +32,15 @@ impl Drop for SafeHDC {
                     Disposer::Release(hwnd) => {
                         windows::Win32::Graphics::Gdi::ReleaseDC(*hwnd, self.0);
                     }
+                    Disposer::None => {}
                 }
             }
         }
     }
 }
+
+unsafe impl Send for SafeHDC {}
+unsafe impl Sync for SafeHDC {}
 
 pub fn create_compatible_dc(hdc: Option<&SafeHDC>) -> anyhow::Result<SafeHDC> {
     unsafe {
@@ -103,8 +118,33 @@ pub fn get_dc(hwnd: Option<windows::Win32::Foundation::HWND>) -> anyhow::Result<
 
 pub fn release_dc(hwnd: Option<windows::Win32::Foundation::HWND>, hdc: SafeHDC) {
     unsafe {
-        windows::Win32::Graphics::Gdi::ReleaseDC(hwnd, hdc.0);
+        match hdc.1 {
+            Disposer::Release(h) => {
+                windows::Win32::Graphics::Gdi::ReleaseDC(h, hdc.0);
+            }
+            Disposer::Delete => {
+                let _ = windows::Win32::Graphics::Gdi::DeleteDC(hdc.0);
+            }
+            Disposer::None => {}
+        }
         // Prevent double drop
         std::mem::forget(hdc);
+    }
+}
+
+pub fn create_display_dc(name: &str) -> anyhow::Result<SafeHDC> {
+    use windows::core::w;
+    let name_u16: Vec<u16> = name.encode_utf16().chain(std::iter::once(0)).collect();
+    unsafe {
+        let h = windows::Win32::Graphics::Gdi::CreateDCW(
+            w!("DISPLAY"),
+            windows::core::PCWSTR(name_u16.as_ptr()),
+            None,
+            None,
+        );
+        if h.is_invalid() {
+            anyhow::bail!("Failed to create display DC for {}", name);
+        }
+        Ok(SafeHDC(h, Disposer::Delete))
     }
 }

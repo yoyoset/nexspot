@@ -14,9 +14,9 @@ interface GeneralTabProps {
 }
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <section className="space-y-3">
-        <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider pl-1">{title}</h3>
-        <div className="space-y-2">{children}</div>
+    <section className="space-y-2">
+        <h3 className="text-[10px] tech-text font-bold text-text-muted uppercase tracking-wider pl-1">{title}</h3>
+        <div className="space-y-1.5">{children}</div>
     </section>
 );
 
@@ -24,78 +24,84 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
     const { t, i18n } = useTranslation();
     const [showFontHelp, setShowFontHelp] = useState(false);
 
-    const toggleLanguage = () => {
+    const toggleLanguage = async () => {
         const newLang = i18n.language === 'zh' ? 'en' : 'zh';
-        i18n.changeLanguage(newLang);
+        try {
+            await invoke('set_language', { lang: newLang });
+            await i18n.changeLanguage(newLang);
+            fetchConfig(); // Refresh local config
+        } catch (e) {
+            console.error("Failed to persist language:", e);
+        }
     };
 
     return (
         <motion.div
             key="general"
-            initial={{ opacity: 0, x: 5 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -5 }}
-            className="space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-5"
         >
-            <Section title="Language">
-                <div className="bg-bg-subtle rounded-lg p-4 flex items-center justify-between">
+            <Section title={t('settings.general.language')}>
+                <div className="bg-bg-subtle border border-white/5 rounded-sm p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Languages className="w-5 h-5 text-text-muted" />
+                        <Languages className="w-4 h-4 text-text-muted opacity-60" />
                         <div>
-                            <div className="text-sm font-medium text-text-main">
-                                {i18n.language === 'zh' ? '中文 (Chinese)' : 'English'}
+                            <div className="text-[12px] font-bold text-text-main tech-text">
+                                {i18n.language === 'zh' ? t('settings.general.lang_zh') : t('settings.general.lang_en')}
                             </div>
-                            <div className="text-xs text-text-muted">Current Language</div>
+                            <div className="text-[9px] tech-text text-text-muted opacity-50 uppercase">{t('settings.general.active_locale')}</div>
                         </div>
                     </div>
-                    <button onClick={toggleLanguage} className="px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors">
-                        Switch
+                    <button onClick={toggleLanguage} className="px-2 py-1 text-[10px] tech-text font-bold bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-colors text-text-muted hover:text-text-main">
+                        {t('settings.general.switch_lang')}
                     </button>
                 </div>
             </Section>
 
-            <Section title={t('settings.general.save_path') || "Save Path"}>
-                <div className="bg-bg-subtle rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex-1 min-w-0 mr-4">
-                        <div className="text-xs text-text-main font-mono truncate bg-white/5 px-2 py-1 rounded border border-white/5">
-                            {config?.save_path || "Default (captures/)"}
+            <Section title={t('settings.general.save_path')}>
+                <div className="bg-bg-subtle border border-white/5 rounded-sm p-3 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                        <div className="text-[11px] text-text-main tech-text truncate bg-black/40 px-2 py-1.5 rounded-sm border border-white/5 font-bold">
+                            {config?.save_path || `${t('common.root_dir')}/captures/`}
                         </div>
-                        <div className="text-[10px] text-text-muted mt-1">Select where to save your captures.</div>
+                        <div className="text-[9px] tech-text text-text-muted mt-1.5 opacity-50 uppercase tracking-tighter">{t('settings.general.save_path_desc')}</div>
                     </div>
-                    <button onClick={selectSavePath} className="px-3 py-1.5 text-xs bg-accent text-white font-medium rounded hover:bg-accent/80 transition-all shadow-lg shadow-accent/20">
-                        {t('settings.general.browse') || "Browse"}
+                    <button onClick={selectSavePath} className="px-3 py-1.5 text-[10px] tech-text font-bold bg-accent text-white rounded-sm hover:bg-accent/80 transition-all shadow-md shadow-accent/10 whitespace-nowrap">
+                        {t('settings.general.browse')}
                     </button>
                 </div>
             </Section>
 
-            <Section title="Custom Font">
-                <div className="bg-bg-subtle rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex-1 mr-4">
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium text-text-main">Font Family</span>
-                                <button onClick={() => setShowFontHelp(!showFontHelp)} className={`p-1 rounded hover:bg-white/10 transition-colors ${showFontHelp ? 'text-accent' : 'text-text-muted'}`}>
-                                    <Book className="w-3.5 h-3.5" />
+            <Section title={t('settings.general.tech_font')}>
+                <div className="bg-bg-subtle border border-white/5 rounded-sm p-3 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-[11px] font-bold text-text-main tech-text uppercase">{t('settings.general.family_id')}</span>
+                                <button onClick={() => setShowFontHelp(!showFontHelp)} className={`p-1 rounded-sm hover:bg-white/10 transition-colors ${showFontHelp ? 'text-accent' : 'text-text-muted'}`}>
+                                    <Book className="w-3 h-3" />
                                 </button>
                             </div>
                             <input
                                 type="text"
                                 value={config?.font_family || "Segoe UI"}
                                 onChange={(e) => setFontFamily(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-text-main focus:border-accent/50 outline-none transition-all"
-                                placeholder="e.g. MiSans"
+                                className="w-full bg-black/40 border border-white/10 rounded-sm px-2 py-1.5 text-[11px] font-bold tech-text text-text-main focus:border-accent/40 outline-none transition-all placeholder:opacity-20"
+                                placeholder={t('settings.general.family_id_placeholder') || "e.g. MiSans"}
                             />
                         </div>
                     </div>
                     <AnimatePresence>
                         {showFontHelp && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                <div className="bg-accent/5 border border-accent/20 rounded-md p-2 text-[10px] text-text-muted space-y-1">
-                                    <p className="font-medium text-accent">How to add fonts:</p>
+                                <div className="bg-accent/5 border border-accent/20 rounded-sm p-2 text-[9px] tech-text text-text-muted space-y-1 opacity-80">
+                                    <p className="font-bold text-accent uppercase tracking-widest">{t('settings.general.font_protocol')}</p>
                                     <ol className="list-decimal pl-4 space-y-0.5">
-                                        <li>Place .ttf/.otf in App Data fonts/ folder.</li>
-                                        <li>Restart NexSpot.</li>
-                                        <li>Enter the Font Family name above.</li>
+                                        <li>{t('settings.general.font_protocol_steps.step1')}</li>
+                                        <li>{t('settings.general.font_protocol_steps.step2')}</li>
+                                        <li>{t('settings.general.font_protocol_steps.step3')}</li>
                                     </ol>
                                 </div>
                             </motion.div>
@@ -104,37 +110,37 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
                 </div>
             </Section>
 
-            <Section title="Engine Configuration (Dual Mode)">
-                <div className="bg-bg-subtle rounded-lg p-4 space-y-4">
+            <Section title={t('settings.general.engine_config')}>
+                <div className="bg-bg-subtle border border-white/5 rounded-sm p-3 space-y-3">
                     {/* Selection Mode Engine */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
                         <div>
-                            <div className="text-sm font-medium text-text-main">Selection Mode</div>
-                            <div className="text-xs text-text-muted">Standard Capture (Alt+A) - Supports Multi-monitor</div>
+                            <div className="text-[12px] font-bold text-text-main tech-text uppercase">{t('settings.general.selection_interface')}</div>
+                            <div className="text-[9px] tech-text text-text-muted opacity-50 uppercase">{t('settings.general.selection_interface_desc')}</div>
                         </div>
                         <select
                             value={config?.selection_engine || "gdi"}
                             onChange={(e) => invoke("set_selection_engine", { engine: e.target.value }).then(fetchConfig)}
-                            className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-text-main outline-none focus:border-accent/40"
+                            className="bg-black/40 border border-white/10 rounded-sm px-2 py-1 text-[11px] font-bold tech-text text-text-main outline-none focus:border-accent/40 cursor-pointer"
                         >
-                            <option value="gdi">GDI (Recommended)</option>
-                            <option value="vello">Vello</option>
+                            <option value="gdi">{t('settings.general.gdi_legacy')}</option>
+                            <option value="vello">{t('settings.general.vello_compute')}</option>
                         </select>
                     </div>
 
                     {/* Snapshot Mode Engine */}
-                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <div className="flex items-center justify-between pt-1">
                         <div>
-                            <div className="text-sm font-medium text-text-main">Snapshot Mode</div>
-                            <div className="text-xs text-text-muted">Fast Capture (Alt+Shift+A) - Single Monitor Only</div>
+                            <div className="text-[12px] font-bold text-text-main tech-text uppercase">{t('settings.general.fast_capture')}</div>
+                            <div className="text-[9px] tech-text text-text-muted opacity-50 uppercase">{t('settings.general.fast_capture_desc')}</div>
                         </div>
                         <select
                             value={config?.snapshot_engine || "vello"}
                             onChange={(e) => invoke("set_snapshot_engine", { engine: e.target.value }).then(fetchConfig)}
-                            className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-text-main outline-none focus:border-accent/40"
+                            className="bg-black/40 border border-white/10 rounded-sm px-2 py-1 text-[11px] font-bold tech-text text-text-main outline-none focus:border-accent/40 cursor-pointer"
                         >
-                            <option value="gdi">GDI</option>
-                            <option value="vello">Vello (Recommended)</option>
+                            <option value="gdi">{t('settings.general.gdi_fallback')}</option>
+                            <option value="vello">{t('settings.general.vello_accelerated')}</option>
                         </select>
                     </div>
                 </div>

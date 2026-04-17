@@ -36,43 +36,60 @@ impl win32::window::WindowEventHandler for OverlayManager {
                 }
             }
             WindowsAndMessaging::WM_LBUTTONDOWN => {
-                let local_x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let local_y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                let (gx, gy) = {
-                    let s = self.state.lock().unwrap();
-                    (local_x + s.x, local_y + s.y)
+                let mut cursor = windows::Win32::Foundation::POINT::default();
+                unsafe {
+                    let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut cursor);
+                }
+                let (nx, ny, hwnd_to_capture) = {
+                    let s = self.state.read().unwrap();
+                    let h = self.active_hwnd(s.capture_engine, &s.monitor_id).unwrap().0;
+                    (cursor.x, cursor.y, h)
                 };
-                self.on_mouse_down(gx, gy);
+                unsafe {
+                    let _ =
+                        windows::Win32::UI::Input::KeyboardAndMouse::SetCapture(hwnd_to_capture);
+                }
+                self.on_mouse_down(nx, ny);
                 return Some(LRESULT(0));
             }
             WindowsAndMessaging::WM_LBUTTONUP => {
-                let local_x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let local_y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                let (gx, gy) = {
-                    let s = self.state.lock().unwrap();
-                    (local_x + s.x, local_y + s.y)
+                let mut cursor = windows::Win32::Foundation::POINT::default();
+                unsafe {
+                    let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut cursor);
+                }
+                let (nx, ny) = {
+                    let _s = self.state.read().unwrap();
+                    (cursor.x, cursor.y)
                 };
-                self.on_mouse_up(gx, gy);
+                unsafe {
+                    let _ = windows::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture();
+                }
+                self.on_mouse_up(nx, ny);
                 return Some(LRESULT(0));
             }
             WindowsAndMessaging::WM_LBUTTONDBLCLK => {
-                let local_x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let local_y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                let (gx, gy) = {
-                    let s = self.state.lock().unwrap();
-                    (local_x + s.x, local_y + s.y)
+                let mut cursor = windows::Win32::Foundation::POINT::default();
+                unsafe {
+                    let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut cursor);
+                }
+                let (nx, ny) = {
+                    let _s = self.state.read().unwrap();
+                    (cursor.x, cursor.y)
                 };
-                self.on_double_click(gx, gy);
+                self.on_double_click(nx, ny);
                 return Some(LRESULT(0));
             }
             WindowsAndMessaging::WM_MOUSEMOVE => {
-                let local_x = (lparam.0 & 0xFFFF) as i16 as i32;
-                let local_y = ((lparam.0 >> 16) & 0xFFFF) as i16 as i32;
-                let (gx, gy) = {
-                    let s = self.state.lock().unwrap();
-                    (local_x + s.x, local_y + s.y)
+                let mut cursor = windows::Win32::Foundation::POINT::default();
+                unsafe {
+                    let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut cursor);
+                }
+                let (nx, ny) = {
+                    let _s = self.state.read().unwrap();
+                    (cursor.x, cursor.y)
                 };
-                self.on_mouse_move(gx, gy);
+                log::trace!("[Mouse] Move Local:({},{})", nx, ny);
+                self.on_mouse_move(nx, ny);
                 return Some(LRESULT(0));
             }
             WindowsAndMessaging::WM_TIMER => {

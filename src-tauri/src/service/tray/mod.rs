@@ -1,4 +1,4 @@
-use crate::service::l10n::{self, L10nKey};
+use crate::service::l10n;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{App, Emitter, Manager, Runtime};
@@ -7,28 +7,28 @@ pub fn setup_tray<R: Runtime>(app: &App<R>) -> Result<(), tauri::Error> {
     let quit_i = MenuItem::with_id(
         app,
         "quit",
-        l10n::t(app.handle(), L10nKey::TrayExit),
+        l10n::t(app.handle(), "tray.exit", "Exit"),
         true,
         None::<&str>,
     )?;
     let settings_i = MenuItem::with_id(
         app,
         "settings",
-        l10n::t(app.handle(), L10nKey::TraySettings),
+        l10n::t(app.handle(), "tray.settings", "Settings"),
         true,
         None::<&str>,
     )?;
     let dashboard_i = MenuItem::with_id(
         app,
         "dashboard",
-        l10n::t(app.handle(), L10nKey::TrayDashboard),
+        l10n::t(app.handle(), "tray.dashboard", "Dashboard"),
         true,
         None::<&str>,
     )?;
     let capture_i = MenuItem::with_id(
         app,
         "capture",
-        l10n::t(app.handle(), L10nKey::TrayCapture),
+        l10n::t(app.handle(), "tray.capture", "Capture Now"),
         true,
         None::<&str>,
     )?;
@@ -87,7 +87,7 @@ pub fn setup_tray<R: Runtime>(app: &App<R>) -> Result<(), tauri::Error> {
                             },
                         };
                         crate::service::workflow::execute_capture_workflow(
-                            app_handle, workflow, None,
+                            app_handle, workflow,
                         )
                         .await;
                     });

@@ -1,332 +1,255 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Camera, Zap, Sparkles, Plus, Edit3, Layers, Settings, Trash2, AlertCircle } from "lucide-react";
+import { Camera, Zap, Cpu, Plus, Edit3, Layers, Settings, Trash2, AlertCircle, Keyboard, Folder, ExternalLink, Scissors, CheckCircle2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useConfig } from "../../hooks/useConfig";
 import { useTranslation } from "react-i18next";
+import { translateError } from "../../utils/error";
 import { useAppStore, Workflow } from "../../store/useAppStore";
-import AISection from "./AISection";
 
 interface DashboardProps {
     onNavigateToWorkflows: (id?: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkflows }) => {
-    const { config, isVelloReady, removeWorkflow } = useConfig();
+    const { config, velloStatus, velloError, removeWorkflow, openFolder } = useConfig();
     const { t } = useTranslation();
-    const [aiCreateTrigger, setAiCreateTrigger] = React.useState<(() => void) | null>(null);
 
     const workflows = config?.workflows || [];
-    const aiShortcuts = config?.ai_shortcuts || [];
 
-    // Helper to detect shortcut conflicts locally (Global: Workflows + AI)
+    const getLocalizedLabel = React.useCallback((label: string, id?: string) => {
+        if (id) {
+            const idKey = `workflows.presets.${id.replace('_default', '')}`;
+            const idTranslated = t(idKey);
+            if (idTranslated !== idKey) return idTranslated;
+        }
+        const key = `workflows.presets.${label.toLowerCase().replace(/\s+/g, '_')}`;
+        const translated = t(key);
+        return translated === key ? label : translated;
+    }, [t]);
+
     const hotkeyStatus = React.useMemo(() => {
         const counts: Record<string, number> = {};
-        const errors = config?.registration_errors || [];
-
-        [...workflows, ...aiShortcuts].forEach((w: any) => {
+        const registrations = config?.registration_errors || [];
+        workflows.forEach((w: Workflow) => {
             if (w.shortcut) {
                 counts[w.shortcut] = (counts[w.shortcut] || 0) + 1;
             }
         });
+        return { counts, registrations };
+    }, [workflows, config?.registration_errors]);
 
-        return {
-            counts,
-            errors
-        };
-    }, [workflows, aiShortcuts, config?.registration_errors]);
-
-    const { systemWorkflows, userWorkflows } = React.useMemo(() => {
-        return {
-            systemWorkflows: workflows.filter((w: Workflow) => w.is_system),
-            userWorkflows: workflows.filter((w: Workflow) => !w.is_system)
-        };
-    }, [workflows]);
-
-    const regionWorkflow = systemWorkflows.find(w => w.id === 'capture_default');
-    const snapshotWorkflow = systemWorkflows.find(w => w.id === 'snapshot_default');
-
-    const handleCreateNew = () => {
-        onNavigateToWorkflows('new');
-    };
-
-    const handleEdit = (id: string) => {
-        onNavigateToWorkflows(id);
-    };
-
-    const getLocalizedLabel = (label: string) => {
-        const key = `workflows.presets.${label.toLowerCase().replace(/\s+/g, '_')}`;
-        const translated = t(key);
-        return translated === key ? label : translated;
-    };
-
-    const getModeInfo = (type: string) => {
-        switch (type) {
-            case 'Fullscreen': return { icon: <Layers className="w-5 h-5" />, label: t('workflows.mode_fullscreen') };
-            case 'Snapshot': return { icon: <Zap className="w-5 h-5" />, label: t('workflows.mode_snapshot') };
-            case 'Window': return { icon: <Camera className="w-5 h-5" />, label: t('workflows.mode_window') };
-            default: return { icon: <Camera className="w-5 h-5" />, label: t('workflows.mode_selection') };
-        }
-    };
+    const handleCreateNew = () => onNavigateToWorkflows('new');
+    const handleEdit = (id: string) => onNavigateToWorkflows(id);
 
     return (
-        <div className="w-full h-full bg-bg-main flex flex-col p-6 custom-scrollbar overflow-y-auto select-none relative gap-6">
-
-            {/* 1. PRIMARY ACTIONS (ULTRA COMPACT HERO) */}
-            <div className="grid grid-cols-2 gap-4">
-                {regionWorkflow && (
-                    <PresetCard
-                        workflow={regionWorkflow}
-                        isVelloReady={isVelloReady}
-                        hasConflict={(hotkeyStatus.counts[regionWorkflow.shortcut] || 0) > 1}
-                        hasError={hotkeyStatus.errors.some((e: string) => e.startsWith(regionWorkflow.id + ":"))}
-                        onEdit={() => handleEdit(regionWorkflow.id)}
-                        onTrigger={() => invoke('trigger_capture', { action: regionWorkflow.id })}
-                        t={t}
-                        getModeInfo={getModeInfo}
-                        getLocalizedLabel={getLocalizedLabel}
-                    />
-                )}
-                {snapshotWorkflow && (
-                    <PresetCard
-                        workflow={snapshotWorkflow}
-                        isVelloReady={isVelloReady}
-                        hasConflict={(hotkeyStatus.counts[snapshotWorkflow.shortcut] || 0) > 1}
-                        hasError={hotkeyStatus.errors.some((e: string) => e.startsWith(snapshotWorkflow.id + ":"))}
-                        onEdit={() => handleEdit(snapshotWorkflow.id)}
-                        onTrigger={() => invoke('trigger_capture', { action: snapshotWorkflow.id })}
-                        t={t}
-                        getModeInfo={getModeInfo}
-                        getLocalizedLabel={getLocalizedLabel}
-                    />
-                )}
-            </div>
-
-            {/* 2. SECONDARY COLLECTIONS (TIGHTER SPACING) */}
-            <div className="flex flex-col gap-5">
-
-                {/* PRESETS LIST */}
-                <CollectionContainer
-                    title={t('workflows.other_presets')}
-                    icon={<Settings className="w-4 h-4" />}
-                    action={
-                        <button
-                            onClick={handleCreateNew}
-                            className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-text-muted transition-all border border-white/5"
-                        >
-                            <Plus className="w-3.5 h-3.5" /> {t('dashboard.new')}
-                        </button>
-                    }
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {userWorkflows.map((w: Workflow) => (
-                            <ListTile
-                                key={w.id}
-                                icon={getModeInfo(w.action.type).icon}
-                                label={getLocalizedLabel(w.label)}
-                                shortcut={w.shortcut}
-                                hasConflict={(hotkeyStatus.counts[w.shortcut] || 0) > 1}
-                                hasError={hotkeyStatus.errors.some((e: string) => e.startsWith(w.id + ":"))}
-                                onClick={() => invoke('trigger_capture', { action: w.id })}
-                                onEdit={() => handleEdit(w.id)}
-                                onRemove={() => removeWorkflow(w.id)}
-                            />
-                        ))}
-                        {userWorkflows.length === 0 && (
-                            <div className="col-span-full py-6 flex items-center justify-center border border-dashed border-white/5 rounded-2xl opacity-10">
-                                <span className="text-[10px] font-black tracking-widest uppercase">{t('workflows.empty')}</span>
-                            </div>
-                        )}
-                    </div>
-                </CollectionContainer>
-
-                {/* AI SHORTCUTS */}
-                <CollectionContainer
-                    title={t('ai.title')}
-                    icon={<Sparkles className="w-4 h-4 text-purple-400" />}
-                    action={
-                        <button
-                            onClick={() => aiCreateTrigger?.()}
-                            className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-text-muted transition-all border border-white/5"
-                        >
-                            <Plus className="w-3.5 h-3.5" /> {t('dashboard.new')}
-                        </button>
-                    }
-                >
-                    <AISection onCreateTrigger={setAiCreateTrigger} isCompact />
-                </CollectionContainer>
-            </div>
-        </div>
-    );
-};
-
-// --- Sub-Components ---
-
-const CollectionContainer: React.FC<{
-    title: string;
-    icon: React.ReactNode;
-    action?: React.ReactNode;
-    children: React.ReactNode;
-}> = ({ title, icon, action, children }) => {
-    return (
-        <div className="flex flex-col gap-3 px-1">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="text-text-muted opacity-30">
-                        {icon}
-                    </div>
-                    <span className="text-[10px] font-black text-text-muted/60 uppercase tracking-[0.2em]">
-                        {title}
-                    </span>
-                </div>
-                {action}
-            </div>
-
-            <div className="bg-bg-subtle/20 border border-white/5 rounded-[20px] p-4">
-                {children}
-            </div>
-        </div>
-    );
-};
-
-const ListTile: React.FC<{
-    icon: React.ReactNode;
-    label: string;
-    shortcut?: string;
-    hasConflict?: boolean;
-    hasError?: boolean;
-    onClick: () => void;
-    onEdit: () => void;
-    onRemove?: () => void;
-}> = ({ icon, label, shortcut, hasConflict, hasError, onClick, onEdit, onRemove }) => {
-    return (
-        <motion.div
-            whileHover={{ x: 2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onClick}
-            className={`group/tile flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border transition-all cursor-pointer overflow-hidden ${hasConflict || hasError ? 'border-red-500/20 bg-red-500/5' : 'border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}
-        >
-            <div className="flex items-center gap-3 overflow-hidden">
-                <div className={`p-2 bg-white/5 rounded-lg transition-all shrink-0 ${hasConflict || hasError ? 'text-red-400' : 'text-text-muted'}`}>
-                    <div className="w-3.5 h-3.5 flex items-center justify-center">
-                        {icon}
-                    </div>
-                </div>
-                <div className="flex flex-col overflow-hidden">
-                    <span className="text-[13px] font-bold text-text-main/90 truncate tracking-tight leading-none mb-1">{label}</span>
-                    <div className="flex items-center gap-2">
-                        {shortcut && (
-                            <span className={`text-[9px] font-mono font-black uppercase tracking-tighter ${hasConflict || hasError ? 'text-red-400/60' : 'text-text-muted/30'}`}>{shortcut}</span>
-                        )}
-                        {(hasConflict || hasError) && <AlertCircle className="w-2.5 h-2.5 text-red-400 anim-pulse" />}
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-1 opacity-0 group-hover/tile:opacity-100 transition-all ml-2 shrink-0">
-                <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="p-1.5 rounded-lg hover:bg-white/10 text-text-muted hover:text-text-main transition-all"
-                >
-                    <Edit3 className="w-3.5 h-3.5" />
-                </button>
-                {onRemove && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500/20 hover:text-red-500 transition-all"
-                    >
-                        <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                )}
-            </div>
-        </motion.div>
-    );
-};
-
-const PresetCard: React.FC<{
-    workflow: Workflow;
-    isVelloReady: boolean;
-    hasConflict?: boolean;
-    hasError?: boolean;
-    onEdit: () => void;
-    onTrigger: () => void;
-    t: any;
-    getModeInfo: (type: string) => any;
-    getLocalizedLabel: (label: string) => string;
-}> = ({ workflow, isVelloReady, hasConflict, hasError, onEdit, onTrigger, t, getModeInfo, getLocalizedLabel }) => {
-    const modeInfo = getModeInfo(workflow.action.type);
-    const engine = workflow.action.config.engine.toLowerCase();
-
-    // Status dot logic: 
-    // GDI is always green (ready)
-    // Vello is yellow if buffering (!isVelloReady), green when ready.
-    const isEngineReady = engine === 'vello' ? isVelloReady : true;
-
-    return (
-        <motion.div
-            whileHover={{ scale: 1.005 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onTrigger}
-            className={`bg-bg-subtle/30 border rounded-[24px] p-5 flex flex-col gap-4 group transition-all relative overflow-hidden ${hasConflict || hasError ? 'border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : 'border-white/5 hover:bg-white/[0.02]'}`}
-        >
-            <div className="flex items-center justify-between relative z-10 w-full">
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg border border-white/5 shadow-inner ${hasConflict || hasError ? 'bg-red-500/10 text-red-400' : 'bg-accent/10 text-accent'}`}>
-                        <div className="w-4 h-4 flex items-center justify-center">
-                            {modeInfo.icon}
-                        </div>
-                    </div>
-                    <div className="flex flex-col">
-                        <div className="text-[14px] font-black text-text-main tracking-tight leading-none mb-1">
-                            {getLocalizedLabel(workflow.label)}
-                        </div>
-                        <span className="text-[8px] text-text-muted/40 uppercase font-black tracking-widest">{modeInfo.label}</span>
-                    </div>
-                </div>
-
-                <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="p-1.5 text-text-muted/30 hover:text-text-main transition-all"
-                >
-                    <Edit3 className="w-3.5 h-3.5" />
-                </button>
-            </div>
-
-            <div className="mt-auto flex flex-col gap-1.5 relative z-10">
+        <div className="w-full h-full bg-bg-main custom-scrollbar overflow-y-auto select-none relative">
+            <div className="noise-bg" />
+            <div className="max-w-screen-lg mx-auto px-6 py-4 flex flex-col gap-2 min-h-full relative z-10">
+            
+            {/* Header: Industrial Console Header */}
+            <div className="flex items-center justify-between border-b border-border-subtle pb-2 mb-2">
                 <div className="flex items-center gap-2">
-                    <div className={`text-[16px] font-black font-mono tracking-tighter leading-none ${hasConflict || hasError ? 'text-red-400' : 'text-text-accent'}`}>
-                        {workflow.shortcut}
-                    </div>
-                    {workflow.enabled && !hasConflict && !hasError && (
-                        <div className="flex items-center gap-1 text-[8px] text-emerald-400 font-black uppercase bg-emerald-500/5 px-1.5 py-0.5 rounded-full border border-emerald-500/10">
-                            <div className="w-1 h-1 rounded-full bg-emerald-400" />
-                            ACTIVE
-                        </div>
-                    )}
-                    {(hasConflict || hasError) && (
-                        <div className="flex items-center gap-1 text-[8px] text-red-400 font-black uppercase bg-red-500/5 px-1.5 py-0.5 rounded-full border border-red-500/10">
-                            <AlertCircle className="w-2.5 h-2.5" />
-                            {hasError ? 'ERROR' : 'CONFLICT'}
-                        </div>
-                    )}
+                    <div className="w-1.5 h-1.5 bg-accent rounded-full animate-breathing shadow-[0_0_8px_var(--color-accent)]" />
+                    <h1 className="tech-text text-[11px] font-bold uppercase tracking-[0.2em] text-text-main opacity-90">
+                        {t('dashboard.title')} <span className="opacity-20 mx-1">//</span> <span className="text-accent">{t('common.status_active')}</span>
+                    </h1>
                 </div>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-[9px] font-black text-text-muted/20 uppercase tracking-[0.1em]">
-                        <span className="text-text-main/20">{workflow.output.format}</span>
-                        <div className="flex items-center gap-1.5">
-                            <div className={`w-1 h-1 rounded-full animate-pulse ${isEngineReady ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                            <span className={`transition-colors ${engine === 'vello' ? (isEngineReady ? 'text-amber-400/60' : 'text-amber-200/40') : 'text-blue-400/40'}`}>
-                                {engine.toUpperCase()}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <button
+                    onClick={handleCreateNew}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-accent/10 hover:bg-accent/20 border border-accent/20 tech-text text-[9px] font-bold uppercase tracking-wider text-accent transition-all"
+                >
+                    <Plus className="w-3 h-3" /> {t('dashboard.new')}
+                </button>
             </div>
 
-            <div className={`absolute top-0 left-0 w-full h-0.5 transition-all ${hasConflict ? 'bg-red-500/40' : 'bg-accent/0 group-hover:bg-accent/20'}`} />
-        </motion.div>
-    );
+            {/* List Header */}
+            <div className="grid grid-cols-[1.2fr_1.8fr_60px_80px_40px_100px_80px] gap-2 px-3 py-1.5 bg-bg-subtle/30 border border-border-subtle rounded-sm tech-text text-[9px] font-bold uppercase text-text-muted/50 tracking-widest">
+                <div className="pl-4">{t('dashboard.column_identifier')}</div>
+                <div>{t('dashboard.column_spec')}</div>
+                <div>{t('dashboard.column_ext')}</div>
+                <div className="text-center">STAT</div>
+                <div className="text-center">DIR</div>
+                <div>{t('dashboard.column_bind')}</div>
+                <div className="text-right">OP</div>
+            </div>
+
+            {/* List Content */}
+            <div className="flex flex-col gap-1 mt-1 transition-all">
+                {workflows.map((w: Workflow) => {
+                    const engine = w.action.config.engine.toLowerCase();
+                    const engineStatus = engine === 'vello' ? velloStatus : 'ready';
+                    const hasHotkeyConflict = (hotkeyStatus.counts[w.shortcut] || 0) > 1;
+                    const hasRegError = hotkeyStatus.registrations.some((e: string) => e === w.id || e.startsWith(w.id + ":"));
+                    const isSystem = w.is_system;
+
+                    return (
+                        <div 
+                            key={w.id}
+                            className={`grid grid-cols-[1.2fr_1.8fr_60px_80px_40px_100px_80px] gap-2 items-center px-4 py-2 border transition-all group relative overflow-hidden ${
+                                !w.enabled ? 'opacity-40 grayscale-[0.5] bg-black/20 border-white/5' :
+                                hasHotkeyConflict || hasRegError 
+                                ? 'bg-red-500/[0.04] border-red-500/20 shadow-[inset_0_0_20px_rgba(239,68,68,0.05)]' 
+                                : 'bg-bg-card/40 border-border-subtle hover:border-border-hover hover:bg-white/[0.015] shadow-sm'
+                            }`}
+                        >
+                            {/* Status Rail */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-0.5 transition-all ${
+                                hasHotkeyConflict || hasRegError ? 'bg-red-500' : 
+                                engine === 'vello' ? 'bg-amber-500/40' : 'bg-blue-500/40'
+                            }`} />
+                            {/* Identifier */}
+                            <div className="flex items-center gap-2 overflow-hidden">
+                                {/* Status Dot */}
+                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                    !w.enabled ? 'bg-text-muted/30' :
+                                    engine === 'vello' ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]' : 'bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.4)]'
+                                }`} />
+                                
+                                {isSystem ? <Layers className="w-3 h-3 opacity-30 text-accent" /> : <Scissors className="w-3 h-3 opacity-30" />}
+                                <span className={`text-[12px] font-bold truncate ${!w.enabled ? 'text-text-muted' : hasHotkeyConflict || hasRegError ? 'text-red-400' : 'text-text-main'}`}>
+                                    {getLocalizedLabel(w.label, w.id)}
+                                </span>
+                            </div>
+
+                            {/* Spec */}
+                            <div className="flex items-center gap-1.5 tech-text text-[10px] uppercase font-bold text-text-muted/40">
+                                <span className={engine === 'vello' ? 'text-amber-500/50' : 'text-blue-500/50'}>{engine}</span>
+                                <span className="opacity-20">/</span>
+                                <span className="whitespace-nowrap">{t(`workflows.mode_${w.action.type.toLowerCase()}`)}</span>
+                            </div>
+
+                            {/* Ext */}
+                            <div className="tech-text text-[10px] font-bold text-text-muted/40">
+                                <span className="tech-badge">{w.output.format.toUpperCase()}</span>
+                            </div>
+
+                            {/* Stat (Split Hotkey / Engine) */}
+                            <div className="flex items-center justify-center gap-2">
+                                {/* Hotkey Stat */}
+                                <div 
+                                    className={`p-1 rounded-sm border ${
+                                        hasHotkeyConflict || hasRegError 
+                                        ? 'border-red-500/30 text-red-500' 
+                                        : 'border-white/5 text-text-muted/20 group-hover:text-text-muted/40'
+                                    }`}
+                                    title={hasHotkeyConflict ? t('dashboard.conflict') : hasRegError ? t('dashboard.error') : 'Hotkey Ready'}
+                                >
+                                    <Keyboard className="w-3 h-3" />
+                                </div>
+                                {/* Engine Stat */}
+                                <div 
+                                    className={`p-1 rounded-sm border ${
+                                        engineStatus === 'ready' 
+                                        ? 'border-white/5 text-emerald-500/30 group-hover:text-emerald-500/60' 
+                                        : engineStatus === 'pending'
+                                        ? 'border-amber-500/20 text-amber-500 animate-pulse'
+                                        : 'border-red-500/30 text-red-500'
+                                    }`}
+                                    title={engineStatus === 'failed' ? velloError || 'Engine Error' : 'Engine Ready'}
+                                >
+                                    <Cpu className="w-3 h-3" />
+                                </div>
+                            </div>
+
+                            {/* Dir */}
+                            <div className="flex justify-center">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); if(w.output.target_folder) openFolder(w.output.target_folder); }}
+                                    className="p-1 rounded-sm hover:bg-white/5 border border-transparent hover:border-white/10 text-text-muted/20 hover:text-text-main transition-all"
+                                    title={w.output.target_folder || t('dashboard.no_folder')}
+                                >
+                                    <Folder className="w-3 h-3" />
+                                </button>
+                            </div>
+
+                            {/* Bind (Hotkey) */}
+                            <div className="tech-text text-[11px] font-bold tracking-tight">
+                                {w.shortcut ? (
+                                    <span className={hasHotkeyConflict || hasRegError ? 'text-red-400 opacity-80' : 'text-accent opacity-80'}>
+                                        {w.shortcut}
+                                    </span>
+                                ) : (
+                                    <span className="text-text-muted/20 italic font-normal text-[9px]">unbound</span>
+                                )}
+                            </div>
+
+                            {/* Op (Actions) */}
+                            <div className="flex items-center justify-end gap-1">
+                                <button
+                                    onClick={async (e) => { 
+                                        e.stopPropagation(); 
+                                        try {
+                                            await invoke('trigger_capture', { action: w.id });
+                                        } catch (err) {
+                                            console.error("Manual trigger failed:", err);
+                                            const message = translateError(err, t);
+                                            useAppStore.getState().showHUD(message, 'error');
+                                        }
+                                    }}
+                                    className="px-2 py-1 rounded-sm bg-accent/10 hover:bg-accent hover:text-white border border-accent/20 hover:border-accent transition-all duration-200 group/zap flex items-center justify-center gap-1.5"
+                                    title={t('dashboard.capture_btn')}
+                                >
+                                    <Zap className="w-3 h-3 transition-transform group-hover/zap:scale-110" />
+                                    <span className="text-[8px] tech-text font-black tracking-tighter hidden group-hover/zap:inline-block">ZAP</span>
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleEdit(w.id); }}
+                                    className="p-1 rounded-sm hover:bg-white/5 text-text-muted/20 hover:text-text-main transition-all"
+                                >
+                                    <Edit3 className="w-3 h-3" />
+                                </button>
+                                {!isSystem && (
+                                    <button
+                                        onClick={async (e) => { 
+                                            e.stopPropagation(); 
+                                            if (window.confirm(t('workflows.delete_confirm'))) {
+                                                try {
+                                                    await removeWorkflow(w.id);
+                                                    useAppStore.getState().showHUD(t('hud.saved'), 'success');
+                                                } catch (err) {
+                                                    console.error("Failed to remove workflow:", err);
+                                                    const message = translateError(err, t);
+                                                    useAppStore.getState().showHUD(message, 'error');
+                                                }
+                                            }
+                                        }}
+                                        className="p-1 rounded-sm hover:bg-red-500/10 text-text-muted/10 hover:text-red-500 transition-all"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+                {workflows.length === 0 && (
+                    <div className="py-20 flex flex-col items-center justify-center border border-dashed border-border-subtle rounded-sm bg-white/[0.01]">
+                        <Zap className="w-6 h-6 text-text-muted/10 mb-2" />
+                        <span className="tech-text text-[9px] font-bold tracking-widest uppercase text-text-muted/30">{t('workflows.empty')}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* System Status Footer */}
+            <div className="mt-auto pt-4 flex items-center justify-between opacity-30 grayscale hover:grayscale-0 transition-all border-t border-white/5 mx-1">
+                <div className="flex items-center gap-4 tech-text text-[9px] font-bold uppercase tracking-wider text-text-muted">
+                    <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                        <span>Core_Kernel: Ready</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 border-l border-white/10 pl-4">
+                        <div className={`w-2 h-2 rounded-full ${velloStatus === 'ready' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-text-muted/20'}`} />
+                        <span>{t('common.kernel_ready')} // VELLO: {velloStatus.toUpperCase()}</span>
+                    </div>
+                </div>
+                <div className="tech-text text-[9px] font-bold text-text-muted/40 italic">
+                    {t('common.version_brand')}
+                </div>
+            </div>
+        </div>
+    </div>
+);
 };
 
 export default Dashboard;

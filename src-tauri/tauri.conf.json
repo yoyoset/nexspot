@@ -2,10 +2,10 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "NexSpot",
   "version": "0.2.1",
-  "identifier": "com.yoyos.nexspot",
+  "identifier": "com.squareuncle.nexspot",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:28420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
@@ -14,10 +14,10 @@
       {
         "label": "main",
         "title": "NexSpot",
-        "width": 800,
-        "height": 680,
-        "minWidth": 600,
-        "minHeight": 500,
+        "width": 720,
+        "height": 460,
+        "minWidth": 720,
+        "minHeight": 460,
         "transparent": false,
         "theme": "Dark"
       }

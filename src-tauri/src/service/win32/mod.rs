@@ -5,6 +5,7 @@ pub mod monitor;
 pub mod send_sync;
 pub mod wgc;
 pub mod window;
+pub mod clipboard;
 
 pub use gdi::*;
 pub use monitor::*;

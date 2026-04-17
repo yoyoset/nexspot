@@ -4,7 +4,7 @@ use crate::service::native_overlay::render::toolbar::types::{
 use crate::service::native_overlay::render::toolbar::{
     layout, property_bar, tool_type_to_drawing_tool,
 };
-use crate::service::native_overlay::state::DrawingTool;
+use crate::service::native_overlay::state::{CaptureEngine, DrawingTool};
 
 pub fn handle_mouse_move(buttons: &mut [ToolbarButton], x: i32, y: i32) -> bool {
     layout::handle_mouse_hit(buttons, x, y)
@@ -54,167 +54,93 @@ pub fn handle_property_click(
     x: i32,
     y: i32,
     enable_advanced_effects: bool,
+    current_is_filled: bool,
+    engine: CaptureEngine,
 ) -> Option<PropertyChange> {
     if !property_bar_visible {
         return None;
     }
 
-    // Check if click is inside property bar
-    if x < property_bar_rect.left
-        || x > property_bar_rect.right
-        || y < property_bar_rect.top
-        || y > property_bar_rect.bottom
-    {
+    if x < property_bar_rect.left || x > property_bar_rect.right || y < property_bar_rect.top || y > property_bar_rect.bottom {
         return None;
     }
 
-    let tool = current_tool
-        .as_ref()
-        .map(tool_type_to_drawing_tool)
-        .unwrap_or(DrawingTool::None);
-    let mut offset_x = property_bar_rect.left + 8;
+    // Constants branching based on Engine
+    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine == CaptureEngine::Gdi {
+        use super::constants::gdi::*;
+        (ITEM_STEP, COLOR_ITEM_STEP, PB_HPADDING, GROUP_GAP, 80.0 /* SLIDER_WIDTH */)
+    } else {
+        use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
+        (ITEM_SIZE as f32 + ITEM_GAP as f32, COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32, PB_HPADDING as f32, GROUP_GAP as f32, SLIDER_WIDTH as f32)
+    };
+    
+    let tool = current_tool.as_ref().map(tool_type_to_drawing_tool).unwrap_or(DrawingTool::None);
+    let mut offset_x = property_bar_rect.left + pb_hpadding as i32;
 
-    // Part 1: Font Size (Only for Text)
+    // Group 1: Base Tool Params
+    let g1_start = offset_x;
     if matches!(tool, DrawingTool::Text) {
         let sizes = [14.0, 24.0, 36.0];
         for &size in &sizes {
-            let r = windows::Win32::Foundation::RECT {
-                left: offset_x,
-                top: property_bar_rect.top + 6,
-                right: offset_x + 32,
-                bottom: property_bar_rect.bottom - 6,
-            };
-            if x >= r.left && x <= r.right && y >= r.top && y <= r.bottom {
+            if x >= offset_x && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 }) && y >= property_bar_rect.top + 6 && y <= property_bar_rect.bottom - 6 {
                 return Some(PropertyChange::FontSize(size));
             }
-            offset_x += 40;
+            offset_x += item_step as i32;
         }
-        offset_x += 4; // Divider offset
-    }
-
-    // Part 1.5: Thickness
-    if tool != DrawingTool::Text && tool != DrawingTool::None {
+    } else if tool != DrawingTool::None {
         let strokes = [2.0, 4.0, 8.0];
         for &stroke in &strokes {
-            let r = windows::Win32::Foundation::RECT {
-                left: offset_x,
-                top: property_bar_rect.top + 6,
-                right: offset_x + 32,
-                bottom: property_bar_rect.bottom - 6,
-            };
-            if x >= r.left && x <= r.right && y >= r.top && y <= r.bottom {
+            if x >= offset_x && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 }) && y >= property_bar_rect.top + 6 && y <= property_bar_rect.bottom - 6 {
                 return Some(PropertyChange::Stroke(stroke));
             }
-            offset_x += 36;
+            offset_x += item_step as i32;
         }
-
-        // Part 1.6: Fill Toggle (Rect/Ellipse)
         if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) {
-            let r = windows::Win32::Foundation::RECT {
-                left: offset_x,
-                top: property_bar_rect.top + 6,
-                right: offset_x + 32,
-                bottom: property_bar_rect.bottom - 6,
-            };
-            if x >= r.left && x <= r.right && y >= r.top && y <= r.bottom {
-                // We return Fill(true) or Fill(false) - implementation logic will toggle if needed, or we explicitly pass "NOT CURRENT".
-                // Actually, the handler just receives Fill, but it needs to know the NEW value.
-                // We'll pass Fill(true) and let the handler toggle it in state.
-                return Some(PropertyChange::Fill(true));
+            if x >= offset_x && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 }) && y >= property_bar_rect.top + 6 && y <= property_bar_rect.bottom - 6 {
+                return Some(PropertyChange::Fill(!current_is_filled));
             }
-            offset_x += 36;
+            offset_x += item_step as i32;
         }
-        offset_x += 4; // Divider
     }
 
-    // Part 2: Colors
+    // Group 2: Colors
     if tool != DrawingTool::Mosaic {
+        if offset_x > g1_start {
+            offset_x += group_gap as i32;
+        }
         let colors = property_bar::get_palette_colors();
         for color in colors {
-            let r = windows::Win32::Foundation::RECT {
-                left: offset_x,
-                top: property_bar_rect.top + 8,
-                right: offset_x + 24,
-                bottom: property_bar_rect.bottom - 8,
+            let (hit_l, hit_r, hit_t, hit_b) = if engine == CaptureEngine::Gdi {
+                use super::constants::gdi::*;
+                (offset_x + COLOR_DOT_OFFSET_X as i32, offset_x + (COLOR_DOT_OFFSET_X + COLOR_ITEM_SIZE) as i32, 
+                 property_bar_rect.top + COLOR_DOT_OFFSET_Y as i32, property_bar_rect.top + (COLOR_DOT_OFFSET_Y + COLOR_ITEM_SIZE) as i32)
+            } else {
+                (offset_x, offset_x + 20, property_bar_rect.top + 8, property_bar_rect.bottom - 8)
             };
-            if x >= r.left && x <= r.right && y >= r.top && y <= r.bottom {
+
+            if x >= hit_l && x <= hit_r && y >= hit_t && y <= hit_b {
                 return Some(PropertyChange::Color(color));
             }
-            offset_x += 32;
+            offset_x += color_step as i32;
         }
     }
 
-    // Part 3: Advanced Effects
+    // Group 3: Advanced Effects
     if enable_advanced_effects && tool != DrawingTool::Mosaic {
-        offset_x += 4; // Divider
-
-        // --- Opacity Section ---
+        offset_x += group_gap as i32;
+        let sw = slider_width as i32;
+        
+        // Opacity Slider
         offset_x += 10;
-        let slider_width = 60;
-        let slider_rect = windows::Win32::Foundation::RECT {
-            left: offset_x,
-            top: property_bar_rect.top,
-            right: offset_x + slider_width,
-            bottom: property_bar_rect.bottom,
-        };
-
-        if x >= slider_rect.left && x <= slider_rect.right {
-            let relative_x = x - slider_rect.left;
-            let opacity = (relative_x as f32 / slider_width as f32).clamp(0.01, 1.0);
+        if x >= offset_x && x <= offset_x + sw {
+            let opacity = ((x - offset_x) as f32 / sw as f32).clamp(0.01, 1.0);
             return Some(PropertyChange::Opacity(opacity));
-        }
-        offset_x += slider_width + 6;
-
-        // Opacity Presets
-        let presets = [0.25, 0.5, 1.0];
-        for &p in &presets {
-            let r = windows::Win32::Foundation::RECT {
-                left: offset_x,
-                top: property_bar_rect.top,
-                right: offset_x + 20,
-                bottom: property_bar_rect.bottom,
-            };
-            if x >= r.left && x <= r.right {
-                return Some(PropertyChange::Opacity(p));
-            }
-            offset_x += 22;
-        }
-
-        // --- Glow Section ---
-        offset_x += 8;
-        let glow_slider_rect = windows::Win32::Foundation::RECT {
-            left: offset_x,
-            top: property_bar_rect.top,
-            right: offset_x + slider_width,
-            bottom: property_bar_rect.bottom,
-        };
-
-        if x >= glow_slider_rect.left && x <= glow_slider_rect.right {
-            let relative_x = x - glow_slider_rect.left;
-            let glow = (relative_x as f32 / slider_width as f32).clamp(0.0, 1.0);
-            return Some(PropertyChange::Glow(glow));
-        }
-        offset_x += slider_width + 6;
-
-        // Glow Presets
-        for &p in &presets {
-            let r = windows::Win32::Foundation::RECT {
-                left: offset_x,
-                top: property_bar_rect.top,
-                right: offset_x + 20,
-                bottom: property_bar_rect.bottom,
-            };
-            if x >= r.left && x <= r.right {
-                return Some(PropertyChange::Glow(p));
-            }
-            offset_x += 22;
         }
     }
 
     None
 }
 
-#[allow(clippy::if_let_mutex)]
 pub fn handle_property_move(
     property_bar_visible: bool,
     property_bar_rect: &windows::Win32::Foundation::RECT,
@@ -223,69 +149,60 @@ pub fn handle_property_move(
     _y: i32,
     enable_advanced_effects: bool,
     is_dragging_opacity: bool,
-    is_dragging_glow: bool,
+    engine: CaptureEngine,
 ) -> Option<PropertyChange> {
     if !property_bar_visible || !enable_advanced_effects {
         return None;
     }
-
-    if !is_dragging_opacity && !is_dragging_glow {
+    if !is_dragging_opacity {
         return None;
     }
 
-    let tool = current_tool
-        .as_ref()
-        .map(tool_type_to_drawing_tool)
-        .unwrap_or(DrawingTool::None);
+    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine == CaptureEngine::Gdi {
+        use super::constants::gdi::*;
+        (ITEM_STEP, COLOR_ITEM_STEP, PB_HPADDING, GROUP_GAP, SLIDER_WIDTH)
+    } else {
+        use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
+        (ITEM_SIZE as f32 + ITEM_GAP as f32, COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32, PB_HPADDING as f32, GROUP_GAP as f32, SLIDER_WIDTH as f32)
+    };
 
-    if tool == DrawingTool::Mosaic {
-        return None;
-    }
+    let tool = current_tool.as_ref().map(tool_type_to_drawing_tool).unwrap_or(DrawingTool::None);
+    if tool == DrawingTool::Mosaic { return None; }
 
-    let mut offset_x = property_bar_rect.left + 8;
+    let mut offset_x = property_bar_rect.left + pb_hpadding as i32;
+    let g1_start = offset_x;
 
-    // Skip Font Size
+    // Skip Group 1
     if matches!(tool, DrawingTool::Text) {
-        offset_x += 3 * 40;
-        offset_x += 4;
-    }
-
-    // Skip Thickness
-    if tool != DrawingTool::Text && tool != DrawingTool::None {
-        offset_x += 3 * 36;
+        offset_x += (3.0 * item_step) as i32;
+    } else if tool != DrawingTool::None {
+        offset_x += (3.0 * item_step) as i32;
         if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) {
-            offset_x += 36;
+            offset_x += item_step as i32;
         }
-        offset_x += 4;
     }
 
-    // Skip Colors
-    let colors_count = property_bar::get_palette_colors().len();
-    offset_x += colors_count as i32 * 32;
+    // Skip Group 2
+    if tool != DrawingTool::Mosaic {
+        if offset_x > g1_start {
+            offset_x += group_gap as i32;
+        }
+        offset_x += (8.0 * color_step) as i32;
+    }
 
-    // Advanced Effects Divider
-    offset_x += 4;
-
-    let slider_width = 60;
-
+    // Group 3
+    offset_x += group_gap as i32;
+    let sw = slider_width as i32;
     if is_dragging_opacity {
         offset_x += 10;
-        let relative_x = x - offset_x;
-        let opacity = (relative_x as f32 / slider_width as f32).clamp(0.01, 1.0);
+        let opacity = ((x - offset_x) as f32 / sw as f32).clamp(0.01, 1.0);
         return Some(PropertyChange::Opacity(opacity));
-    }
-
-    if is_dragging_glow {
-        // Skip Opacity slider and presets
-        offset_x += 10 + slider_width + 6 + (3 * 22) + 8;
-        let relative_x = x - offset_x;
-        let glow = (relative_x as f32 / slider_width as f32).clamp(0.0, 1.0);
-        return Some(PropertyChange::Glow(glow));
     }
 
     None
 }
 
+#[derive(Debug, PartialEq)]
 pub enum PropertyHit {
     None,
     OpacitySlider,
@@ -300,68 +217,52 @@ pub fn hit_test_property_bar(
     x: i32,
     y: i32,
     enable_advanced_effects: bool,
+    engine: CaptureEngine,
 ) -> PropertyHit {
-    if !property_bar_visible {
+    if !property_bar_visible || x < property_bar_rect.left || x > property_bar_rect.right || y < property_bar_rect.top || y > property_bar_rect.bottom {
         return PropertyHit::None;
     }
 
-    // Check if click is inside property bar
-    if x < property_bar_rect.left
-        || x > property_bar_rect.right
-        || y < property_bar_rect.top
-        || y > property_bar_rect.bottom
-    {
-        return PropertyHit::None;
-    }
+    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine == CaptureEngine::Gdi {
+        use super::constants::gdi::*;
+        (ITEM_STEP, COLOR_ITEM_STEP, PB_HPADDING, GROUP_GAP, SLIDER_WIDTH)
+    } else {
+        use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
+        (ITEM_SIZE as f32 + ITEM_GAP as f32, COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32, PB_HPADDING as f32, GROUP_GAP as f32, SLIDER_WIDTH as f32)
+    };
 
-    let tool = current_tool
-        .as_ref()
-        .map(tool_type_to_drawing_tool)
-        .unwrap_or(DrawingTool::None);
+    let tool = current_tool.as_ref().map(tool_type_to_drawing_tool).unwrap_or(DrawingTool::None);
+    if tool == DrawingTool::Mosaic || !enable_advanced_effects { return PropertyHit::Other; }
 
-    if tool == DrawingTool::Mosaic {
-        return PropertyHit::Other;
-    }
+    let mut offset_x = property_bar_rect.left + pb_hpadding as i32;
+    let g1_start = offset_x;
 
-    if !enable_advanced_effects {
-        return PropertyHit::Other;
-    }
-
-    let mut offset_x = property_bar_rect.left + 8;
-
-    // Skip Font Size
+    // Skip Group 1
     if matches!(tool, DrawingTool::Text) {
-        offset_x += 3 * 40;
-        offset_x += 4;
-    }
-
-    // Skip Thickness
-    if tool != DrawingTool::Text && tool != DrawingTool::None {
-        offset_x += 3 * 36;
-        if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) {
-            offset_x += 36;
+        offset_x += (3.0 * item_step) as i32;
+    } else if tool != DrawingTool::None {
+        offset_x += (3.0 * item_step) as i32;
+        if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) { 
+            offset_x += item_step as i32; 
         }
-        offset_x += 4;
     }
 
-    // Skip Colors
-    let colors_count = property_bar::get_palette_colors().len();
-    offset_x += colors_count as i32 * 32;
+    // Skip Group 2
+    if tool != DrawingTool::Mosaic {
+        if offset_x > g1_start {
+            offset_x += group_gap as i32;
+        }
+        offset_x += (8.0 * color_step) as i32;
+    }
 
-    // Advanced Effects Divider
-    offset_x += 4;
-
-    // Opacity Section
+    // Group 3
+    offset_x += group_gap as i32;
+    let sw = slider_width as i32;
+    
+    // Opacity
     offset_x += 10;
-    let slider_width = 60;
-    if x >= offset_x && x <= offset_x + slider_width {
+    if x >= offset_x && x <= offset_x + sw {
         return PropertyHit::OpacitySlider;
-    }
-    offset_x += slider_width + 6 + (3 * 22) + 8; // Presets + Padding
-
-    // Glow Section
-    if x >= offset_x && x <= offset_x + slider_width {
-        return PropertyHit::GlowSlider;
     }
 
     PropertyHit::Other

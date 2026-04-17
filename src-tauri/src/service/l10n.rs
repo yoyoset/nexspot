@@ -1,110 +1,86 @@
 use crate::AppState;
 use tauri::Manager;
+use std::collections::HashMap;
+use std::sync::OnceLock;
 
-pub enum L10nKey {
-    // Tray
-    TrayDashboard,
-    TrayCapture,
-    TraySettings,
-    TrayExit,
+// 单一事实来源：直接从前端 locale 目录编译时包含
+static ZH_DICT_STR: &str = include_str!("../../../src/locales/zh.json");
+static EN_DICT_STR: &str = include_str!("../../../src/locales/en.json");
 
-    // Toolbar Tooltips
-    ToolRect,
-    ToolEllipse,
-    ToolLine,
-    ToolArrow,
-    ToolBrush,
-    ToolText,
-    ToolMosaic,
-    ToolMore,
-    ToolSequence,
-    ToolPin,
-    ToolSave,
-    ToolCopy,
-    ToolCancel,
+static DICTIONARY: OnceLock<(HashMap<String, String>, HashMap<String, String>)> = OnceLock::new();
 
-    // Engine Switching
-    SwitchingToAdvanced,
-    AdvancedModeConfirmTitle,
-    AdvancedModeConfirmBody,
+fn get_dicts() -> &'static (HashMap<String, String>, HashMap<String, String>) {
+    DICTIONARY.get_or_init(|| {
+        let mut zh_map = HashMap::new();
+        let mut en_map = HashMap::new();
 
-    // Notifications
-    NotificationCopiedTitle,
-    NotificationCopiedBody,
-    NotificationSavedTitle,
-    NotificationSavedBody,
+        fn flatten_json(value: &serde_json::Value, prefix: String, map: &mut HashMap<String, String>) {
+            match value {
+                serde_json::Value::Object(obj) => {
+                    for (k, v) in obj {
+                        let new_prefix = if prefix.is_empty() {
+                            k.clone()
+                        } else {
+                            format!("{}.{}", prefix, k)
+                        };
+                        flatten_json(v, new_prefix, map);
+                    }
+                }
+                serde_json::Value::String(s) => {
+                    map.insert(prefix, s.clone());
+                }
+                _ => {}
+            }
+        }
+
+        if let Ok(zh_json) = serde_json::from_str::<serde_json::Value>(ZH_DICT_STR) {
+            flatten_json(&zh_json, "".to_string(), &mut zh_map);
+        }
+        if let Ok(en_json) = serde_json::from_str::<serde_json::Value>(EN_DICT_STR) {
+            flatten_json(&en_json, "".to_string(), &mut en_map);
+        }
+
+        (zh_map, en_map)
+    })
 }
 
-pub fn t<R: tauri::Runtime>(app: &tauri::AppHandle<R>, key: L10nKey) -> String {
+pub fn t<R: tauri::Runtime>(app: &tauri::AppHandle<R>, key_path: &str, default_fallback: &str) -> String {
     let lang = app
         .try_state::<AppState>()
         .and_then(|s| {
             s.config_state
                 .lock()
-                .ok()
-                .map(|c| c.config.language.clone())
+                .unwrap_or_else(|e| e.into_inner())
+                .config
+                .language
+                .clone()
+                .into()
         })
         .unwrap_or_else(|| "zh".to_string());
+
+    let (zh_dict, en_dict) = get_dicts();
+    
     let is_zh = lang == "zh" || lang == "zh-CN";
+    let target_dict = if is_zh { zh_dict } else { en_dict };
 
-    match key {
-        L10nKey::TrayDashboard => if is_zh { "仪表盘" } else { "Dashboard" }.to_string(),
-        L10nKey::TrayCapture => if is_zh { "立即截图" } else { "Capture" }.to_string(),
-        L10nKey::TraySettings => if is_zh { "设置" } else { "Settings" }.to_string(),
-        L10nKey::TrayExit => if is_zh { "退出" } else { "Exit" }.to_string(),
-
-        L10nKey::ToolRect => if is_zh { "矩形" } else { "Rectangle" }.to_string(),
-        L10nKey::ToolEllipse => if is_zh { "椭圆" } else { "Circle" }.to_string(),
-        L10nKey::ToolLine => if is_zh { "直线" } else { "Line" }.to_string(),
-        L10nKey::ToolArrow => if is_zh { "箭头" } else { "Arrow" }.to_string(),
-        L10nKey::ToolBrush => if is_zh { "画笔" } else { "Brush" }.to_string(),
-        L10nKey::ToolText => if is_zh { "文字" } else { "Text" }.to_string(),
-        L10nKey::ToolMosaic => if is_zh { "马赛克" } else { "Mosaic" }.to_string(),
-        L10nKey::ToolMore => if is_zh {
-            "高级模式 (Vello)"
-        } else {
-            "Advanced Mode (Vello)"
-        }
-        .to_string(),
-        L10nKey::ToolSequence => if is_zh { "序号" } else { "Sequence" }.to_string(),
-        L10nKey::ToolPin => if is_zh { "置顶" } else { "Pin" }.to_string(),
-        L10nKey::ToolSave => if is_zh { "保存" } else { "Save" }.to_string(),
-        L10nKey::ToolCopy => if is_zh { "复制" } else { "Copy" }.to_string(),
-        L10nKey::ToolCancel => if is_zh { "退出截图" } else { "Cancel" }.to_string(),
-
-        L10nKey::SwitchingToAdvanced => if is_zh {
-            "正在切换至高级引擎..."
-        } else {
-            "Switching to Advanced Engine..."
-        }
-        .to_string(),
-
-        L10nKey::AdvancedModeConfirmTitle => if is_zh {
-            "切换到高级模式？"
-        } else {
-            "Switch to Advanced Mode?"
-        }
-        .to_string(),
-        L10nKey::AdvancedModeConfirmBody => if is_zh {
-            "高级模式提供高性能渲染 (Vello) 和 WGC 捕捉，但初始化可能需要一点时间。是否继续？"
-        } else {
-            "Advanced Mode provides high-performance rendering (Vello) and WGC capture, but initialization may take a moment. Carry on?"
-        }
-        .to_string(),
-
-        L10nKey::NotificationCopiedTitle => if is_zh { "已复制" } else { "Copied" }.to_string(),
-        L10nKey::NotificationCopiedBody => if is_zh {
-            "图片已复制到剪贴板"
-        } else {
-            "Image copied to clipboard"
-        }
-        .to_string(),
-        L10nKey::NotificationSavedTitle => if is_zh { "已保存" } else { "Saved" }.to_string(),
-        L10nKey::NotificationSavedBody => if is_zh {
-            "图片已保存到本地"
-        } else {
-            "Image saved to captures"
-        }
-        .to_string(),
+    // 优先尝试 backend 路径，再尝试原始路径
+    let backend_key = format!("backend.{}", key_path);
+    if let Some(val) = target_dict.get(&backend_key) {
+        return val.clone();
     }
+
+    target_dict.get(key_path).cloned().unwrap_or_else(|| default_fallback.to_string())
 }
+
+pub fn t_with_args<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    key_path: &str,
+    args: &[(&str, &str)],
+) -> String {
+    let mut text = t(app, key_path, key_path);
+    for (key, val) in args {
+        text = text.replace(&format!("{{{}}}", key), val);
+    }
+    text
+}
+

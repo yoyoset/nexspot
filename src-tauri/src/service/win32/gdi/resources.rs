@@ -10,15 +10,27 @@ use windows::Win32::Graphics::Gdi::{
 #[derive(Debug)]
 pub struct SafeHBITMAP(pub(crate) HBITMAP);
 
+impl SafeHBITMAP {
+    /// Transfers ownership of the handle to the caller (e.g. for Clipboard).
+    /// The caller is responsible for calling DeleteObject or passing it to a system function that takes ownership.
+    pub fn leak(self) -> HBITMAP {
+        let h = self.0;
+        std::mem::forget(self);
+        h
+    }
+}
+
 impl Drop for SafeHBITMAP {
     fn drop(&mut self) {
         if !self.0.is_invalid() {
             unsafe {
-                let _ = DeleteObject(HGDIOBJ(self.0 .0));
+                let _ = DeleteObject(windows::Win32::Graphics::Gdi::HGDIOBJ(self.0 .0));
             }
         }
     }
 }
+unsafe impl Send for SafeHBITMAP {}
+unsafe impl Sync for SafeHBITMAP {}
 
 #[derive(Debug)]
 pub struct SafeBrush(pub(crate) HBRUSH);
@@ -32,6 +44,8 @@ impl Drop for SafeBrush {
         }
     }
 }
+unsafe impl Send for SafeBrush {}
+unsafe impl Sync for SafeBrush {}
 
 #[derive(Debug)]
 pub struct SafeFont(pub(crate) HFONT);
@@ -45,6 +59,8 @@ impl Drop for SafeFont {
         }
     }
 }
+unsafe impl Send for SafeFont {}
+unsafe impl Sync for SafeFont {}
 
 #[derive(Debug)]
 pub struct SafePen(pub(crate) HPEN);
@@ -58,6 +74,8 @@ impl Drop for SafePen {
         }
     }
 }
+unsafe impl Send for SafePen {}
+unsafe impl Sync for SafePen {}
 
 pub fn create_compatible_bitmap(hdc: &SafeHDC, w: i32, h: i32) -> anyhow::Result<SafeHBITMAP> {
     unsafe {
@@ -161,12 +179,12 @@ pub fn add_font_mem(data: &[u8]) -> anyhow::Result<windows::Win32::Foundation::H
     }
 }
 
-pub fn get_bitmap_bits(
+pub fn get_bitmap_pixels_u32(
     hdc: &SafeHDC,
     hbitmap: &SafeHBITMAP,
     width: i32,
     height: i32,
-) -> anyhow::Result<Vec<u8>> {
+) -> anyhow::Result<Vec<u32>> {
     unsafe {
         let bi = windows::Win32::Graphics::Gdi::BITMAPINFOHEADER {
             biSize: std::mem::size_of::<windows::Win32::Graphics::Gdi::BITMAPINFOHEADER>() as u32,
@@ -183,9 +201,8 @@ pub fn get_bitmap_bits(
             ..Default::default()
         };
 
-        // 4 bytes per pixel * width * height
-        let size = (width * height * 4) as usize;
-        let mut pixels = vec![0u8; size];
+        let size = (width * height) as usize;
+        let mut pixels = Vec::with_capacity(size);
 
         let result = windows::Win32::Graphics::Gdi::GetDIBits(
             hdc.0,
@@ -201,13 +218,14 @@ pub fn get_bitmap_bits(
             anyhow::bail!("GetDIBits failed");
         }
 
-        // Fix Alpha channel? GDI often sets alpha to 0 for 32-bit RGB.
-        // We typically want 255 (opaque) for the background screenshot.
-        // Or if it's a screenshot, maybe it has valid data?
-        // BitBlt from screen usually gives 0xFF for Alpha or 0x00 depending on source.
-        // Let's force Alpha to 0xFF to be safe for D2D (otherwise it might be transparent).
-        for chunk in pixels.chunks_exact_mut(4) {
-            chunk[3] = 255;
+        pixels.set_len(size);
+
+        // Fix Alpha and Ensure ARGB for GDI+ consistency in ONE PASS
+        // GDI GetDIBits for 32bpp BI_RGB gives BGRA order in memory (interpreted as u32 little-endian).
+        // On little-endian, memory [B, G, R, A] is u32 0xAARRGGBB.
+        // GDI often leaves A as 0. We force it to 0xFF.
+        for p in &mut pixels {
+            *p |= 0xFF000000;
         }
 
         Ok(pixels)

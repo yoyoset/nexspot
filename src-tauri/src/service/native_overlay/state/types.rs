@@ -18,6 +18,8 @@ pub enum HitZone {
     Tip,
     WingLeft,
     WingRight,
+    NeckLeft,
+    NeckRight,
 }
 
 impl HitZone {
@@ -91,6 +93,8 @@ pub enum CaptureEngine {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CaptureMode {
     Standard,
+    Snapshot { allow_resize: bool },
+    FixedWindow,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -125,4 +129,13 @@ pub enum PropertyChange {
     Opacity(f32),
     Shadow(bool),
     Glow(f32),
+    Style(crate::service::config::types::AestheticStyle),
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum VelloStatus {
+    Pending,
+    Ready,
+    Failed(String),
 }
