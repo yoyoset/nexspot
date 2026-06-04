@@ -1,70 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* =============================================================================
+   NexSpot · Studio 设计令牌 (Tailwind v4)
+   方向：Linear/Raycast 现代克制 — 柔和圆角 + 阴影/玻璃层级 + 单一 periwinkle 强调色。
+   设计基准见 docs/design/2026-06-04-studio-redesign/。
+   主题：<html data-theme="dark|light">（App.tsx 运行时设置，system 经 matchMedia 解析）。
+   强调色：唯一源 --accent；--accent-press / --on-accent 在 JS 派生（见 App.tsx applyTheme）。
+   ============================================================================= */
+
+/* ---- 1. 运行时变量（可热改，无需重建） ---- */
 :root {
-    /* Industrial Accent */
-    --color-accent: #3b82f6;
-    --color-accent-glow: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    /* accent — 用户可改 */
+    --accent: #7a6ff2;
+    --accent-press: #6a5fe6;
+    --on-accent: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+    --accent-line: color-mix(in srgb, var(--accent) 38%, transparent);
+    --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
 
-    /* High Density Industrial Theme - Zinc/Slate based */
-    --color-bg-main: #09090b; /* Zinc-950 */
-    --color-bg-card: #121214; 
-    --color-bg-subtle: #18181b; /* Zinc-900 */
-    --color-bg-sidebar: #09090b;
-    --color-border-subtle: #27272a; /* Zinc-800 */
-    --color-border-hover: #3f3f46; /* Zinc-700 */
-    --color-text-main: #e2e2e7; /* Zinc-200 (Softer White) */
-    --color-text-muted: #a1a1aa; /* Zinc-400 */
-    --color-bg-overlay: rgba(9, 9, 11, 0.6);
-    
-    /* Geometry */
-    --radius-industrial: 2px;
-    --radius-button: 4px;
+    /* spacing scale */
+    --s1: 6px; --s2: 10px; --s3: 16px; --s4: 24px; --s5: 36px;
+    /* radius */
+    --r-pill: 999px; --r-btn: 9px; --r-panel: 12px; --r-lg: 16px;
+    /* 旧组件遗留圆角（迁移期保留，逐页重写后移除） */
+    --radius-industrial: 2px; --radius-button: 4px;
+    /* type */
+    --font: "Manrope", system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-    /* Spacing Density */
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 12px;
-    --spacing-lg: 16px;
+    /* 默认（首帧，data-theme 未挂前）采用 dark 值，避免无样式闪烁 */
+    --bg0: #0c0d10; --bg1: #141519; --bg2: #1b1c21; --bg3: #23242b;
+    --bd: rgba(255,255,255,.09); --bd2: rgba(255,255,255,.14);
+    --tx: #ececef; --mut: #9a9aa5; --faint: #63636d;
+    --ok: #57d9a3; --warn: #f5c451; --bad: #f76d6d;
+    --ok-soft: color-mix(in srgb, #57d9a3 18%, transparent);
+    --warn-soft: color-mix(in srgb, #f5c451 18%, transparent);
+    --bad-soft: color-mix(in srgb, #f76d6d 18%, transparent);
+    --shadow-sm: 0 2px 8px -2px rgba(0,0,0,.5);
+    --shadow: 0 18px 40px -22px rgba(0,0,0,.75);
+    --shadow-float: 0 24px 60px -20px rgba(0,0,0,.78), 0 2px 0 0 rgba(255,255,255,.04) inset;
+    --glass: rgba(20,21,25,.74);
 }
 
-[data-theme='light'] {
-    --color-bg-main: #fafafa;
-    --color-bg-card: #ffffff;
-    --color-bg-subtle: #f4f4f5;
-    --color-bg-sidebar: #f4f4f5;
-    --color-border-subtle: #e4e4e7;
-    --color-border-hover: #d4d4d8;
-    --color-text-main: #09090b;
-    --color-text-muted: #71717a;
-}
-
-/* Tailwind v4 CSS variable mapping */
-@theme {
-    --color-bg-main: var(--color-bg-main);
-    --color-bg-card: var(--color-bg-card);
-    --color-bg-subtle: var(--color-bg-subtle);
-    --color-bg-sidebar: var(--color-bg-sidebar);
-    --color-border-subtle: var(--color-border-subtle);
-    --color-border-hover: var(--color-border-hover);
-    --color-accent: var(--color-accent);
-    --color-accent-glow: var(--color-accent-glow);
-    --color-text-main: var(--color-text-main);
-    --color-text-muted: var(--color-text-muted);
-    --color-bg-overlay: var(--color-bg-overlay);
-    
-    --radius-sm: var(--radius-industrial);
-    --radius-md: var(--radius-button);
-}
-
-:root {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    line-height: 1.4; /* Tighter line height for density */
-    font-weight: 400;
-
+html[data-theme="dark"] {
+    --bg0: #0c0d10; --bg1: #141519; --bg2: #1b1c21; --bg3: #23242b;
+    --bd: rgba(255,255,255,.09); --bd2: rgba(255,255,255,.14);
+    --tx: #ececef; --mut: #9a9aa5; --faint: #63636d;
+    --ok: #57d9a3; --warn: #f5c451; --bad: #f76d6d;
+    --ok-soft: color-mix(in srgb, #57d9a3 18%, transparent);
+    --warn-soft: color-mix(in srgb, #f5c451 18%, transparent);
+    --bad-soft: color-mix(in srgb, #f76d6d 18%, transparent);
+    --shadow-sm: 0 2px 8px -2px rgba(0,0,0,.5);
+    --shadow: 0 18px 40px -22px rgba(0,0,0,.75);
+    --shadow-float: 0 24px 60px -20px rgba(0,0,0,.78), 0 2px 0 0 rgba(255,255,255,.04) inset;
+    --glass: rgba(20,21,25,.74);
     color-scheme: dark;
-    color: var(--color-text-main);
-    background-color: var(--color-bg-main);
+}
 
+html[data-theme="light"] {
+    --bg0: #f5f5f7; --bg1: #ffffff; --bg2: #f1f1f4; --bg3: #ffffff;
+    --bd: rgba(0,0,0,.10); --bd2: rgba(0,0,0,.16);
+    --tx: #1b1c1f; --mut: #6c6c75; --faint: #a0a0a8;
+    --ok: #1f9d6b; --warn: #bf8a14; --bad: #dc4d4d;
+    --ok-soft: color-mix(in srgb, #1f9d6b 14%, transparent);
+    --warn-soft: color-mix(in srgb, #bf8a14 16%, transparent);
+    --bad-soft: color-mix(in srgb, #dc4d4d 13%, transparent);
+    --shadow-sm: 0 2px 8px -3px rgba(20,22,40,.18);
+    --shadow: 0 18px 40px -24px rgba(20,22,40,.30);
+    --shadow-float: 0 24px 60px -22px rgba(20,22,40,.34), 0 1px 0 0 rgba(255,255,255,.7) inset;
+    --glass: rgba(255,255,255,.78);
+    color-scheme: light;
+}
+
+/* ---- 2. 暴露给 Tailwind 工具类 (v4 @theme inline) ---- */
+@theme inline {
+    /* 新令牌名（重写后的组件使用）：bg-bg-0、text-ink、text-muted、rounded-panel… */
+    --color-bg-0: var(--bg0);
+    --color-bg-1: var(--bg1);
+    --color-bg-2: var(--bg2);
+    --color-bg-3: var(--bg3);
+    --color-line: var(--bd);
+    --color-line-2: var(--bd2);
+    --color-ink: var(--tx);
+    --color-muted: var(--mut);
+    --color-faint: var(--faint);
+    --color-accent: var(--accent);
+    --color-accent-soft: var(--accent-soft);
+    --color-accent-line: var(--accent-line);
+    --color-on-accent: var(--on-accent);
+    --color-ok: var(--ok);
+    --color-warn: var(--warn);
+    --color-bad: var(--bad);
+
+    --radius-btn: var(--r-btn);
+    --radius-panel: var(--r-panel);
+    --radius-lg: var(--r-lg);
+
+    --font-sans: var(--font);
+    --font-mono: var(--mono);
+
+    --shadow-float: var(--shadow-float);
+
+    /* 向后兼容别名：现有组件仍在用旧工具名，迁移期映射到 Studio 值，逐页重写后移除 */
+    --color-bg-main: var(--bg0);
+    --color-bg-card: var(--bg1);
+    --color-bg-subtle: var(--bg2);
+    --color-bg-sidebar: var(--bg0);
+    --color-border-subtle: var(--bd);
+    --color-border-hover: var(--bd2);
+    --color-text-main: var(--tx);
+    --color-text-muted: var(--mut);
+    --color-bg-overlay: var(--glass);
+    --color-accent-glow: var(--accent-glow);
+}
+
+/* ---- 3. base ---- */
+:root {
+    font-family: var(--font);
+    line-height: 1.45;
+    font-weight: 400;
+    color: var(--tx);
+    background-color: var(--bg0);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -79,81 +136,54 @@ body {
     min-height: 100vh;
     overflow: hidden;
     user-select: none;
+    background: var(--bg0);
+    color: var(--tx);
 }
 
-/* Industrial Component Styles */
+/* ---- 4. 保留的工具类（现有组件依赖） ---- */
+/* 技术元数据：等宽。Studio 方向收敛字距（旧版整屏宽字距已弃） */
+.tech-text {
+    font-family: var(--mono);
+    letter-spacing: -0.01em;
+    font-variant-ligatures: none;
+}
+
+.mono { font-family: var(--mono); font-variant-ligatures: none; }
+
 .industrial-panel {
-    background-color: var(--color-bg-card);
-    border: 1px solid var(--color-border-subtle);
+    background-color: var(--bg1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-panel);
+    box-shadow: var(--shadow-sm);
     transition: all 0.15s ease;
 }
+.industrial-panel:hover { border-color: var(--bd2); }
 
-.industrial-panel:hover {
-    border-color: var(--color-border-hover);
-}
+.glow-text { text-shadow: 0 0 12px var(--accent-glow); }
 
-.tech-text {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    letter-spacing: -0.02em;
-}
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--mut); background-clip: padding-box; }
 
-.glow-text {
-    text-shadow: 0 0 12px var(--color-accent-glow);
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--mut); background-clip: padding-box; }
 
-.custom-scrollbar::-webkit-scrollbar {
-    width: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--color-border-subtle);
-    border-radius: 0px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--color-border-hover);
-}
-
-/* Global Scrollbar */
-::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--color-border-subtle);
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--color-border-hover);
-}
-
-/* Utility for high density gaps */
 .gap-industrial { gap: 0.5rem; }
 .p-industrial { padding: 0.75rem; }
 
-/* Professional UI Refinement */
 @keyframes breathing-pulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); filter: blur(1px); }
+    0%, 100% { opacity: 0.45; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.12); }
 }
-
-.animate-breathing {
-    animation: breathing-pulse 3s ease-in-out infinite;
-}
+.animate-breathing { animation: breathing-pulse 3s ease-in-out infinite; }
 
 .noise-bg {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     background-repeat: repeat;
-    opacity: 0.02;
+    opacity: 0.015;
     pointer-events: none;
     position: absolute;
     inset: 0;
@@ -161,12 +191,13 @@ body {
 }
 
 .tech-badge {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 1px 4px;
-    border-radius: 2px;
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    color: var(--color-text-muted);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    font-family: var(--mono);
 }

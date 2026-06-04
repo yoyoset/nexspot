@@ -73,7 +73,19 @@ function App() {
             }
 
             root.setAttribute('data-theme', effectiveTheme);
-            root.style.setProperty('--color-accent', config.accent_color);
+
+            // Accent: single source --accent; derive press/on-accent (Studio tokens)
+            const accent = config.accent_color || '#7a6ff2';
+            const hexLum = (hex: string) => {
+                const m = hex.replace('#', '');
+                if (m.length < 6) return 0;
+                const ch = [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16) / 255);
+                const f = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+                return 0.2126 * f(ch[0]) + 0.7152 * f(ch[1]) + 0.0722 * f(ch[2]);
+            };
+            root.style.setProperty('--accent', accent);
+            root.style.setProperty('--accent-press', `color-mix(in srgb, ${accent} 82%, #000)`);
+            root.style.setProperty('--on-accent', hexLum(accent) > 0.55 ? '#1b1c1f' : '#ffffff');
 
             // Also update color-scheme for scrollbars/native inputs
             root.style.colorScheme = effectiveTheme;
