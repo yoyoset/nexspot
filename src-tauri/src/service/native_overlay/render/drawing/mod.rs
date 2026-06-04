@@ -12,15 +12,19 @@ struct ClippingGuard<'a> {
 }
 
 impl<'a> ClippingGuard<'a> {
-    fn new(hdc: &'a SafeHDC, selection: Option<RECT>) -> Self {
+    fn new(hdc: &'a SafeHDC, selection: Option<RECT>, ox: i32, oy: i32) -> Self {
         let saved_state = unsafe { windows::Win32::Graphics::Gdi::SaveDC(hdc.0) };
         if let Some(sel) = selection {
             unsafe {
-                // IntersectClipRect uses logical coordinates.
-                // Since draw_all_objects is called with a DC that has SetWindowOrgEx offset,
-                // passing global coordinates here works perfectly as long as they are matched by GDI.
+                // IntersectClipRect uses logical coordinates relative to the DC.
+                // On secondary monitors, the DC origin is (ox, oy) in absolute space.
+                // We must normalize the absolute 'sel' coordinates to local space.
                 let _ = windows::Win32::Graphics::Gdi::IntersectClipRect(
-                    hdc.0, sel.left, sel.top, sel.right, sel.bottom,
+                    hdc.0,
+                    sel.left - ox,
+                    sel.top - oy,
+                    sel.right - ox,
+                    sel.bottom - oy,
                 );
             }
         }
@@ -41,9 +45,17 @@ pub fn draw_all_objects(
     graphics: Option<&crate::service::win32::gdiplus::GraphicsWrapper>,
     state: &mut OverlayState,
     cache: &mut GdiCache,
+    ox: i32,
+    oy: i32,
 ) -> anyhow::Result<()> {
     // 1. Setup Clipping to Selection (RAII)
-    let _guard = ClippingGuard::new(hdc, state.selection);
+    // Normalize selection relative to the drawing DC origin
+    let _guard = ClippingGuard::new(
+        hdc,
+        state.selection,
+        ox,
+        oy,
+    );
 
     // 2. Prepare Source DC for sampling (used by Mosaic)
     let mut src_hdc_opt = None;

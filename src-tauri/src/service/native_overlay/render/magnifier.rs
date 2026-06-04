@@ -10,6 +10,7 @@ pub fn draw_magnifier(
     mouse_y: i32,
     state: &mut OverlayState,
     ctx: &mut MonitorRenderContext,
+    current_monitor_rect: RECT,
 ) -> anyhow::Result<()> {
     if !state.is_visible {
         return Ok(());
@@ -22,14 +23,14 @@ pub fn draw_magnifier(
 
     let mut x = mouse_x + offset_x;
     let mut y = mouse_y + offset_y;
-    if x + mag_size > state.monitor_rect.right {
+    if x + mag_size > current_monitor_rect.right {
         x = mouse_x - mag_size - offset_x;
     }
-    if y + mag_size > state.monitor_rect.bottom {
+    if y + mag_size > current_monitor_rect.bottom {
         y = mouse_y - mag_size - offset_y;
     }
 
-    let rect = RECT {
+    let _rect = RECT {
         left: x,
         top: y,
         right: x + mag_size,
@@ -38,10 +39,10 @@ pub fn draw_magnifier(
     
     let brush_bg = ctx.cache.get_brush(0x202020)?;
     let local_rect = RECT {
-        left: x - state.monitor_rect.left,
-        top: y - state.monitor_rect.top,
-        right: x + mag_size - state.monitor_rect.left,
-        bottom: y + mag_size - state.monitor_rect.top,
+        left: x - current_monitor_rect.left,
+        top: y - current_monitor_rect.top,
+        right: x + mag_size - current_monitor_rect.left,
+        bottom: y + mag_size - current_monitor_rect.top,
     };
     win32::gdi::fill_rect(hdc_mem, &local_rect, &brush_bg);
 
@@ -65,8 +66,8 @@ pub fn draw_magnifier(
         let src_x = mouse_x - (src_w / 2) - state.capture_x;
         let src_y = mouse_y - (src_h / 2) - state.capture_y;
 
-        let local_x = x - state.monitor_rect.left;
-        let local_y = y - state.monitor_rect.top;
+        let local_x = x - current_monitor_rect.left;
+        let local_y = y - current_monitor_rect.top;
 
         unsafe {
             let _ = windows::Win32::Graphics::Gdi::StretchBlt(
@@ -88,10 +89,10 @@ pub fn draw_magnifier(
         win32::gdi::select_object(hdc_src, prev)?;
     }
 
-    let mid_x = (x + mag_size / 2) - state.monitor_rect.left;
-    let mid_y = (y + mag_size / 2) - state.monitor_rect.top;
-    let local_x = x - state.monitor_rect.left;
-    let local_y = y - state.monitor_rect.top;
+    let mid_x = (x + mag_size / 2) - current_monitor_rect.left;
+    let mid_y = (y + mag_size / 2) - current_monitor_rect.top;
+    let local_x = x - current_monitor_rect.left;
+    let local_y = y - current_monitor_rect.top;
 
     {
         let brush_cross = ctx.cache.get_brush(0x00D7FF)?;

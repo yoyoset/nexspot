@@ -250,7 +250,7 @@ impl WgcStreamManager {
                 let hmonitor_id_log = hmonitor_id.clone();
                 let settings = Settings::new(
                     monitor,
-                    CursorCaptureSettings::Default,
+                    CursorCaptureSettings::WithoutCursor,
                     DrawBorderSettings::WithoutBorder,
                     SecondaryWindowSettings::Default,
                     MinimumUpdateIntervalSettings::Default,
@@ -363,7 +363,7 @@ pub fn capture_monitor_to_vello(
 
     let settings = Settings::new(
         monitor,
-        CursorCaptureSettings::Default,
+        CursorCaptureSettings::WithoutCursor,
         DrawBorderSettings::WithoutBorder,
         SecondaryWindowSettings::Default,
         MinimumUpdateIntervalSettings::Default,

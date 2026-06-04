@@ -196,7 +196,7 @@ pub fn render_frame(
         let _ = graphics.translate(-(monitor_rect.left as f32), -(monitor_rect.top as f32));
 
         // 4. Draw Drawing Objects
-        drawing::draw_all_objects(&hdc_mem, Some(&graphics), state, &mut ctx.cache)?;
+        drawing::draw_all_objects(&hdc_mem, Some(&graphics), state, &mut ctx.cache, monitor_rect.left, monitor_rect.top)?;
 
         // 5. Draw UI Elements (Toolbar)
         let tb_rect = &toolbar.rect;
@@ -219,77 +219,85 @@ pub fn render_frame(
         }
     }
 
-    // Draw magnifier logic
-    let is_adjusting = matches!(
-        state.interaction_mode,
-        crate::service::native_overlay::state::InteractionMode::Selecting
-            | crate::service::native_overlay::state::InteractionMode::Resizing(_)
-    );
+    // --- CROSS-MONITOR COORDINATE ISOLATION ---
+    let mouse_in_this_monitor = state.mouse_x >= monitor_rect.left 
+        && state.mouse_x < monitor_rect.right 
+        && state.mouse_y >= monitor_rect.top 
+        && state.mouse_y < monitor_rect.bottom;
 
-    let is_outside = if let Some(sel) = state.selection {
-        state.mouse_x < sel.left
-            || state.mouse_x > sel.right
-            || state.mouse_y < sel.top
-            || state.mouse_y > sel.bottom
-    } else {
-        true
-    };
+    if mouse_in_this_monitor {
+        // Draw magnifier logic
+        let is_adjusting = matches!(
+            state.interaction_mode,
+            crate::service::native_overlay::state::InteractionMode::Selecting
+                | crate::service::native_overlay::state::InteractionMode::Resizing(_)
+        );
 
-    let is_over_toolbar = state.mouse_x >= toolbar.rect.left
-        && state.mouse_x < toolbar.rect.right
-        && state.mouse_y >= toolbar.rect.top
-        && state.mouse_y < toolbar.rect.bottom;
-
-    if (is_adjusting || is_outside) && !is_over_toolbar {
-        magnifier::draw_magnifier(&hdc_mem, state.mouse_x, state.mouse_y, state, ctx)?;
-    }
-
-    // 6. Draw Custom Brush/Mosaic Circle Preview
-    if !is_over_toolbar
-        && matches!(
-            state.current_tool,
-            crate::service::native_overlay::state::DrawingTool::Brush
-                | crate::service::native_overlay::state::DrawingTool::Mosaic
-        )
-    {
-        let is_in_selection = if let Some(sel) = state.selection {
-            state.mouse_x >= sel.left
-                && state.mouse_x <= sel.right
-                && state.mouse_y >= sel.top
-                && state.mouse_y <= sel.bottom
+        let is_outside = if let Some(sel) = state.selection {
+            state.mouse_x < sel.left
+                || state.mouse_x > sel.right
+                || state.mouse_y < sel.top
+                || state.mouse_y > sel.bottom
         } else {
-            true 
+            true
         };
 
-        if is_in_selection {
-            let radius = if state.current_tool
-                == crate::service::native_overlay::state::DrawingTool::Brush
-            {
-                (state.current_stroke / 2.0).max(2.0) as i32
+        let is_over_toolbar = state.mouse_x >= toolbar.rect.left
+            && state.mouse_x < toolbar.rect.right
+            && state.mouse_y >= toolbar.rect.top
+            && state.mouse_y < toolbar.rect.bottom;
+
+        if (is_adjusting || is_outside) && !is_over_toolbar {
+            magnifier::draw_magnifier(&hdc_mem, state.mouse_x, state.mouse_y, state, ctx, monitor_rect)?;
+        }
+
+        // 6. Draw Custom Brush/Mosaic Circle Preview
+        if !is_over_toolbar
+            && matches!(
+                state.current_tool,
+                crate::service::native_overlay::state::DrawingTool::Brush
+                    | crate::service::native_overlay::state::DrawingTool::Mosaic
+            )
+        {
+            let is_in_selection = if let Some(sel) = state.selection {
+                state.mouse_x >= sel.left
+                    && state.mouse_x <= sel.right
+                    && state.mouse_y >= sel.top
+                    && state.mouse_y <= sel.bottom
             } else {
-                20 // Mosaic size matches renderer
+                true 
             };
 
-            let pen = ctx.cache.get_gdi_pen(windows::Win32::Graphics::Gdi::PS_SOLID.0 as _, 1, 0xFFFFFF)?; // White outline
-            let old_p = win32::gdi::select_object(
-                &hdc_mem,
-                windows::Win32::Graphics::Gdi::HGDIOBJ(pen.0 .0),
-            )?;
+            if is_in_selection {
+                let radius = if state.current_tool
+                    == crate::service::native_overlay::state::DrawingTool::Brush
+                {
+                    (state.current_stroke / 2.0).max(2.0) as i32
+                } else {
+                    20 // Mosaic size matches renderer
+                };
 
-            let hollow_brush =
-                win32::gdi::get_stock_object(windows::Win32::Graphics::Gdi::HOLLOW_BRUSH)?;
-            let old_b = win32::gdi::select_object(&hdc_mem, hollow_brush)?;
+                let pen = ctx.cache.get_gdi_pen(windows::Win32::Graphics::Gdi::PS_SOLID.0 as _, 1, 0xFFFFFF)?; // White outline
+                let old_p = win32::gdi::select_object(
+                    &hdc_mem,
+                    windows::Win32::Graphics::Gdi::HGDIOBJ(pen.0 .0),
+                )?;
 
-            let _ = win32::gdi::ellipse(
-                &hdc_mem,
-                state.mouse_x - radius - monitor_rect.left,
-                state.mouse_y - radius - monitor_rect.top,
-                state.mouse_x + radius - monitor_rect.left,
-                state.mouse_y + radius - monitor_rect.top,
-            );
+                let hollow_brush =
+                    win32::gdi::get_stock_object(windows::Win32::Graphics::Gdi::HOLLOW_BRUSH)?;
+                let old_b = win32::gdi::select_object(&hdc_mem, hollow_brush)?;
 
-            win32::gdi::select_object(&hdc_mem, old_b)?;
-            win32::gdi::select_object(&hdc_mem, old_p)?;
+                let _ = win32::gdi::ellipse(
+                    &hdc_mem,
+                    state.mouse_x - radius - monitor_rect.left,
+                    state.mouse_y - radius - monitor_rect.top,
+                    state.mouse_x + radius - monitor_rect.left,
+                    state.mouse_y + radius - monitor_rect.top,
+                );
+
+                win32::gdi::select_object(&hdc_mem, old_b)?;
+                win32::gdi::select_object(&hdc_mem, old_p)?;
+            }
         }
     }
 

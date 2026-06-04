@@ -120,7 +120,20 @@ pub fn render_snapshot(
             {
                 let mut cache = crate::service::win32::gdi::GdiCache::default();
                 let graphics = crate::service::win32::gdiplus::GraphicsWrapper::new(hdc_mem_comp.0)?;
-                crate::service::native_overlay::render::drawing::draw_all_objects(&hdc_mem_comp, Some(&graphics), &mut state, &mut cache)?;
+                
+                let (cx, cy) = (state.capture_x, state.capture_y);
+
+                // Align GDI+ with Global coordinates by offsetting by the capture origin.
+                let _ = graphics.translate(-(cx as f32), -(cy as f32));
+                
+                crate::service::native_overlay::render::drawing::draw_all_objects(
+                    &hdc_mem_comp, 
+                    Some(&graphics), 
+                    &mut state, 
+                    &mut cache,
+                    cx,
+                    cy,
+                )?;
             }
 
 

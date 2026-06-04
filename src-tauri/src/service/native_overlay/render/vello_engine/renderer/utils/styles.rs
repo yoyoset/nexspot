@@ -124,16 +124,28 @@ fn get_style_spec(style: AestheticStyle) -> StyleSpec {
         },
         AestheticStyle::Sketch => StyleSpec {
             layers: vec![
-                // 1. Jitter strokes
+                // 1. First Pass: Light Draft Jitter
                 RenderLayer {
-                    alpha_mul: 0.6,
-                    width_mul: 0.8,
+                    alpha_mul: 0.35,
+                    width_mul: 0.7,
                     force_fill: Some(false),
-                    offsets: vec![(-1.0, 0.5), (1.5, -0.5), (0.0, 1.0)],
+                    offsets: vec![(-2.2, 1.8), (2.8, -1.2)],
                     ..Default::default()
                 },
-                // 2. Main
-                RenderLayer::default(),
+                // 2. Second Pass: Inner Scratch
+                RenderLayer {
+                    alpha_mul: 0.45,
+                    width_mul: 1.1,
+                    force_fill: Some(false),
+                    offsets: vec![(0.8, 1.2), (-1.2, -1.5)],
+                    ..Default::default()
+                },
+                // 3. Third Pass: Main Pencil Line
+                RenderLayer {
+                    alpha_mul: 0.75,
+                    width_mul: 0.9,
+                    ..Default::default()
+                },
             ],
         },
         AestheticStyle::Glass => StyleSpec {

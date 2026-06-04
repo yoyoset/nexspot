@@ -65,37 +65,22 @@ impl OverlayState {
     }
 
     pub fn finalize_all_objects(&mut self) {
+        // 1. Process current drawing (Finalize Interaction)
+        if let Some(mut drawing) = self.current_drawing.take() {
+            // Only commit if it has content (2+ points or special tool)
+            if drawing.points.len() >= 2
+                || matches!(drawing.tool, DrawingTool::Number)
+                || matches!(drawing.tool, DrawingTool::Text)
+            {
+                self.objects.push(drawing);
+            }
+        }
+
         let vello_bg = self.vello.background.clone();
         // Borrow the handle instead of cloning
         let gdi_hbm = self.gdi.hbitmap_bright.as_ref();
 
-        // 1. Process current drawing
-        if let Some(drawing) = &mut self.current_drawing {
-            if drawing.tool == DrawingTool::Mosaic {
-                let offset_x = self.capture_x as f64;
-                let offset_y = self.capture_y as f64;
-                let gdi_pixels = self.gdi.bright_pixels.clone();
-                let width = self.width;
-
-                drawing.process_mosaic_pending_points(usize::MAX, |x, y| {
-                    if let Some(img) = &vello_bg {
-                        sample_mosaic_color_vello_final(img, x - offset_x, y - offset_y)
-                    } else if let Some(hbm) = gdi_hbm {
-                        sample_mosaic_color_gdi_final(
-                            hbm,
-                            gdi_pixels.as_deref().map(|p| p.as_slice()),
-                            width,
-                            x - offset_x,
-                            y - offset_y,
-                        )
-                    } else {
-                        0xFF808080
-                    }
-                });
-            }
-        }
-
-        // 2. Process all committed objects
+        // 2. Process all objects (including the one just pushed) for Mosaic
         for obj in &mut self.objects {
             if obj.tool == DrawingTool::Mosaic && !obj.mosaic_pending_points.is_empty() {
                 let offset_x = self.capture_x as f64;

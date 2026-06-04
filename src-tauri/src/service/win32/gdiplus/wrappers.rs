@@ -11,6 +11,9 @@ impl GraphicsWrapper {
             if GdipCreateFromHDC(hdc, &mut graphics) != windows::Win32::Graphics::GdiPlus::Ok {
                 return Err(anyhow::anyhow!("GdipCreateFromHDC failed"));
             }
+            // Enable anti-aliasing by default
+            let _ = GdipSetSmoothingMode(graphics, SmoothingModeAntiAlias);
+            let _ = GdipSetTextRenderingHint(graphics, TextRenderingHintAntiAliasGridFit);
         }
         std::result::Result::Ok(Self(graphics))
     }
@@ -44,6 +47,24 @@ impl GraphicsWrapper {
         unsafe {
             if GdipResetWorldTransform(self.0) != windows::Win32::Graphics::GdiPlus::Ok {
                 return Err(anyhow::anyhow!("GdipResetWorldTransform failed"));
+            }
+        }
+        std::result::Result::Ok(())
+    }
+
+    pub fn set_smoothing_mode(&self, mode: SmoothingMode) -> anyhow::Result<()> {
+        unsafe {
+            if GdipSetSmoothingMode(self.0, mode) != windows::Win32::Graphics::GdiPlus::Ok {
+                return Err(anyhow::anyhow!("GdipSetSmoothingMode failed"));
+            }
+        }
+        std::result::Result::Ok(())
+    }
+
+    pub fn set_text_rendering_hint(&self, hint: TextRenderingHint) -> anyhow::Result<()> {
+        unsafe {
+            if GdipSetTextRenderingHint(self.0, hint) != windows::Win32::Graphics::GdiPlus::Ok {
+                return Err(anyhow::anyhow!("GdipSetTextRenderingHint failed"));
             }
         }
         std::result::Result::Ok(())
