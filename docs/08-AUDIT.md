@@ -47,13 +47,15 @@
 该调用是"挂载后补取启动错误"的兜底：后端在 `setup()` 中 `emit("shortcut-startup-error")` 可能早于前端注册监听器（启动竞态），此 fetch 用于补上漏掉的那次。
 **处置**：在 `commands/config/mod.rs` 实现 `get_startup_errors`（返回 `ConfigState.last_registration_errors`）并在 `lib.rs` 注册。属"补全真机制"，非删除。
 
-### B3 · AI 子系统未接线（💤）
+### B3 · AI 子系统未接线（💤）— ✅ 已移除（Phase 2，2026-06-04）
 
-`service/ai/{mod,openai}.rs` 与前端 `src/components/Settings/tabs/AgentCoreTab.tsx` 均存在，但：
-- 无任何 AI 相关命令注册到 `invoke_handler`。
-- `SettingsPanel` 的 Tab 列表当前为 general/workflows/advanced/style/donate，**未挂 AgentCoreTab**。
+原状：`service/ai/{mod,openai}.rs` 与 `AgentCoreTab.tsx` 均存在但完全孤立（无命令注册、无任何 import、未挂入 SettingsPanel）。
+**决策**：产品方向定为"专注截图、移除 AI"。已删除：
+- 后端 `service/ai/`（mod.rs + openai.rs）及 `service/mod.rs` 的 `pub mod ai;`
+- 前端孤儿组件 `AgentCoreTab.tsx`
+- 中英 locale 的全部 AI 文案（settings.tabs.ai、顶层 `ai` 块、`tools.ai_directive`、`notification.ai_start_failed_title`）
 
-**结论**：AI 截图宏（[06](06-TOOLBAR-TOOLS.md)）目前不可用。需决策：补全接线，或移除死代码。注：归档的前端重设计 spec（`docs/superpowers/specs/2026-04-11-frontend-compact-redesign.md`）原本主张**删除全部 AI 组件**——与 `TOOLS.md` 中"AI 回流到 PIN"的产品愿景**相互冲突**，需产品决策定调。
+遗留尾巴（低优先，下次顺手清）：`GlobalHUD` 的 `HUDType` 仍含未使用的 `'ai'` 分支；`Cargo.toml` 的 `reqwest`/`async-trait`/`futures` 若不再被 ocr/stitch 使用可一并精简（本次保守未动）。
 
 ### B4 · 未追踪文件
 

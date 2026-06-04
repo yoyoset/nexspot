@@ -52,8 +52,8 @@ NexSpot 是一款 **Windows 桌面截图与标注工具**，对标"微信截图�
 | 系统托盘 | ✅ | `service/tray/mod.rs` |
 | 多显示器 / 混合 DPI 处理 | ✅ | `win32/monitor.rs`，启动时检测并提示 |
 | 主题 / 强调色 | ✅ | `set_theme` / `set_accent_color` |
-| AI 截图宏（截图+提示词→AI→PIN 回流） | 💤 / 📝 | `service/ai/` + `AgentCoreTab.tsx` 存在，但**未注册为 Tauri 命令**，规格见 [06](06-TOOLBAR-TOOLS.md) |
-| 捐赠页 | ✅ | `src/components/Settings/tabs/DonateTab.tsx`（未追踪，新增中） |
+| AI 截图宏 | ❌ 已移除 | 2026-06-04 产品定为"专注截图"，AI 死代码已删，见 [08-AUDIT B3](08-AUDIT.md) |
+| 捐赠页 | ✅ | `src/components/Settings/tabs/DonateTab.tsx` |
 
 > 详细的"实现 vs 规格"差异、以及前后端字段漂移见 [08-AUDIT](08-AUDIT.md)。
 

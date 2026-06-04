@@ -56,7 +56,6 @@ src-tauri/src/
     ├── stitch.rs               长截图拼接
     ├── pin.rs                  PIN 状态与窗口
     ├── tray/mod.rs             系统托盘
-    ├── ai/{mod,openai}.rs      AI 客户端（💤 未注册为命令）
     ├── notification.rs  logger.rs  l10n.rs
     ├── native_overlay/         ★★ 截图内核
     │   ├── mod.rs              模块导出

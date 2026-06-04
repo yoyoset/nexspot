@@ -1,5 +1,4 @@
 pub mod activity;
-pub mod ai;
 pub mod config;
 pub mod hotkey;
 pub mod l10n;

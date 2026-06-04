@@ -5,8 +5,7 @@
             "shortcuts": "Shortcuts",
             "general": "General Settings",
             "engine": "Kernel Logs",
-            "aesthetics": "Appearance",
-            "ai": "Agent Core"
+            "aesthetics": "Appearance"
         },
         "performance": {
             "title": "Performance & Quality",
@@ -175,35 +174,6 @@
             "capture": "Regular Capture"
         }
     },
-    "ai": {
-        "title": "AI Agent Configuration",
-        "new": "Initialize Protocol",
-        "edit": "Reconfigure Protocol",
-        "delete": "Destroy",
-        "bind": "Bind",
-        "save": "Commit Changes",
-        "cancel": "Abort",
-        "empty": "No Active Directives",
-        "field_name": "Identifier Name",
-        "field_prompt": "Prompt Instruction",
-        "glyph_symbol": "Glyph Symbol",
-        "interface_persistence": "Interface Persistence",
-        "activate_global_sync": "Activate Global Sync",
-        "default_name": "New Agent Action",
-        "api_orchestration": "API Orchestration Protocol",
-        "vision_warning": "Vision Buffer Required",
-        "vision_desc": "Analysis subroutines require visual processing capabilities.",
-        "provider_uplink": "Agent Provider Uplink",
-        "endpoint_uri": "Endpoint URI",
-        "kernel_id": "Kernel Identifier",
-        "access_key": "Access Key (API Key)",
-        "syncing": "Syncing...",
-        "synced": "Synced",
-        "commit_config": "Commit Config",
-        "ping": "Connectivity Test",
-        "verify_success": "Sync OK: Provider Active",
-        "verify_fail": "Sync Fail: Connection Error"
-    },
     "workflows": {
         "title": "Workflow Orchestration",
         "desc": "Configure capture pipelines and triggers",
@@ -335,7 +305,6 @@
             "brush": "Brush",
             "text": "Text",
             "mosaic": "Mosaic",
-            "ai_directive": "Agent Directive",
             "undo": "Undo",
             "more": "Advanced Mode (Vello)",
             "sequence": "Sequence",
@@ -363,7 +332,6 @@
             "save_failed_title": "Save Failed",
             "copy_failed_title": "Copy Failed",
             "pin_failed_title": "Pin Failed",
-            "ai_start_failed_title": "AI Task Failed",
             "capture_empty_body": "Captured image was empty",
             "macro_error_title": "Shortcut Error",
             "macro_error_body": "Shortcut '{id}' not found in current view."

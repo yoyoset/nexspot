@@ -5,8 +5,7 @@
             "shortcuts": "快捷键",
             "general": "常规设置",
             "engine": "核心日志",
-            "aesthetics": "外观样式",
-            "ai": "AI 助手库"
+            "aesthetics": "外观样式"
         },
         "performance": {
             "title": "性能与质量",
@@ -177,35 +176,6 @@
             "capture": "常规截图"
         }
     },
-    "ai": {
-        "title": "AI 助手配置",
-        "new": "初始化协议",
-        "edit": "重构配置",
-        "delete": "销毁",
-        "bind": "绑定",
-        "save": "执行提交",
-        "cancel": "放弃",
-        "empty": "无活跃指令",
-        "field_name": "指令标识名",
-        "field_prompt": "提示词指令 (Prompt)",
-        "glyph_symbol": "图形符号 (Icon)",
-        "interface_persistence": "界面持久化",
-        "activate_global_sync": "激活全局同步",
-        "default_name": "新助手动作",
-        "api_orchestration": "API 编排协议",
-        "vision_warning": "需要视觉缓存缓冲区",
-        "vision_desc": "分析子程序需要视觉处理能力。",
-        "provider_uplink": "助手服务商上行",
-        "endpoint_uri": "终端 URI",
-        "kernel_id": "内核标识符",
-        "access_key": "访问令牌 (API Key)",
-        "syncing": "正在同步...",
-        "synced": "已就绪",
-        "commit_config": "提交配置",
-        "ping": "连接测试",
-        "verify_success": "同步成功: 服务商在线",
-        "verify_fail": "同步失败: 连接错误"
-    },
     "workflows": {
         "title": "预设编排 (Workflows)",
         "desc": "配置截图流水线与外部触发器",
@@ -337,7 +307,6 @@
             "brush": "画笔",
             "text": "文字",
             "mosaic": "马赛克",
-            "ai_directive": "AI 指令",
             "undo": "撤销",
             "more": "高级模式 (Vello)",
             "sequence": "序号",
@@ -365,7 +334,6 @@
             "save_failed_title": "保存失败",
             "copy_failed_title": "复制失败",
             "pin_failed_title": "钉选失败",
-            "ai_start_failed_title": "AI 任务启动失败",
             "capture_empty_body": "截图内容为空",
             "macro_error_title": "快捷指令错误",
             "macro_error_body": "快捷指令 '{id}' 在当前视图中不可用。"
