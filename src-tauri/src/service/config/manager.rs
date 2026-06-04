@@ -202,6 +202,11 @@ impl ConfigState {
         self.config.default_export_format = format;
         self.save();
     }
+    
+    pub fn set_quick_save(&mut self, enabled: bool) {
+        self.config.quick_save = enabled;
+        self.save();
+    }
 
 
     pub fn set_snapshot_enabled(&mut self, enabled: bool) {

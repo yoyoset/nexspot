@@ -105,6 +105,13 @@ pub fn set_default_export_format(state: State<'_, AppState>, format: String) -> 
 }
 
 #[tauri::command]
+pub fn set_quick_save(state: State<'_, AppState>, enabled: bool) -> Result<(), ConfigError> {
+    let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+    c_state.set_quick_save(enabled);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn set_selection_engine(state: State<'_, AppState>, engine: String) -> Result<(), ConfigError> {
     let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
     c_state.config.selection_engine = engine;

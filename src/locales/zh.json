@@ -49,7 +49,9 @@
             "fast_capture": "极速捕捉内核",
             "fast_capture_desc": "异步缓冲流水线",
             "gdi_fallback": "GDI 兼容模式",
-            "vello_accelerated": "Vello 硬件加速"
+            "vello_accelerated": "Vello 硬件加速",
+            "quick_save": "双击快速保存协议",
+            "quick_save_desc": "开启后，双击选区将同时执行“保存到文件”和“复制到剪贴板”动作。"
         },
         "engine": {
             "title": "系统资源审计",

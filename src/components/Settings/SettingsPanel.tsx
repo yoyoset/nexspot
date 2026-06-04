@@ -9,6 +9,8 @@ import GeneralTab from "./tabs/GeneralTab";
 import AdvancedTab from "./tabs/AdvancedTab";
 import StyleTab from "./tabs/StyleTab";
 import WorkflowsTab from "./tabs/WorkflowsTab";
+import DonateTab from "./tabs/DonateTab";
+import { Coffee } from "lucide-react";
 
 const SettingsPanel: React.FC = () => {
     const { settingsNavigation, setSettingsNavigation } = useAppStore();
@@ -31,6 +33,7 @@ const SettingsPanel: React.FC = () => {
         { id: "workflows", icon: Layers, label: t('workflows.title') },
         { id: "advanced", icon: Cpu, label: t('settings.advanced.title') },
         { id: "style", icon: Palette, label: t('settings.tabs.aesthetics') },
+        { id: "donate", icon: Coffee, label: t('settings.tabs.donate', 'Donate') },
     ];
 
     return (
@@ -107,6 +110,10 @@ const SettingsPanel: React.FC = () => {
 
                         {activeTab === "style" && (
                             <StyleTab />
+                        )}
+
+                        {activeTab === "donate" && (
+                            <DonateTab />
                         )}
                     </AnimatePresence>
                 </div>

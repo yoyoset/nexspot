@@ -47,7 +47,9 @@
             "fast_capture": "Rapid Capture Kernel",
             "fast_capture_desc": "Async Buffer Pipeline",
             "gdi_fallback": "GDI Fallback",
-            "vello_accelerated": "Vello Accelerated"
+            "vello_accelerated": "Vello Accelerated",
+            "quick_save": "Double-Click Quick Save Protocol",
+            "quick_save_desc": "When enabled, double-clicking the selection will perform both 'Save to File' and 'Copy to Clipboard' actions."
         },
         "engine": {
             "title": "System Audit Logs",

@@ -121,6 +121,9 @@ pub struct AppConfig {
     #[serde(default = "default_format")]
     pub default_export_format: String, // "png" or "jpg"
 
+    #[serde(default)]
+    pub quick_save: bool,
+
     #[serde(skip_deserializing)]
     #[serde(default)]
     pub registration_errors: Vec<String>,

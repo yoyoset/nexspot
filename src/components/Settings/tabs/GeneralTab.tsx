@@ -145,6 +145,24 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
                     </div>
                 </div>
             </Section>
+
+            <Section title={t('settings.general.quick_save')}>
+                <div className="bg-bg-subtle border border-white/5 rounded-sm p-3 flex items-center justify-between">
+                    <div>
+                        <div className="text-[12px] font-bold text-text-main tech-text uppercase">{t('settings.general.quick_save')}</div>
+                        <div className="text-[9px] tech-text text-text-muted opacity-50 uppercase">{t('settings.general.quick_save_desc')}</div>
+                    </div>
+                    <div
+                        onClick={() => invoke("set_quick_save", { enabled: !config?.quick_save }).then(fetchConfig)}
+                        className={`w-10 h-5 rounded-sm relative cursor-pointer transition-all duration-200 border ${config?.quick_save ? "bg-accent/20 border-accent/40" : "bg-black/40 border-white/10"}`}
+                    >
+                        <motion.div
+                            animate={{ x: config?.quick_save ? 22 : 4 }}
+                            className={`absolute top-1 w-3 h-3 rounded-sm ${config?.quick_save ? "bg-accent" : "bg-text-muted/40"}`}
+                        />
+                    </div>
+                </div>
+            </Section>
         </motion.div>
     );
 };

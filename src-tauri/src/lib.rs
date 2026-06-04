@@ -179,6 +179,7 @@ pub fn run() {
             commands::set_concurrency,
             commands::set_default_export_format,
             commands::set_language,
+            commands::set_quick_save,
             commands::set_snapshot_enabled,
             commands::set_snapshot_size,
             commands::set_selection_engine,

@@ -40,7 +40,20 @@ impl OverlayManager {
 
     pub fn on_double_click(&mut self, x: i32, y: i32) {
         if InputHandler::handle_double_click(&self.state, x, y) {
-            let _ = self.save_clipboard();
+            let quick_save = {
+                use tauri::Manager;
+                let app_state = self.app.state::<crate::AppState>();
+                let config_guard = app_state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+                config_guard.config.quick_save
+            };
+
+            if quick_save {
+                let _ = crate::service::native_overlay::save::save_selection(&self.state, &self.app);
+                let _ = crate::service::native_overlay::save::copy_to_clipboard(&self.state, &self.app);
+                self.close_and_reset();
+            } else {
+                let _ = self.save_clipboard();
+            }
         }
     }
 

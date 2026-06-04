@@ -21,6 +21,7 @@ impl Default for AppConfig {
             concurrency: 4,
             registration_errors: Vec::new(),
             default_export_format: "png".to_string(),
+            quick_save: false,
         }
     }
 }
