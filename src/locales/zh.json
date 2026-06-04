@@ -118,7 +118,6 @@
             "theme_dark": "深色模式",
             "accent_config": "品牌变色配置",
             "render_preset": "渲染预设库",
-            "indicator_config": "状态指示灯配置",
             "colors": {
                 "blue_print": "BLUE_PRINT",
                 "void_purple": "VOID_PURPLE",

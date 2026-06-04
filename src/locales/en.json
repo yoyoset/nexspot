@@ -116,7 +116,6 @@
             "theme_dark": "Dark Phase",
             "accent_config": "Accent Variable Configuration",
             "render_preset": "Aesthetic Design Preset",
-            "indicator_config": "Indicator Chromatic Uplink",
             "colors": {
                 "blue_print": "BLUE_PRINT",
                 "void_purple": "VOID_PURPLE",

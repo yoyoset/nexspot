@@ -74,9 +74,6 @@ function App() {
 
             root.setAttribute('data-theme', effectiveTheme);
             root.style.setProperty('--color-accent', config.accent_color);
-            if (config.indicator_color) {
-                root.style.setProperty('--color-indicator', config.indicator_color);
-            }
 
             // Also update color-scheme for scrollbars/native inputs
             root.style.colorScheme = effectiveTheme;
@@ -91,7 +88,7 @@ function App() {
             mediaQuery.addEventListener('change', handleChange);
             return () => mediaQuery.removeEventListener('change', handleChange);
         }
-    }, [config?.theme, config?.accent_color, config?.indicator_color]);
+    }, [config?.theme, config?.accent_color]);
 
     const isPinCollection = window.location.hash.includes("pin-collection");
     const isScrollingPreview = window.location.hash.includes("scrolling-preview");

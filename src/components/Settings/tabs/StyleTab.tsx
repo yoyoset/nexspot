@@ -13,7 +13,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 const StyleTab: React.FC = () => {
     const { t } = useTranslation();
-    const { config, setTheme, setAccentColor, setIndicatorColor, setVelloAestheticStyle } = useConfig();
+    const { config, setTheme, setAccentColor, setVelloAestheticStyle } = useConfig();
 
     const themes = [
         { id: 'system', icon: Monitor, label: t('settings.style.theme_system') },
@@ -96,31 +96,6 @@ const StyleTab: React.FC = () => {
                             <span className="text-[9px] font-bold tracking-widest uppercase tech-text">
                                 {t(`settings.aesthetics.styles.${style.toLowerCase()}`)}
                             </span>
-                        </button>
-                    ))}
-                </div>
-            </Section>
-
-            <Section title={t('settings.style.indicator_config')}>
-                <div className="flex flex-wrap gap-2 px-1">
-                    {colors.map((color) => (
-                        <button
-                            key={color.name}
-                            onClick={() => setIndicatorColor(color.value)}
-                            className="relative group p-0.5 border border-transparent hover:border-white/20 rounded-sm transition-all focus:outline-none"
-                        >
-                            <div
-                                className={`w-6 h-6 rounded-sm shadow-inner transition-transform`}
-                                style={{ backgroundColor: color.value }}
-                            />
-                            {config?.indicator_color?.toUpperCase() === color.value.toUpperCase() && (
-                                <motion.div
-                                    layoutId="indicator-color-check"
-                                    className="absolute inset-0 flex items-center justify-center text-white"
-                                >
-                                    <div className="w-1 h-3 bg-white" />
-                                </motion.div>
-                            )}
                         </button>
                     ))}
                 </div>

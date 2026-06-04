@@ -22,23 +22,30 @@
 
 `src/hooks/useConfig.ts` 中存在两个 `invoke`，但对应命令**不在** `lib.rs` 的 `invoke_handler` 列表：
 
-| 前端调用 | 位置 | 后端状态 |
-|----------|------|----------|
-| `invoke("set_ocr_engine", { engine })` | `useConfig.ts:62`（`setOcrEngine`，由 `GeneralTab` 使用） | ❌ 未注册 → 调用必抛错 |
-| `invoke("set_indicator_color", { color })` | `useConfig.ts:192`（`setIndicatorColor`） | ❌ 未注册 → 调用必抛错 |
+> **✅ B1 / B2 / B6 已于 Phase 1（2026-06-04）修复**，详见各条目状态。
 
-**建议**：要么在后端实现并注册这两个命令（并在 `AppConfig` 增字段），要么从前端移除相关 setter/调用。
+### B1 · 前端调用了未注册的 Tauri 命令（会运行时报错）— ✅ 已修复
 
-### B2 · 前后端 AppConfig 字段不对齐
+| 前端调用 | 原状态 | 处置 |
+|----------|--------|------|
+| `invoke("set_ocr_engine")` | ❌ 未注册 + 无控件调用（死管线） | **删除** `setOcrEngine` 及其 prop 传递链（useConfig / SettingsPanel / GeneralTab） |
+| `invoke("set_indicator_color")` | ❌ 未注册 + `--color-indicator` 无消费者 + 与强调色重复 | **删除** 指示器颜色功能（StyleTab 区块 + useConfig + App.tsx + store 字段 + 文案键） |
+| `invoke("get_startup_errors")` | ❌ 未注册（见 B6） | **后端补全并注册**（闭合启动竞态） |
 
-| 字段 | 后端 `types.rs` | 前端 `useAppStore.ts` | 备注 |
-|------|----------------|----------------------|------|
-| `indicator_color` | ❌ 无 | ✅ 有（`App.tsx` 还会 `setProperty('--color-indicator')`） | 前端读了一个后端不下发的字段 → 永远 undefined |
-| `ocr_engine` | ❌ 无 | ❌ 接口无，但 `setOcrEngine` 乐观写入该键 | 幽灵字段 |
-| `quick_save` | ✅ 有 + `set_quick_save` 命令 | ❌ 接口未声明，无对应 setter | 后端能力前端未暴露 |
-| `language` | ✅ 有 + `set_language` 命令 | ✅ 有，但 `useConfig` 无 `setLanguage` | 切换语言入口在别处（i18n），确认是否真正持久化 |
+### B2 · 前后端 AppConfig 字段不对齐 — ✅ 已修复
 
-**建议**：以后端 `types.rs` 为准，统一前端 `AppConfig` 接口；删除 `indicator_color`/`ocr_engine` 或在后端补齐。
+| 字段 | 处置 |
+|------|------|
+| `indicator_color` | 前端字段 + `--color-indicator` 写入已删除（功能两端皆为半成品，与强调色重复） |
+| `ocr_engine` | 幽灵字段及其乐观写入已删除 |
+| `quick_save` | Phase 0 提交已贯通前后端（GeneralTab 开关 + `set_quick_save`） |
+| `language` | 经由 `set_language` 持久化（GeneralTab 切换调用），保留 |
+
+### B6 · 启动错误补取命令缺失 — ✅ 已修复（Phase 1 新发现）
+
+`TauriEventListener.tsx:41` 在挂载时 `invoke("get_startup_errors")`，但后端从未注册该命令 → **每次启动都抛错**（被 try/catch 吞掉，仅 console 报错）。
+该调用是"挂载后补取启动错误"的兜底：后端在 `setup()` 中 `emit("shortcut-startup-error")` 可能早于前端注册监听器（启动竞态），此 fetch 用于补上漏掉的那次。
+**处置**：在 `commands/config/mod.rs` 实现 `get_startup_errors`（返回 `ConfigState.last_registration_errors`）并在 `lib.rs` 注册。属"补全真机制"，非删除。
 
 ### B3 · AI 子系统未接线（💤）
 

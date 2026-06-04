@@ -8,7 +8,6 @@ import { invoke } from "@tauri-apps/api/core";
 interface GeneralTabProps {
     config: any; // Ideally this should be strongly typed based on useConfig return type
     selectSavePath: () => void;
-    setOcrEngine: (engine: string) => void;
     setFontFamily: (font: string) => void;
     fetchConfig: () => void;
 }

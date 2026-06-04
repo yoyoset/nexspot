@@ -168,6 +168,7 @@ pub fn run() {
             crate::service::native_overlay::scrolling::save_scrolled_image_to,
             crate::service::native_overlay::scrolling::copy_image_to_clipboard,
             commands::get_config,
+            commands::get_startup_errors,
             commands::set_save_path,
             commands::set_font_family,
             commands::set_vello_enabled,

@@ -57,18 +57,6 @@ export function useConfig() {
         }
     };
 
-    const setOcrEngine = async (engine: string) => {
-        try {
-            await invoke("set_ocr_engine", { engine });
-            useAppStore.setState((state) => ({
-                config: state.config ? { ...state.config, ocr_engine: engine } : null
-            }));
-            return { success: true };
-        } catch (err) {
-            return { success: false, error: String(err) };
-        }
-    };
-
     const setFontFamily = async (font: string) => {
         try {
             await invoke("set_font_family", { font });
@@ -187,18 +175,6 @@ export function useConfig() {
         }
     };
 
-    const setIndicatorColor = async (color: string) => {
-        try {
-            await invoke("set_indicator_color", { color });
-            useAppStore.setState((state) => ({
-                config: state.config ? { ...state.config, indicator_color: color } : null
-            }));
-            return { success: true };
-        } catch (err) {
-            return { success: false, error: String(err) };
-        }
-    };
-
     const setJpgQuality = async (quality: number) => {
         try {
             await invoke("set_jpg_quality", { quality });
@@ -296,10 +272,10 @@ export function useConfig() {
 
     return {
         config, loading, error, fetchConfig, selectSavePath,
-        setOcrEngine, setFontFamily,
+        setFontFamily,
         setVelloEnabled, setVelloAdvancedEffects, setVelloAestheticStyle, setSnapshotEnabled, setSnapshotSize,
         setSelectionEngine, setSnapshotEngine,
-        setTheme, setAccentColor, setIndicatorColor,
+        setTheme, setAccentColor,
         addWorkflow, removeWorkflow, updateWorkflow,
         openFolder, emergencyResetToGdi,
         setJpgQuality, setConcurrency, setDefaultExportFormat,

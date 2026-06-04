@@ -20,6 +20,16 @@ pub fn get_config(state: State<'_, AppState>) -> AppConfig {
     state.config.clone()
 }
 
+/// Fetch-on-mount catch-up for hotkey registration errors.
+/// The backend also emits `shortcut-startup-error` during setup, but that event
+/// may fire before the webview registers its listener; this command lets the
+/// frontend reconcile the cached errors once it is ready.
+#[tauri::command]
+pub fn get_startup_errors(state: State<'_, AppState>) -> Vec<String> {
+    let state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+    state.last_registration_errors.clone()
+}
+
 #[tauri::command]
 pub fn set_save_path(state: State<'_, AppState>, path: String) -> Result<(), ConfigError> {
     let mut state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());

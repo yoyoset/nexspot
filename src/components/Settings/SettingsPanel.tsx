@@ -18,7 +18,7 @@ const SettingsPanel: React.FC = () => {
     const setActiveTab = (tab: string) => setSettingsNavigation(tab);
 
     const {
-        config, selectSavePath, fetchConfig, setOcrEngine, setFontFamily,
+        config, selectSavePath, fetchConfig, setFontFamily,
         setVelloEnabled, setVelloAdvancedEffects, setVelloAestheticStyle, setSnapshotEnabled, setSnapshotSize,
         removeWorkflow, setJpgQuality, setConcurrency, setDefaultExportFormat
     } = useConfig();
@@ -71,7 +71,6 @@ const SettingsPanel: React.FC = () => {
                             <GeneralTab
                                 config={config}
                                 selectSavePath={selectSavePath}
-                                setOcrEngine={setOcrEngine}
                                 setFontFamily={setFontFamily}
                                 fetchConfig={fetchConfig}
                             />

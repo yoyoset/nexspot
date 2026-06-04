@@ -50,7 +50,6 @@ export interface AppConfig {
     // Appearance
     theme: string;
     accent_color: string;
-    indicator_color: string;
 
 
     // Performance & Quality
