@@ -1,0 +1,92 @@
+/* =============================================================================
+   NexSpot · Studio — Design Tokens (Tailwind CSS v4)
+   -----------------------------------------------------------------------------
+   Single source of truth for the whole UI. The runtime CSS variables below are
+   what the prototype uses 1:1 (same names). Theme = [data-theme] on <html>.
+   Accent is driven by ONE variable (--accent); everything else derives from it.
+   ============================================================================= */
+
+@import "tailwindcss";
+
+/* ---- 1. runtime variables (themeable at runtime, no rebuild needed) ---- */
+:root {
+  /* accent — user-customizable; set --accent and derive the rest in JS:
+       --accent-press = color-mix(in srgb, var(--accent) 82%, #000)
+       --on-accent    = luminance(accent) > 0.55 ? #1b1c1f : #ffffff   */
+  --accent: #7a6ff2;
+  --accent-press: #6a5fe6;
+  --on-accent: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 38%, transparent);
+
+  /* spacing scale (px) */
+  --s1: 6px; --s2: 10px; --s3: 16px; --s4: 24px; --s5: 36px;
+  /* radius */
+  --r-pill: 999px; --r-btn: 9px; --r-panel: 12px; --r-lg: 16px;
+  /* type */
+  --font: "Manrope", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html[data-theme="dark"] {
+  --bg0: #0c0d10; --bg1: #141519; --bg2: #1b1c21; --bg3: #23242b;
+  --bd: rgba(255,255,255,.09); --bd2: rgba(255,255,255,.14);
+  --tx: #ececef; --mut: #9a9aa5; --faint: #63636d;
+  --ok: #57d9a3; --warn: #f5c451; --bad: #f76d6d;
+  --ok-soft:  color-mix(in srgb, #57d9a3 18%, transparent);
+  --warn-soft:color-mix(in srgb, #f5c451 18%, transparent);
+  --bad-soft: color-mix(in srgb, #f76d6d 18%, transparent);
+  --shadow-sm: 0 2px 8px -2px rgba(0,0,0,.5);
+  --shadow:    0 18px 40px -22px rgba(0,0,0,.75);
+  --shadow-float: 0 24px 60px -20px rgba(0,0,0,.78), 0 2px 0 0 rgba(255,255,255,.04) inset;
+  --glass: rgba(20,21,25,.74);   /* floating windows: + backdrop-filter: blur(22px) saturate(1.3) */
+}
+
+html[data-theme="light"] {
+  --bg0: #f5f5f7; --bg1: #ffffff; --bg2: #f1f1f4; --bg3: #ffffff;
+  --bd: rgba(0,0,0,.10); --bd2: rgba(0,0,0,.16);
+  --tx: #1b1c1f; --mut: #6c6c75; --faint: #a0a0a8;
+  --ok: #1f9d6b; --warn: #bf8a14; --bad: #dc4d4d;
+  --ok-soft:  color-mix(in srgb, #1f9d6b 14%, transparent);
+  --warn-soft:color-mix(in srgb, #bf8a14 16%, transparent);
+  --bad-soft: color-mix(in srgb, #dc4d4d 13%, transparent);
+  --shadow-sm: 0 2px 8px -3px rgba(20,22,40,.18);
+  --shadow:    0 18px 40px -24px rgba(20,22,40,.30);
+  --shadow-float: 0 24px 60px -22px rgba(20,22,40,.34), 0 1px 0 0 rgba(255,255,255,.7) inset;
+  --glass: rgba(255,255,255,.78);
+}
+
+/* ---- 2. expose runtime vars to Tailwind utilities (v4 @theme inline) ----
+   `inline` = utilities resolve to the var() reference, so they stay live when
+   [data-theme] flips. Now you can write bg-surface-1, text-muted, rounded-panel… */
+@theme inline {
+  --color-bg-0: var(--bg0);
+  --color-bg-1: var(--bg1);
+  --color-bg-2: var(--bg2);
+  --color-bg-3: var(--bg3);
+  --color-line: var(--bd);
+  --color-line-2: var(--bd2);
+  --color-ink: var(--tx);
+  --color-muted: var(--mut);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+
+  --radius-btn: var(--r-btn);
+  --radius-panel: var(--r-panel);
+  --radius-lg: var(--r-lg);
+
+  --font-sans: var(--font);
+  --font-mono: var(--mono);
+
+  --shadow-float: var(--shadow-float);
+}
+
+/* ---- 3. base ---- */
+html { font-family: var(--font); }
+body { background: var(--bg0); color: var(--tx); -webkit-font-smoothing: antialiased; }
+.mono { font-family: var(--mono); font-variant-ligatures: none; }
