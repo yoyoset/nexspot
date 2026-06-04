@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Copy, Save, AlertCircle, Cpu } from 'lucide-react';
+import { Check, Copy, Save, AlertCircle } from 'lucide-react';
 
-export type HUDType = 'success' | 'copy' | 'save' | 'error' | 'warning' | 'ai';
+export type HUDType = 'success' | 'copy' | 'save' | 'error' | 'warning';
 
 interface GlobalHUDProps {
     message: string;
@@ -17,7 +17,6 @@ const GlobalHUD: React.FC<GlobalHUDProps> = ({ message, type = 'success', isVisi
             case 'save': return <Save className="w-4 h-4 opacity-70" />;
             case 'error': return <AlertCircle className="w-4 h-4 text-red-500 opacity-80" />;
             case 'warning': return <AlertCircle className="w-4 h-4 text-amber-500 opacity-80" />;
-            case 'ai': return <Cpu className="w-4 h-4 text-accent animate-pulse" />;
             default: return <Check className="w-4 h-4 text-emerald-500 opacity-80" />;
         }
     };

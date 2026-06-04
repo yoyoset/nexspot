@@ -66,7 +66,7 @@ impl OverlayState {
 
     pub fn finalize_all_objects(&mut self) {
         // 1. Process current drawing (Finalize Interaction)
-        if let Some(mut drawing) = self.current_drawing.take() {
+        if let Some(drawing) = self.current_drawing.take() {
             // Only commit if it has content (2+ points or special tool)
             if drawing.points.len() >= 2
                 || matches!(drawing.tool, DrawingTool::Number)

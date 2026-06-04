@@ -116,7 +116,7 @@ pub fn get_dc(hwnd: Option<windows::Win32::Foundation::HWND>) -> anyhow::Result<
     }
 }
 
-pub fn release_dc(hwnd: Option<windows::Win32::Foundation::HWND>, hdc: SafeHDC) {
+pub fn release_dc(_hwnd: Option<windows::Win32::Foundation::HWND>, hdc: SafeHDC) {
     unsafe {
         match hdc.1 {
             Disposer::Release(h) => {
