@@ -43,17 +43,13 @@ pub fn draw_property_bar(
         );
     }
     
-    // Draw Background for Group 1 (on content_scene)
-    if offset_x > group1_start {
-        draw_group_background(&mut content_scene, group1_start - 1.0, offset_x + 1.0, rect);
-    }
+    let _ = group1_start;
 
-    // 3. Group 2: Color Palette
+    // 3. Group 2: Color Palette（组间仅留间距，不再画内框 — Studio 单一 pill）
     if tool != DrawingTool::Mosaic {
         let group2_start = if offset_x > group1_start + 1.0 { offset_x + GROUP_GAP } else { offset_x };
         offset_x = group2_start;
         colors::draw_color_palette(&mut content_scene, &mut offset_x, rect, current_color);
-        draw_group_background(&mut content_scene, group2_start - 1.0, offset_x + 1.0, rect);
     }
 
     // 4. Group 3: Advanced Effects
@@ -67,7 +63,6 @@ pub fn draw_property_bar(
             current_opacity,
             current_glow,
         );
-        draw_group_background(&mut content_scene, group3_start - 1.0, offset_x + 1.0, rect);
     }
 
     // 5. Draw Main Container Background (Dynamically sized)
@@ -82,25 +77,4 @@ pub fn draw_property_bar(
 
     // 6. Append Content Scene
     scene.append(&content_scene, None);
-}
-
-fn draw_group_background(scene: &mut Scene, x0: f64, x1: f64, rect: &windows::Win32::Foundation::RECT) {
-    use vello::kurbo::{Affine, Rect, RoundedRect};
-    use vello::peniko::Color;
-
-    let group_rect = Rect::new(
-        x0,
-        rect.top as f64 + 4.0,
-        x1,
-        rect.bottom as f64 - 4.0,
-    );
-    let rounded = RoundedRect::from_rect(group_rect, 1.0);
-    
-    scene.stroke(
-        &vello::kurbo::Stroke::new(1.0),
-        Affine::IDENTITY,
-        Color::from_rgba8(39, 39, 42, 100), // Zinc-800 subtle
-        None,
-        &rounded,
-    );
 }

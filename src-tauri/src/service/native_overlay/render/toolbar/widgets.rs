@@ -185,6 +185,7 @@ pub fn draw_property_selector(
     _indicator_color: u32,
 ) -> anyhow::Result<()> {
     if is_selected {
+        // 选中 = accent 填充（无底部标记条，Studio 风）
         let brush = gdi::BrushWrapper::new_solid(BG_ACTIVE)?;
         gdi::fill_rounded_rectangle(
             graphics,
@@ -197,25 +198,11 @@ pub fn draw_property_selector(
             ),
             RADIUS_WIDGET,
         )?;
-
-        // Active Marker (Bottom bar for property selectors - Slimmer 2px line)
-        let marker_brush = gdi::BrushWrapper::new_solid(ACCENT_COLOR)?;
-        gdi::fill_rounded_rectangle(
-            graphics,
-            &marker_brush,
-            (
-                rect.left as f32 + 10.0,
-                rect.bottom as f32 - 3.0,
-                (rect.right - rect.left) as f32 - 20.0,
-                2.0,
-            ),
-            1.0,
-        )?;
     }
 
     if let Some(text) = label {
         let text_color = if is_selected {
-            TEXT_PRIMARY
+            0xFFFFFFFF // on-accent
         } else {
             TEXT_SECONDARY
         };
@@ -245,24 +232,24 @@ pub fn draw_color_dot(
     _indicator_color: u32,
 ) -> anyhow::Result<()> {
     if is_selected {
-        // 1. Professional Inset Selection Ring (White, 1px)
-        let selection_pen = gdi::PenWrapper::new(0xFFFFFFFF, 1.0)?;
+        // Studio accent 选中环（1.5px periwinkle）
+        let selection_pen = gdi::PenWrapper::new(ACCENT_COLOR, 1.5)?;
         gdi::draw_rounded_rectangle(
             graphics,
             &selection_pen,
             (
-                (rect.left - 2) as f32,
-                (rect.top - 2) as f32,
-                (rect.right - rect.left + 4) as f32,
-                (rect.bottom - rect.top + 4) as f32,
+                (rect.left - 3) as f32,
+                (rect.top - 3) as f32,
+                (rect.right - rect.left + 6) as f32,
+                (rect.bottom - rect.top + 6) as f32,
             ),
-            RADIUS_WIDGET + 1.0,
+            RADIUS_WIDGET + 2.0,
         )?;
     }
 
     let brush = gdi::BrushWrapper::new_solid(color)?;
     let border_color = if is_selected {
-        0xFFFFFFFF // Selection accent
+        ACCENT_COLOR
     } else {
         0xFF333333 // Muted border
     };
