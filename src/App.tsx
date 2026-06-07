@@ -6,6 +6,8 @@ import Dashboard from "./components/Dashboard/Dashboard";
 import StartupErrorToast from "./components/Overlay/StartupErrorToast";
 import GlobalHUD from "./components/Overlay/GlobalHUD";
 import { TauriEventListener } from "./components/Overlay/TauriEventListener";
+import TitleBar from "./components/Navigation/TitleBar";
+import { invoke } from "@tauri-apps/api/core";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
 import PinCollectionWindow from "./components/Pin/PinCollectionWindow";
@@ -33,6 +35,19 @@ function App() {
 
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = React.useState<AppTab>('dashboard');
+    const [isAlwaysOnTop, setIsAlwaysOnTop] = React.useState(false);
+
+    useEffect(() => {
+        invoke<boolean>('is_pin_always_on_top').then(setIsAlwaysOnTop).catch(() => { });
+    }, []);
+
+    const toggleAlwaysOnTop = async () => {
+        try {
+            setIsAlwaysOnTop(await invoke<boolean>('toggle_pin_always_on_top'));
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     const handleEditWorkflow = (id?: string) => {
         if (!id || id === 'new') {
@@ -134,10 +149,18 @@ function App() {
     }
 
     return (
-        <main className="w-full h-full relative overflow-hidden bg-bg-main flex">
+        <main className="w-full h-full relative overflow-hidden bg-bg-main flex flex-col">
             <TauriEventListener />
 
-            <Navigator activeTab={activeTab} onTabChange={setActiveTab} />
+            <TitleBar isAlwaysOnTop={isAlwaysOnTop} />
+
+            <div className="flex-1 min-h-0 flex relative overflow-hidden">
+            <Navigator
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                isAlwaysOnTop={isAlwaysOnTop}
+                onToggleAlwaysOnTop={toggleAlwaysOnTop}
+            />
 
             <div className="flex-1 h-full relative overflow-hidden pointer-events-auto">
                 <AnimatePresence mode="wait">
@@ -179,6 +202,7 @@ function App() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
             </div>
 
 

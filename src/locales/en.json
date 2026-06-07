@@ -159,6 +159,12 @@
         "activity": "Activity Hub",
         "settings": "Settings"
     },
+    "titlebar": {
+        "pinned": "Pinned",
+        "minimize": "Minimize",
+        "maximize": "Maximize",
+        "close": "Close"
+    },
     "activity": {
         "title": "Activity Hub",
         "live": "Live Monitoring",

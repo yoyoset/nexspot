@@ -161,6 +161,12 @@
         "activity": "活动中心",
         "settings": "设置"
     },
+    "titlebar": {
+        "pinned": "置顶",
+        "minimize": "最小化",
+        "maximize": "最大化",
+        "close": "关闭"
+    },
     "activity": {
         "title": "活动中心",
         "live": "实时监控",

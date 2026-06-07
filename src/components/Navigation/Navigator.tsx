@@ -1,6 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Activity, Settings, Lock, Unlock } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
+import { LayoutDashboard, Activity, Settings, Pin, PinOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { AppTab } from '../../types/navigation';
@@ -8,25 +7,17 @@ import { AppTab } from '../../types/navigation';
 interface NavigatorProps {
     activeTab: AppTab;
     onTabChange: (tab: AppTab) => void;
+    isAlwaysOnTop: boolean;
+    onToggleAlwaysOnTop: () => void;
 }
 
-const Navigator: React.FC<NavigatorProps> = ({ activeTab, onTabChange }) => {
+/**
+ * 活动栏 Rail（宽 48，底 bg0）。纯图标 34×34，圆角 9。
+ * 激活态：accent-soft 底 + accent 图标 + 左缘竖条。底部窗口置顶开关。
+ * 设计基准：docs/design/2026-06-04-studio-redesign/ §全局·活动栏 Rail。
+ */
+const Navigator: React.FC<NavigatorProps> = ({ activeTab, onTabChange, isAlwaysOnTop, onToggleAlwaysOnTop }) => {
     const { t } = useTranslation();
-    const [isAlwaysOnTop, setIsAlwaysOnTop] = React.useState(false);
-
-    React.useEffect(() => {
-        // Get initial status
-        invoke<boolean>('is_pin_always_on_top').then(setIsAlwaysOnTop);
-    }, []);
-
-    const toggleAlwaysOnTop = async () => {
-        try {
-            const next = await invoke<boolean>('toggle_pin_always_on_top');
-            setIsAlwaysOnTop(next);
-        } catch (e) {
-            console.error(e);
-        }
-    };
 
     const navItems = [
         { id: 'dashboard' as AppTab, icon: LayoutDashboard, label: t('nav.dashboard') },
@@ -34,46 +25,64 @@ const Navigator: React.FC<NavigatorProps> = ({ activeTab, onTabChange }) => {
         { id: 'settings' as AppTab, icon: Settings, label: t('nav.settings') },
     ];
 
+    const RailButton: React.FC<{
+        active: boolean;
+        onClick: () => void;
+        tip: string;
+        children: React.ReactNode;
+        accent?: boolean;
+    }> = ({ active, onClick, tip, children, accent }) => (
+        <button
+            onClick={onClick}
+            className="relative group w-[34px] h-[34px] flex items-center justify-center rounded-[9px] transition-colors hover:bg-bg-2"
+            aria-label={tip}
+        >
+            {active && (
+                <>
+                    <span className="absolute inset-0 rounded-[9px] bg-accent-soft" />
+                    <motion.span
+                        layoutId="rail-active-bar"
+                        className="absolute -left-[7px] top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-full bg-accent"
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                    />
+                </>
+            )}
+            <span className={`relative z-10 ${active || accent ? 'text-accent' : 'text-muted group-hover:text-ink'} transition-colors`}>
+                {children}
+            </span>
+
+            {/* Tooltip 右侧 */}
+            <span className="absolute left-[42px] px-2 py-1 bg-bg-3 border border-line-2 rounded-[7px] text-[11px] text-ink opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-float z-50">
+                {tip}
+            </span>
+        </button>
+    );
+
     return (
-        <nav className="w-10 h-full bg-bg-sidebar border-r border-border-subtle flex flex-col items-center py-2 gap-2 shrink-0 z-20">
+        <nav className="w-12 h-full bg-bg-0 flex flex-col items-center pt-3 pb-3 gap-2 shrink-0 z-20">
             {navItems.map((item) => {
-                const isActive = activeTab === item.id;
                 const Icon = item.icon;
-
                 return (
-                    <button
+                    <RailButton
                         key={item.id}
+                        active={activeTab === item.id}
                         onClick={() => onTabChange(item.id)}
-                        className="relative group p-2 rounded-sm transition-all"
-                        title={item.label}
+                        tip={item.label}
                     >
-                        {isActive && (
-                            <motion.div
-                                layoutId="nav-active"
-                                className="absolute inset-0 bg-accent/5 border border-accent/20 rounded-sm"
-                                transition={{ duration: 0.1 }}
-                            />
-                        )}
-                        <Icon
-                            className={`w-3.5 h-3.5 transition-colors relative z-10 ${isActive ? 'text-accent' : 'text-text-muted group-hover:text-text-main'
-                                }`}
-                        />
-
-                        {/* Tooltip (Industrial Style) */}
-                        <div className="absolute left-full ml-1.5 px-1.5 py-0.5 bg-bg-card border border-border-subtle rounded-sm text-[9px] tech-text text-text-main opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-2xl z-50">
-                            {item.label}
-                        </div>
-                    </button>
+                        <Icon className="w-[18px] h-[18px]" />
+                    </RailButton>
                 );
             })}
-            <div className="mt-auto flex flex-col items-center gap-1.5 pb-2">
-                <button
-                    onClick={toggleAlwaysOnTop}
-                    className={`p-2 rounded-sm transition-all border ${isAlwaysOnTop ? 'text-accent bg-accent/5 border-accent/20' : 'text-text-muted border-transparent hover:text-text-main hover:bg-white/5'}`}
-                    title={isAlwaysOnTop ? t('pin.tooltip_pin_off') : t('pin.tooltip_pin_on')} 
+
+            <div className="mt-auto">
+                <RailButton
+                    active={false}
+                    accent={isAlwaysOnTop}
+                    onClick={onToggleAlwaysOnTop}
+                    tip={isAlwaysOnTop ? t('pin.tooltip_pin_off') : t('pin.tooltip_pin_on')}
                 >
-                    {isAlwaysOnTop ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                </button>
+                    {isAlwaysOnTop ? <Pin className="w-[18px] h-[18px]" /> : <PinOff className="w-[18px] h-[18px]" />}
+                </RailButton>
             </div>
         </nav>
     );
