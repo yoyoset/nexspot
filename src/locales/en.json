@@ -152,7 +152,22 @@
         "library_desc": "Recent Snaps",
         "library_empty": "NO HISTORY",
         "error": "ERROR",
-        "conflict": "CONFLICT"
+        "conflict": "CONFLICT",
+        "page_title": "Workflows",
+        "subtitle_one": "{{count}} workflow · every hotkey is a pipeline",
+        "subtitle_other": "{{count}} workflows · every hotkey is a pipeline",
+        "summary_conflicts": "{{count}} hotkey conflicts",
+        "summary_engines": "{{count}} engines not ready",
+        "new_workflow": "New Workflow",
+        "engine_ready": "Engine ready",
+        "engine_not_ready": "Engine not ready",
+        "hotkey_conflict": "Hotkey conflict",
+        "hotkey_ok": "Hotkey OK",
+        "system_preset": "System preset",
+        "open_folder": "Open folder",
+        "empty_title": "No workflows yet",
+        "empty_desc": "Every hotkey is a screenshot pipeline. Create your first one, bind a shortcut, and capture in a single keystroke.",
+        "empty_cta": "Create your first workflow"
     },
     "nav": {
         "dashboard": "Dashboard",

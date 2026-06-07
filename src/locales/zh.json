@@ -154,7 +154,22 @@
         "library_desc": "最近截图",
         "library_empty": "暂无历史",
         "error": "热键冲突",
-        "conflict": "冲突"
+        "conflict": "冲突",
+        "page_title": "工作流",
+        "subtitle_one": "{{count}} 条 · 每个热键就是一条流水线",
+        "subtitle_other": "{{count}} 条 · 每个热键就是一条流水线",
+        "summary_conflicts": "{{count}} 个热键冲突",
+        "summary_engines": "{{count}} 个引擎未就绪",
+        "new_workflow": "新建工作流",
+        "engine_ready": "引擎就绪",
+        "engine_not_ready": "引擎未就绪",
+        "hotkey_conflict": "热键冲突",
+        "hotkey_ok": "热键正常",
+        "system_preset": "系统预设",
+        "open_folder": "打开文件夹",
+        "empty_title": "还没有工作流",
+        "empty_desc": "每个热键就是一条截图流水线。创建第一条并绑定快捷键，即可一键截图。",
+        "empty_cta": "新建第一条工作流"
     },
     "nav": {
         "dashboard": "仪表盘",
