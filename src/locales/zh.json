@@ -201,7 +201,10 @@
             "ocr": "OCR 文字识别",
             "scrolling": "滚动截图拼接",
             "capture": "常规截图"
-        }
+        },
+        "view_list": "列表",
+        "view_grid": "缩略图",
+        "open_file": "打开图片"
     },
     "workflows": {
         "title": "工作流",

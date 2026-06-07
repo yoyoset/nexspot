@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, FileText, Scroll, Folder, ExternalLink, Activity as ActivityIcon } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Camera, FileText, Scroll, Folder, ExternalLink, Activity as ActivityIcon, LayoutList, LayoutGrid } from 'lucide-react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { useAppStore, Workflow, ActivityEntry } from '../../store/useAppStore';
 import { useConfig } from '../../hooks/useConfig';
@@ -12,12 +13,36 @@ const TYPE_META: Record<string, { color: string; Icon: React.ComponentType<{ cla
 const typeMeta = (type: string) => TYPE_META[type.toLowerCase()] || { color: 'var(--accent)', Icon: Camera };
 
 const dirOf = (p: string) => p.replace(/[/\\][^/\\]*$/, '');
+const baseName = (p: string) => p.split(/[/\\]/).pop() || p;
+const isImage = (p: string) => /\.(png|jpe?g|webp|bmp|gif)$/i.test(p);
+
+/** 缩略图：走 asset 协议加载真实位图，加载失败回退到类型图标。 */
+const Thumb: React.FC<{ path: string; color: string; Icon: React.ComponentType<{ className?: string }>; className?: string }> = ({ path, color, Icon, className }) => {
+    const [failed, setFailed] = useState(false);
+    if (isImage(path) && !failed) {
+        return (
+            <img
+                src={convertFileSrc(path)}
+                onError={() => setFailed(true)}
+                className={className}
+                loading="lazy"
+                alt=""
+            />
+        );
+    }
+    return (
+        <div className={`flex items-center justify-center ${className}`} style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}>
+            <Icon className="w-4 h-4" />
+        </div>
+    );
+};
 
 const ActivityHub: React.FC = () => {
     const { config, activity, fetchActivity } = useAppStore();
     const { openFolder } = useConfig();
     const { t } = useTranslation();
     const workflows = config?.workflows || [];
+    const [view, setView] = useState<'list' | 'grid'>('grid');
 
     useEffect(() => {
         fetchActivity();
@@ -68,30 +93,79 @@ const ActivityHub: React.FC = () => {
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 px-6 py-5 overflow-hidden">
                 {/* Left · activity stream */}
                 <section className="flex flex-col min-h-0">
-                    <h2 className="mono text-[10.5px] font-semibold tracking-[0.12em] uppercase text-faint mb-3">
-                        {t('activity.section_stream')}
-                    </h2>
-                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
-                        <AnimatePresence mode="popLayout">
-                            {activity.length > 0 ? activity.map((entry: ActivityEntry) => {
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="mono text-[10.5px] font-semibold tracking-[0.12em] uppercase text-faint">
+                            {t('activity.section_stream')}
+                        </h2>
+                        <div className="flex items-center gap-0.5 p-0.5 rounded-btn bg-bg-2 border border-line">
+                            <button
+                                onClick={() => setView('list')}
+                                title={t('activity.view_list')}
+                                className={`w-7 h-7 flex items-center justify-center rounded-[7px] transition-colors ${view === 'list' ? 'bg-accent text-on-accent' : 'text-muted hover:text-ink'}`}
+                            >
+                                <LayoutList className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setView('grid')}
+                                title={t('activity.view_grid')}
+                                className={`w-7 h-7 flex items-center justify-center rounded-[7px] transition-colors ${view === 'grid' ? 'bg-accent text-on-accent' : 'text-muted hover:text-ink'}`}
+                            >
+                                <LayoutGrid className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {activity.length === 0 ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center py-16 gap-2">
+                            <ActivityIcon className="w-8 h-8 text-faint opacity-40 mb-1" />
+                            <p className="text-[12.5px] font-semibold text-muted">{t('activity.empty')}</p>
+                            <p className="text-[11.5px] text-faint">{t('activity.empty_desc')}</p>
+                        </div>
+                    ) : view === 'grid' ? (
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+                            <div className="grid grid-cols-2 gap-3">
+                                {activity.map((entry: ActivityEntry) => {
+                                    const { color, Icon } = typeMeta(entry.activity_type);
+                                    const path = entry.file_path || entry.metadata || '';
+                                    return (
+                                        <motion.button
+                                            key={entry.id}
+                                            initial={{ y: 7 }}
+                                            animate={{ y: 0 }}
+                                            transition={{ duration: 0.18 }}
+                                            onClick={() => path && openFolder(dirOf(path))}
+                                            title={path}
+                                            className="group flex flex-col rounded-panel bg-bg-2 border border-line hover:border-line-2 transition-colors overflow-hidden text-left"
+                                        >
+                                            <div className="relative w-full aspect-video bg-bg-0 overflow-hidden">
+                                                <Thumb path={path} color={color} Icon={Icon} className="w-full h-full object-cover" />
+                                                <span className="absolute top-1.5 right-1.5 mono text-[9.5px] text-faint bg-bg-0/80 backdrop-blur px-1.5 py-0.5 rounded">
+                                                    {new Date(entry.timestamp * 1000).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div className="px-2.5 py-2 min-w-0">
+                                                <div className="text-[12px] font-semibold text-ink truncate">{typeLabel(entry.activity_type)}</div>
+                                                {path && <div className="mono text-[10px] text-muted truncate">{baseName(path)}</div>}
+                                            </div>
+                                        </motion.button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
+                            {activity.map((entry: ActivityEntry) => {
                                 const { color, Icon } = typeMeta(entry.activity_type);
                                 const path = entry.file_path || entry.metadata || '';
                                 return (
                                     <motion.div
                                         key={entry.id}
-                                        layout
                                         initial={{ y: 7 }}
                                         animate={{ y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.97 }}
                                         transition={{ duration: 0.18 }}
                                         className="group flex items-center gap-3 px-3 py-2.5 rounded-panel bg-bg-2 border border-line hover:border-line-2 transition-colors"
                                     >
-                                        <div
-                                            className="w-[34px] h-[34px] shrink-0 rounded-[9px] flex items-center justify-center"
-                                            style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}
-                                        >
-                                            <Icon className="w-4 h-4" />
-                                        </div>
+                                        <Thumb path={path} color={color} Icon={Icon} className="w-[44px] h-[34px] shrink-0 rounded-[7px] object-cover border border-line" />
                                         <div className="flex flex-col min-w-0 flex-1">
                                             <span className="text-[12.5px] font-semibold text-ink truncate">{typeLabel(entry.activity_type)}</span>
                                             {path && <span className="mono text-[10.5px] text-muted truncate">{path}</span>}
@@ -110,15 +184,9 @@ const ActivityHub: React.FC = () => {
                                         )}
                                     </motion.div>
                                 );
-                            }) : (
-                                <div className="flex-1 flex flex-col items-center justify-center text-center py-16 gap-2">
-                                    <ActivityIcon className="w-8 h-8 text-faint opacity-40 mb-1" />
-                                    <p className="text-[12.5px] font-semibold text-muted">{t('activity.empty')}</p>
-                                    <p className="text-[11.5px] text-faint">{t('activity.empty_desc')}</p>
-                                </div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                            })}
+                        </div>
+                    )}
                 </section>
 
                 {/* Right · storage pools */}

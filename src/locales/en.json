@@ -201,7 +201,10 @@
             "ocr": "OCR Text Recognition",
             "scrolling": "Scrolling Capture Stitching",
             "capture": "Regular Capture"
-        }
+        },
+        "view_list": "List",
+        "view_grid": "Thumbnails",
+        "open_file": "Open image"
     },
     "workflows": {
         "title": "Workflows",
