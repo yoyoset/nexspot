@@ -102,9 +102,9 @@ pub fn draw_property_bar(
             )?;
 
             if tool != DrawingTool::Mosaic {
-                // Draw thickness indicator dot for non-mosaic tools
+                // Draw thickness indicator dot — 选中态白点（叠在 accent 选中底上），否则次级灰
                 let color = if is_selected {
-                    ACCENT_COLOR
+                    0xFFFFFFFF
                 } else {
                     TEXT_SECONDARY
                 };
@@ -142,9 +142,9 @@ pub fn draw_property_bar(
                 ACCENT_COLOR,
             )?;
 
-            // Draw Fill Icon (Simple GDI+ Square for now, modularized later if needed)
+            // Draw Fill Icon — 选中(已填充)时白色叠在 accent 底上
             let color = if current_is_filled {
-                ACCENT_COLOR
+                0xFFFFFFFF
             } else {
                 TEXT_SECONDARY
             };

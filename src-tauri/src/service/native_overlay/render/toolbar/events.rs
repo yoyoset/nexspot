@@ -109,16 +109,11 @@ pub fn handle_property_click(
             offset_x += group_gap as i32;
         }
         let colors = property_bar::get_palette_colors();
+        // 命中盒覆盖整步宽 + 整条高度，避免色块间隙/垂直错位导致点不中
         for color in colors {
-            let (hit_l, hit_r, hit_t, hit_b) = if engine == CaptureEngine::Gdi {
-                use super::constants::gdi::*;
-                (offset_x + COLOR_DOT_OFFSET_X as i32, offset_x + (COLOR_DOT_OFFSET_X + COLOR_ITEM_SIZE) as i32, 
-                 property_bar_rect.top + COLOR_DOT_OFFSET_Y as i32, property_bar_rect.top + (COLOR_DOT_OFFSET_Y + COLOR_ITEM_SIZE) as i32)
-            } else {
-                (offset_x, offset_x + 20, property_bar_rect.top + 8, property_bar_rect.bottom - 8)
-            };
-
-            if x >= hit_l && x <= hit_r && y >= hit_t && y <= hit_b {
+            let hit_l = offset_x;
+            let hit_r = offset_x + color_step as i32;
+            if x >= hit_l && x < hit_r && y >= property_bar_rect.top && y <= property_bar_rect.bottom {
                 return Some(PropertyChange::Color(color));
             }
             offset_x += color_step as i32;
