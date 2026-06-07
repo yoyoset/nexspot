@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import SettingsPanel from "./components/Settings/SettingsPanel";
@@ -163,45 +163,21 @@ function App() {
             />
 
             <div className="flex-1 h-full relative overflow-hidden pointer-events-auto">
-                <AnimatePresence mode="wait">
-                    {activeTab === 'dashboard' && (
-                        <motion.div
-                            key="dashboard"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0"
-                        >
-                            <Dashboard
-                                onNavigateToWorkflows={handleEditWorkflow}
-                            />
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'activity' && (
-                        <motion.div
-                            key="activity"
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            className="absolute inset-0"
-                        >
-                            <ActivityHub />
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'settings' && (
-                        <motion.div
-                            key="settings"
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            className="absolute inset-0"
-                        >
-                            <SettingsPanel />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {activeTab === 'dashboard' && (
+                    <div className="absolute inset-0">
+                        <Dashboard onNavigateToWorkflows={handleEditWorkflow} />
+                    </div>
+                )}
+                {activeTab === 'activity' && (
+                    <div className="absolute inset-0">
+                        <ActivityHub />
+                    </div>
+                )}
+                {activeTab === 'settings' && (
+                    <div className="absolute inset-0">
+                        <SettingsPanel />
+                    </div>
+                )}
             </div>
             </div>
 

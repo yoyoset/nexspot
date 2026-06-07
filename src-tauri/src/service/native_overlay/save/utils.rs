@@ -72,6 +72,12 @@ pub fn save_pixels_to_file(
     if let Err(e) = result {
         log::error!("Failed to save image to {:?}: {}", file_path, e);
     } else {
+        crate::service::activity::log_activity(
+            app,
+            "screenshot",
+            Some(file_path.display().to_string()),
+            None,
+        );
         use crate::service::l10n;
         let _ = app
             .notification()

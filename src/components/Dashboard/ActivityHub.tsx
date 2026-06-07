@@ -29,15 +29,17 @@ const ActivityHub: React.FC = () => {
         return () => { if (unlisten) unlisten(); };
     }, []);
 
+    const defaultPath = config?.save_path || '';
     const pools = useMemo(() => {
+        // 按解析后的实际文件夹分组（target_folder 为空时归入全局默认路径）
         const map = new Map<string, Workflow[]>();
         workflows.forEach((w: Workflow) => {
-            const folder = w.output.target_folder || t('common.root_dir');
+            const folder = w.output.target_folder || defaultPath || t('common.root_dir');
             if (!map.has(folder)) map.set(folder, []);
             map.get(folder)!.push(w);
         });
         return Array.from(map.entries());
-    }, [workflows, t]);
+    }, [workflows, defaultPath, t]);
 
     const typeLabel = (type: string) => {
         const key = `activity.type.${type.toLowerCase()}`;
@@ -125,11 +127,14 @@ const ActivityHub: React.FC = () => {
                         {t('activity.section_pools')}
                     </h2>
                     <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
-                        {pools.map(([folder, ws]) => (
+                        {pools.map(([folder, ws]) => {
+                            const openable = folder && folder !== t('common.root_dir');
+                            return (
                             <button
                                 key={folder}
-                                onClick={() => ws[0]?.output.target_folder && openFolder(ws[0].output.target_folder)}
-                                className="group flex items-center gap-3 px-3 py-2.5 rounded-panel bg-bg-2 border border-line hover:border-line-2 transition-colors text-left"
+                                onClick={() => openable && openFolder(folder)}
+                                disabled={!openable}
+                                className="group flex items-center gap-3 px-3 py-2.5 rounded-panel bg-bg-2 border border-line hover:border-line-2 transition-colors text-left disabled:cursor-default"
                             >
                                 <div className="w-9 h-9 shrink-0 rounded-[9px] bg-bg-0 border border-line flex items-center justify-center">
                                     <Folder className="w-[18px] h-[18px] text-muted group-hover:text-accent transition-colors" />
@@ -144,7 +149,8 @@ const ActivityHub: React.FC = () => {
                                     {ws.length}
                                 </span>
                             </button>
-                        ))}
+                            );
+                        })}
                     </div>
                 </section>
             </div>

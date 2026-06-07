@@ -1,6 +1,5 @@
 import React from 'react';
 import { LayoutDashboard, Activity, Settings, Pin, PinOff } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { AppTab } from '../../types/navigation';
 
@@ -40,11 +39,7 @@ const Navigator: React.FC<NavigatorProps> = ({ activeTab, onTabChange, isAlwaysO
             {active && (
                 <>
                     <span className="absolute inset-0 rounded-[9px] bg-accent-soft" />
-                    <motion.span
-                        layoutId="rail-active-bar"
-                        className="absolute -left-[7px] top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-full bg-accent"
-                        transition={{ duration: 0.18, ease: 'easeOut' }}
-                    />
+                    <span className="absolute -left-[7px] top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-full bg-accent" />
                 </>
             )}
             <span className={`relative z-10 ${active || accent ? 'text-accent' : 'text-muted group-hover:text-ink'} transition-colors`}>

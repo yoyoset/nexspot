@@ -63,6 +63,12 @@ pub fn save_selection(state_arc: &Arc<RwLock<OverlayState>>, app: &AppHandle) ->
         if let Err(e) = crate::service::win32::bitmap::save_bitmap_to_file(raw_hbm, &file_path, quality) {
             log::error!("GDI Save fail: {:?}", e);
         } else {
+            crate::service::activity::log_activity(
+                &app_handle,
+                "screenshot",
+                Some(file_path.display().to_string()),
+                None,
+            );
             let _ = app_handle.notification().builder()
                 .title(l10n::t(&app_handle, "backend.notification.saved_title", "Saved"))
                 .body(format!("{}: {}", l10n::t(&app_handle, "backend.notification.saved_body", "Image saved locally"), file_path.display()))
@@ -98,6 +104,12 @@ pub fn save_selection_to_path(
         if let Err(e) = crate::service::win32::bitmap::save_bitmap_to_file(raw_hbm, &path_buf, quality) {
             log::error!("GDI SaveAs fail: {:?}", e);
         } else {
+            crate::service::activity::log_activity(
+                &app_handle,
+                "screenshot",
+                Some(path_buf.display().to_string()),
+                None,
+            );
             let _ = app_handle.notification().builder()
                 .title(l10n::t(&app_handle, "backend.notification.saved_title", "Saved"))
                 .body(format!("{}: {}", l10n::t(&app_handle, "backend.notification.saved_body", "Image saved locally"), path_buf.display()))
