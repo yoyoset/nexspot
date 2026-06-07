@@ -16,7 +16,7 @@ impl Default for AppConfig {
             snapshot_engine: "vello".to_string(),
             workflows: super::types::default_workflows(),
             theme: "system".to_string(),
-            accent_color: "#3b82f6".to_string(),
+            accent_color: "#7a6ff2".to_string(), // Studio periwinkle
             jpg_quality: 90,
             concurrency: 4,
             registration_errors: Vec::new(),

@@ -143,7 +143,7 @@ fn default_theme() -> String {
 }
 
 fn default_accent_color() -> String {
-    "#3b82f6".to_string()
+    "#7a6ff2".to_string() // Studio periwinkle
 }
 
 fn default_true() -> bool {

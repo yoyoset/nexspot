@@ -54,6 +54,12 @@ impl ConfigState {
 
     pub fn load(&mut self) {
         self.config = io::load(&self.config_path);
+        // One-time migration: legacy default accent (blue) → Studio periwinkle.
+        // Only the exact old default is bumped; user-chosen colors are preserved.
+        if self.config.accent_color.eq_ignore_ascii_case("#3b82f6") {
+            self.config.accent_color = "#7a6ff2".to_string();
+            self.save();
+        }
         // Differential update logic is handled by io::load returning full config
         // Re-register all to be safe? Or differential?
         // Original logic was: load -> register_all (which effectively re-registers)
