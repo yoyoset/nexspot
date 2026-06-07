@@ -46,7 +46,7 @@ const ActivityHub: React.FC = () => {
     };
 
     return (
-        <div className="w-full h-full bg-bg-main flex flex-col overflow-hidden select-none">
+        <div className="w-full h-full bg-bg-0 flex flex-col overflow-hidden select-none">
             {/* Header */}
             <div className="flex items-center gap-3 px-6 py-[18px] border-b border-line shrink-0">
                 <h1 className="text-[17px] font-extrabold tracking-[-0.02em] text-ink leading-none whitespace-nowrap">

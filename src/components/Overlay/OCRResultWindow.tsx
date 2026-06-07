@@ -103,7 +103,7 @@ const OCRResultWindow: React.FC = () => {
                                             fontSize: `${word.height * 0.8}px`,
                                             lineHeight: `${word.height}px`
                                         }}
-                                        className="inline-flex items-center justify-center bg-accent/5 hover:bg-accent/40 border border-transparent hover:border-accent/50 rounded-[1px] cursor-text transition-all text-text-main/0 hover:text-text-main/100 leading-none whitespace-nowrap overflow-hidden"
+                                        className="inline-flex items-center justify-center bg-accent/5 hover:bg-accent/40 border border-transparent hover:border-accent/50 rounded-[1px] cursor-text transition-all text-ink/0 hover:text-ink leading-none whitespace-nowrap overflow-hidden"
                                         title={word.text}
                                     >
                                         {word.text}
@@ -134,7 +134,7 @@ const OCRResultWindow: React.FC = () => {
             
             {/* Branding Indicator (Subtle) */}
             <div className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-20 transition-opacity pointer-events-none">
-                <span className="text-[8px] tech-text text-text-muted uppercase tracking-tighter">
+                <span className="mono text-[9px] text-muted">
                     {t('ocr_result.engine_info')}
                 </span>
             </div>

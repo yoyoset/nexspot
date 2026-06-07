@@ -17,14 +17,11 @@
     --on-accent: #ffffff;
     --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
     --accent-line: color-mix(in srgb, var(--accent) 38%, transparent);
-    --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
 
     /* spacing scale */
     --s1: 6px; --s2: 10px; --s3: 16px; --s4: 24px; --s5: 36px;
     /* radius */
     --r-pill: 999px; --r-btn: 9px; --r-panel: 12px; --r-lg: 16px;
-    /* 旧组件遗留圆角（迁移期保留，逐页重写后移除） */
-    --radius-industrial: 2px; --radius-button: 4px;
     /* type */
     --font: "Manrope", system-ui, -apple-system, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -102,17 +99,6 @@ html[data-theme="light"] {
 
     --shadow-float: var(--shadow-float);
 
-    /* 向后兼容别名：现有组件仍在用旧工具名，迁移期映射到 Studio 值，逐页重写后移除 */
-    --color-bg-main: var(--bg0);
-    --color-bg-card: var(--bg1);
-    --color-bg-subtle: var(--bg2);
-    --color-bg-sidebar: var(--bg0);
-    --color-border-subtle: var(--bd);
-    --color-border-hover: var(--bd2);
-    --color-text-main: var(--tx);
-    --color-text-muted: var(--mut);
-    --color-bg-overlay: var(--glass);
-    --color-accent-glow: var(--accent-glow);
 }
 
 /* ---- 3. base ---- */
@@ -140,26 +126,9 @@ body {
     color: var(--tx);
 }
 
-/* ---- 4. 保留的工具类（现有组件依赖） ---- */
-/* 技术元数据：等宽。Studio 方向收敛字距（旧版整屏宽字距已弃） */
-.tech-text {
-    font-family: var(--mono);
-    letter-spacing: -0.01em;
-    font-variant-ligatures: none;
-}
-
+/* ---- 4. 工具类 ---- */
+/* 技术元数据：等宽 */
 .mono { font-family: var(--mono); font-variant-ligatures: none; }
-
-.industrial-panel {
-    background-color: var(--bg1);
-    border: 1px solid var(--bd);
-    border-radius: var(--r-panel);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.15s ease;
-}
-.industrial-panel:hover { border-color: var(--bd2); }
-
-.glow-text { text-shadow: 0 0 12px var(--accent-glow); }
 
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -171,25 +140,6 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: var(--mut); background-clip: padding-box; }
 
-.gap-industrial { gap: 0.5rem; }
-.p-industrial { padding: 0.75rem; }
-
-@keyframes breathing-pulse {
-    0%, 100% { opacity: 0.45; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.12); }
-}
-.animate-breathing { animation: breathing-pulse 3s ease-in-out infinite; }
-
-.noise-bg {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    opacity: 0.015;
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-}
-
 /* 悬浮辅助窗玻璃外壳（PIN / 滚动 / OCR） */
 .float-win {
     background: var(--glass);
@@ -198,16 +148,4 @@ body {
     border: 1px solid var(--bd2);
     border-radius: 16px;
     box-shadow: var(--shadow-float);
-}
-
-.tech-badge {
-    background: var(--accent-soft);
-    border: 1px solid var(--accent-line);
-    padding: 1px 6px;
-    border-radius: 6px;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--accent);
-    font-family: var(--mono);
 }

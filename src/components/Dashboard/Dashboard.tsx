@@ -72,7 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkflows }) => {
     };
 
     return (
-        <div className="w-full h-full bg-bg-main custom-scrollbar overflow-y-auto select-none">
+        <div className="w-full h-full bg-bg-0 custom-scrollbar overflow-y-auto select-none">
             {/* Header */}
             <div className="flex items-center gap-3 px-6 py-[18px] border-b border-line">
                 <div className="flex flex-col gap-0.5 min-w-0">

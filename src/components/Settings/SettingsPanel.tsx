@@ -36,7 +36,7 @@ const SettingsPanel: React.FC = () => {
     ];
 
     return (
-        <div className="w-full h-full bg-bg-main flex overflow-hidden">
+        <div className="w-full h-full bg-bg-0 flex overflow-hidden">
             {/* Sub-tab navigation */}
             <div className="w-[158px] shrink-0 border-r border-line flex flex-col py-3 px-2 gap-0.5 bg-bg-1">
                 {tabs.map((tab) => (

@@ -149,7 +149,7 @@ function App() {
     }
 
     return (
-        <main className="w-full h-full relative overflow-hidden bg-bg-main flex flex-col">
+        <main className="w-full h-full relative overflow-hidden bg-bg-0 flex flex-col">
             <TauriEventListener />
 
             <TitleBar isAlwaysOnTop={isAlwaysOnTop} />
