@@ -12,6 +12,26 @@ use std::sync::{Mutex, RwLock, Arc};
 use tauri::{Emitter, Manager};
 
 pub fn run() {
+    // Capture panic location to a file even when the panic is non-unwinding (renderer
+    // callbacks abort before stderr is readable). Written to %TEMP%/nexspot_panic.log.
+    {
+        let default_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            let msg = format!(
+                "[{:?}] PANIC: {}\n",
+                std::time::SystemTime::now(),
+                info
+            );
+            let path = std::env::temp_dir().join("nexspot_panic.log");
+            use std::io::Write;
+            if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+                let _ = f.write_all(msg.as_bytes());
+            }
+            eprintln!("{}", msg);
+            default_hook(info);
+        }));
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
