@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { translateError } from "../../utils/error";
-import { Settings as SettingsIcon, Cpu, Layers, Palette } from "lucide-react";
+import { SlidersHorizontal, Workflow as WorkflowIcon, Cpu, Palette, Heart } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useConfig } from "../../hooks/useConfig";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,6 @@ import AdvancedTab from "./tabs/AdvancedTab";
 import StyleTab from "./tabs/StyleTab";
 import WorkflowsTab from "./tabs/WorkflowsTab";
 import DonateTab from "./tabs/DonateTab";
-import { Coffee } from "lucide-react";
 
 const SettingsPanel: React.FC = () => {
     const { settingsNavigation, setSettingsNavigation } = useAppStore();
@@ -29,43 +28,34 @@ const SettingsPanel: React.FC = () => {
     }, [fetchConfig]);
 
     const tabs = [
-        { id: "general", icon: Cpu, label: t('settings.tabs.general') },
-        { id: "workflows", icon: Layers, label: t('workflows.title') },
+        { id: "general", icon: SlidersHorizontal, label: t('settings.tabs.general') },
+        { id: "workflows", icon: WorkflowIcon, label: t('workflows.title') },
         { id: "advanced", icon: Cpu, label: t('settings.advanced.title') },
         { id: "style", icon: Palette, label: t('settings.tabs.aesthetics') },
-        { id: "donate", icon: Coffee, label: t('settings.tabs.donate', 'Donate') },
+        { id: "donate", icon: Heart, label: t('settings.tabs.donate', 'Donate') },
     ];
 
     return (
-        <div className="w-full h-full bg-bg-main flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-bg-subtle/30">
-                <div className="flex items-center gap-2">
-                    <SettingsIcon className="w-3.5 h-3.5 text-accent opacity-80" />
-                    <h2 className="font-bold text-text-main text-sm tracking-tight tech-text uppercase">{t('settings.title')}</h2>
-                </div>
+        <div className="w-full h-full bg-bg-main flex overflow-hidden">
+            {/* Sub-tab navigation */}
+            <div className="w-[158px] shrink-0 border-r border-line flex flex-col py-3 px-2 gap-0.5 bg-bg-1">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-btn text-[12.5px] font-semibold transition-colors ${activeTab === tab.id
+                            ? "bg-accent-soft text-accent"
+                            : "text-muted hover:text-ink hover:bg-bg-2"
+                            }`}
+                    >
+                        <tab.icon className="w-4 h-4 shrink-0" />
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar */}
-                <div className="w-36 border-r border-border-subtle flex flex-col py-2 bg-bg-sidebar">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-sm text-[11px] font-bold tech-text transition-all duration-150 border ${activeTab === tab.id
-                                ? "bg-accent/5 text-accent border-accent/20"
-                                : "text-text-muted border-transparent hover:text-text-main hover:bg-white/[0.03]"
-                                }`}
-                        >
-                            <tab.icon className="w-3.5 h-3.5" />
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 p-4 overflow-y-auto bg-bg-main/50 relative custom-scrollbar">
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-7 py-6">
                     <AnimatePresence mode="wait">
                         {activeTab === "general" && (
                             <GeneralTab
@@ -116,14 +106,6 @@ const SettingsPanel: React.FC = () => {
                         )}
                     </AnimatePresence>
                 </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-3 py-1.5 border-t border-border-subtle bg-white/[0.01] flex justify-end">
-                <span className="text-[9px] text-text-muted tech-text opacity-40 uppercase tracking-widest">
-                    {t('common.version_brand')} <span className="mx-1">//</span> {t('common.industrial_grade')}
-                </span>
-            </div>
         </div>
     );
 };

@@ -377,6 +377,9 @@
         "kernel_ready": "内核引擎: 已就绪",
         "status_active": "活跃节点",
         "industrial_grade": "工业级稳定版本",
-        "root_dir": "系统根目录"
+        "root_dir": "系统根目录",
+        "cancel": "取消",
+        "save": "保存",
+        "select": "浏览"
     }
 }

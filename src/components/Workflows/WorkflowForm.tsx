@@ -1,261 +1,170 @@
 import React from "react";
-import { Cpu, FolderOpen, Check, Camera, Scan, Maximize, Target, Hash } from "lucide-react";
+import { FolderOpen, Scan, Monitor, AppWindow, Crop, HardDrive, Clipboard } from "lucide-react";
 import ShortcutRecorder from "../Settings/ShortcutRecorder";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Workflow } from "../../store/useAppStore";
+import { Segmented, Toggle, TextField } from "../Settings/atoms";
 
 interface WorkflowFormProps {
     workflow: Workflow;
     onChange: (w: Workflow) => void;
-    save_path?: string; // Global save path
+    save_path?: string;
 }
+
+const MODES: { type: string; icon: React.ComponentType<{ className?: string }>; key: string }[] = [
+    { type: 'Selection', icon: Scan, key: 'mode_selection' },
+    { type: 'Fullscreen', icon: Monitor, key: 'mode_fullscreen' },
+    { type: 'Window', icon: AppWindow, key: 'mode_window' },
+    { type: 'Snapshot', icon: Crop, key: 'mode_snapshot' },
+];
+
+const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <label className="text-[12px] font-semibold text-muted mb-1.5 block">{children}</label>
+);
 
 const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onChange, save_path }) => {
     const { t } = useTranslation();
 
-    const updateAction = (updates: any) => {
-        onChange({
-            ...workflow,
-            action: {
-                ...workflow.action,
-                ...updates
-            }
-        });
-    };
+    const updateAction = (updates: any) => onChange({ ...workflow, action: { ...workflow.action, ...updates } });
+    const updateActionConfig = (updates: any) => onChange({ ...workflow, action: { ...workflow.action, config: { ...workflow.action.config, ...updates } } });
+    const updateOutput = (updates: any) => onChange({ ...workflow, output: { ...workflow.output, ...updates } });
 
-    const updateActionConfig = (updates: any) => {
-        onChange({
-            ...workflow,
-            action: {
-                ...workflow.action,
-                config: { ...workflow.action.config, ...updates }
-            }
-        });
-    };
-
-    const updateOutput = (updates: any) => {
-        onChange({
-            ...workflow,
-            output: {
-                ...workflow.output,
-                ...updates
-            }
-        });
-    };
+    const ToggleCard: React.FC<{ icon: React.ComponentType<{ className?: string }>; label: string; checked: boolean; onChange: (v: boolean) => void }> =
+        ({ icon: Icon, label, checked, onChange }) => (
+            <div className="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-panel bg-bg-2 border border-line">
+                <Icon className="w-4 h-4 text-muted shrink-0" />
+                <span className="text-[12.5px] font-semibold text-ink flex-1">{label}</span>
+                <Toggle checked={checked} onChange={onChange} />
+            </div>
+        );
 
     return (
-        <div className="space-y-2.5">
-            {/* Row 1: Active + Identity + Shortcut */}
-            <div className="grid grid-cols-[auto_1fr_180px] gap-3 items-end p-2 bg-accent/5 rounded-sm border border-accent/10 shadow-inner">
-                <div className="flex flex-col gap-1.5 pb-0.5">
-                    <label className="text-[9px] text-accent uppercase font-black tech-text tracking-widest">{t('workflows.active')}</label>
-                    <ToggleItem
-                        label=""
-                        checked={workflow.enabled}
-                        onChange={(val) => !workflow.is_system && onChange({ ...workflow, enabled: val })}
-                        disabled={workflow.is_system}
-                    />
+        <div className="flex flex-col gap-5">
+            {/* Name + enabled */}
+            <div>
+                <div className="flex items-center justify-between mb-1.5">
+                    <FieldLabel>{t('workflows.label')}</FieldLabel>
+                    {!workflow.is_system && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11.5px] text-muted">{t('workflows.active')}</span>
+                            <Toggle checked={workflow.enabled} onChange={(v) => onChange({ ...workflow, enabled: v })} />
+                        </div>
+                    )}
                 </div>
-                <div className="space-y-1.5 px-2 border-l border-white/5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest pl-1">{t('workflows.label')}</label>
-                    <input
-                        type="text"
-                        value={workflow.label}
-                        onChange={e => onChange({ ...workflow, label: e.target.value })}
-                        className="w-full h-8 bg-bg-main/50 border border-border-subtle rounded-sm px-3 text-[11px] text-text-main tech-text outline-none focus:border-accent/40 transition-colors"
-                        placeholder="Protocol Name"
-                    />
-                </div>
-                <div className="space-y-1.5 px-2 border-l border-white/5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest pl-1">{t('workflows.shortcut')}</label>
-                    <ShortcutRecorder
-                        value={workflow.shortcut}
-                        onChange={(k) => onChange({ ...workflow, shortcut: k })}
-                        placeholder={t('common.none')}
-                        status={workflow.shortcut ? 'success' : 'neutral'}
-                        className="w-full h-8"
-                    />
-                </div>
+                <TextField
+                    value={workflow.label}
+                    onChange={(e) => onChange({ ...workflow, label: e.target.value })}
+                    placeholder={t('workflows.label')}
+                    className="w-full"
+                />
             </div>
 
-            {/* Row 2: Engine + Mode + Snapshot Settings */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 p-2 bg-black/20 border border-white/5 rounded-sm">
-                <div className="space-y-1.5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest pl-1">{t('workflows.engine')}</label>
-                    <div className="relative group">
-                        <Cpu className="absolute left-2.5 top-2 w-3.5 h-3.5 text-text-muted opacity-40 group-focus-within:text-accent group-focus-within:opacity-100 transition-all" />
-                        <select
-                            value={workflow.action.config.engine}
-                            onChange={e => updateActionConfig({ engine: e.target.value })}
-                            className="w-full h-8 bg-bg-main/30 border border-border-subtle rounded-sm pl-8 pr-2 text-[11px] text-text-main tech-text outline-none focus:border-accent/40 transition-colors appearance-none"
-                        >
-                            <option value="gdi">{t('workflows.engine_gdi')}</option>
-                            <option value="vello">{t('workflows.engine_vello')}</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="space-y-1.5 border-l border-white/5 pl-3">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest pl-1">{t('workflows.mode')}</label>
-                    <div className="relative group">
-                        {workflow.action.type === 'Selection' && <Scan className="absolute left-2.5 top-2 w-3.5 h-3.5 text-text-muted opacity-40" />}
-                        {workflow.action.type === 'Fullscreen' && <Maximize className="absolute left-2.5 top-2 w-3.5 h-3.5 text-text-muted opacity-40" />}
-                        {workflow.action.type === 'Window' && <Target className="absolute left-2.5 top-2 w-3.5 h-3.5 text-text-muted opacity-40" />}
-                        {workflow.action.type === 'Snapshot' && <Camera className="absolute left-2.5 top-2 w-3.5 h-3.5 text-text-muted opacity-40" />}
-
-                        <select
-                            value={workflow.action.type}
-                            onChange={e => updateAction({ type: e.target.value })}
-                            className="w-full h-8 bg-bg-main/30 border border-border-subtle rounded-sm pl-8 pr-2 text-[11px] text-text-main tech-text outline-none focus:border-accent/40 transition-colors appearance-none"
-                        >
-                            <option value="Selection">{t('workflows.mode_selection')}</option>
-                            <option value="Fullscreen">{t('workflows.mode_fullscreen')}</option>
-                            <option value="Window">{t('workflows.mode_window')}</option>
-                            <option value="Snapshot">{t('workflows.mode_snapshot')}</option>
-                        </select>
-                    </div>
-                </div>
-
-                {workflow.action.type === 'Snapshot' && (
-                    <div className="col-span-1 lg:col-span-1 flex gap-2 border-l border-white/5 pl-3">
-                        <div className="flex-1 space-y-1.5">
-                            <label className="text-[10px] text-accent/60 uppercase font-black tech-text tracking-widest flex items-center gap-1">
-                                <Hash className="w-2.5 h-2.5" /> {t('workflows.width')}
-                            </label>
-                            <input
-                                type="number"
-                                value={workflow.action.config.width || 800}
-                                onChange={e => updateActionConfig({ width: parseInt(e.target.value) })}
-                                className="w-full h-8 bg-accent/5 border border-accent/20 rounded-sm px-2 text-[11px] text-text-main tech-text outline-none focus:border-accent"
-                            />
-                        </div>
-                        <div className="flex-1 space-y-1.5">
-                            <label className="text-[10px] text-accent/60 uppercase font-black tech-text tracking-widest flex items-center gap-1">
-                                <Hash className="w-2.5 h-2.5" /> {t('workflows.height')}
-                            </label>
-                            <input
-                                type="number"
-                                value={workflow.action.config.height || 600}
-                                onChange={e => updateActionConfig({ height: parseInt(e.target.value) })}
-                                className="w-full h-8 bg-accent/5 border border-accent/20 rounded-sm px-2 text-[11px] text-text-main tech-text outline-none focus:border-accent"
-                            />
-                        </div>
-                    </div>
-                )}
+            {/* Shortcut */}
+            <div>
+                <FieldLabel>{t('workflows.shortcut')}</FieldLabel>
+                <ShortcutRecorder
+                    value={workflow.shortcut}
+                    onChange={(k) => onChange({ ...workflow, shortcut: k })}
+                    placeholder={t('common.none')}
+                    status={workflow.shortcut ? 'success' : 'neutral'}
+                />
             </div>
 
-            {/* Row 3: Target Folder (Compact) */}
-            <div className="flex items-center gap-4 p-2 bg-black/20 border border-white/5 rounded-sm">
-                <div className="flex-1 space-y-1.5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest pl-1 opacity-50">{t('workflows.target_folder')}</label>
-                    <div className="flex gap-2">
-                        <div className="flex-1 h-8 bg-black/40 border border-border-subtle rounded-sm px-3 flex items-center text-[10px] text-text-muted tech-text font-mono truncate shadow-inner">
-                            {workflow.output.target_folder || save_path || t('workflows.global_default')}
-                        </div>
-                        <button
-                            onClick={async () => {
-                                const path = await invoke('select_folder');
-                                if (path) updateOutput({ target_folder: path as string });
-                            }}
-                            className="h-8 px-3 rounded-sm bg-bg-sidebar border border-border-subtle text-[10px] text-text-muted tech-text hover:text-white hover:bg-accent/40 hover:border-accent/50 transition-all font-bold uppercase tracking-widest flex items-center gap-2"
-                        >
-                            <FolderOpen className="w-3.5 h-3.5" />
-                            {t('common.select')}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Row 4: Naming + Format + Distribution */}
-            <div className="grid grid-cols-[1fr_auto_auto] gap-4 p-2 bg-black/20 border border-white/5 rounded-sm items-end">
-                {/* Naming */}
-                <div className="space-y-1.5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest pl-1 opacity-50">{t('workflows.naming')}</label>
-                    <input
-                        type="text"
-                        value={workflow.output.naming_template}
-                        onChange={e => updateOutput({ naming_template: e.target.value })}
-                        placeholder={t('workflows.naming_placeholder')}
-                        className="w-full h-8 bg-bg-main/30 border border-border-subtle rounded-sm px-3 text-[11px] text-text-main tech-text outline-none focus:border-accent/40 font-mono shadow-inner uppercase"
-                    />
-                </div>
-
-                {/* Format */}
-                <div className="space-y-1.5 px-3 border-l border-white/5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest opacity-50 text-center block mb-1">{t('workflows.format')}</label>
-                    <div className="flex gap-1">
-                        {['png', 'jpg', 'webp'].map(fmt => (
+            {/* Mode 4-card */}
+            <div>
+                <FieldLabel>{t('workflows.mode')}</FieldLabel>
+                <div className="grid grid-cols-4 gap-2">
+                    {MODES.map((m) => {
+                        const active = workflow.action.type === m.type;
+                        const Icon = m.icon;
+                        return (
                             <button
-                                key={fmt}
-                                onClick={() => updateOutput({ format: fmt })}
-                                className={`w-12 h-7 rounded-sm text-[9px] tech-text font-black uppercase transition-all border ${workflow.output.format === fmt
-                                    ? 'bg-accent/20 border-accent/50 text-accent shadow-[0_0_10px_rgba(59,130,246,0.2)]'
-                                    : 'bg-bg-main/30 border-border-subtle text-text-muted hover:border-border-hover'
-                                    }`}
+                                key={m.type}
+                                onClick={() => updateAction({ type: m.type })}
+                                className={`flex flex-col items-center gap-1.5 py-3 rounded-panel border transition-colors ${active ? 'bg-accent-soft border-accent-line text-accent' : 'bg-bg-2 border-line text-muted hover:text-ink hover:border-line-2'}`}
                             >
-                                {fmt}
+                                <Icon className="w-5 h-5" />
+                                <span className="text-[11px] font-semibold text-center px-1 leading-tight">{t(`workflows.${m.key}`)}</span>
                             </button>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
+            </div>
 
-                {/* Distribution */}
-                <div className="space-y-1.5 px-3 border-l border-white/5">
-                    <label className="text-[10px] text-text-muted uppercase font-bold tech-text tracking-widest opacity-50 text-center block mb-1">{t('workflows.destination')}</label>
-                    <div className="flex gap-2">
-                        <ToggleItemHighlight
-                            label={t('workflows.copy_to_clipboard')}
-                            checked={workflow.output.save_to_clipboard}
-                            onChange={(val) => updateOutput({ save_to_clipboard: val })}
-                        />
-                        <ToggleItemHighlight
-                            label={t('workflows.save_to_file')}
-                            checked={workflow.output.save_to_file}
-                            onChange={(val) => updateOutput({ save_to_file: val })}
-                        />
+            {/* Snapshot size (only Snapshot) */}
+            {workflow.action.type === 'Snapshot' && (
+                <div className="flex gap-4">
+                    <div className="flex-1">
+                        <FieldLabel>{t('workflows.width')}</FieldLabel>
+                        <TextField mono type="number" value={workflow.action.config.width ?? 800}
+                            onChange={(e) => updateActionConfig({ width: parseInt(e.target.value) })} className="w-full" />
+                    </div>
+                    <div className="flex-1">
+                        <FieldLabel>{t('workflows.height')}</FieldLabel>
+                        <TextField mono type="number" value={workflow.action.config.height ?? 600}
+                            onChange={(e) => updateActionConfig({ height: parseInt(e.target.value) })} className="w-full" />
                     </div>
                 </div>
+            )}
+
+            {/* Engine + Format */}
+            <div className="flex flex-wrap gap-6">
+                <div>
+                    <FieldLabel>{t('workflows.engine')}</FieldLabel>
+                    <Segmented
+                        value={workflow.action.config.engine}
+                        onChange={(v) => updateActionConfig({ engine: v })}
+                        options={[{ value: 'gdi', label: 'GDI' }, { value: 'vello', label: 'Vello' }]}
+                    />
+                </div>
+                <div>
+                    <FieldLabel>{t('workflows.format')}</FieldLabel>
+                    <Segmented
+                        value={workflow.output.format}
+                        onChange={(v) => updateOutput({ format: v })}
+                        options={[{ value: 'png', label: 'PNG' }, { value: 'jpg', label: 'JPG' }, { value: 'webp', label: 'WEBP' }]}
+                    />
+                </div>
+            </div>
+
+            {/* Save location */}
+            <div>
+                <FieldLabel>{t('workflows.target_folder')}</FieldLabel>
+                <div className="flex gap-2">
+                    <div className="flex-1 h-9 bg-bg-3 border border-line rounded-btn px-3 flex items-center mono text-[11.5px] text-muted truncate">
+                        {workflow.output.target_folder || save_path || t('workflows.global_default')}
+                    </div>
+                    <button
+                        onClick={async () => {
+                            const path = await invoke('select_folder');
+                            if (path) updateOutput({ target_folder: path as string });
+                        }}
+                        className="flex items-center gap-1.5 h-9 px-3 rounded-btn bg-bg-2 border border-line text-[12.5px] font-semibold text-ink hover:border-line-2 transition-colors shrink-0"
+                    >
+                        <FolderOpen className="w-4 h-4 text-muted" /> {t('common.select')}
+                    </button>
+                </div>
+            </div>
+
+            {/* Naming */}
+            <div>
+                <FieldLabel>{t('workflows.naming')}</FieldLabel>
+                <TextField mono
+                    value={workflow.output.naming_template}
+                    onChange={(e) => updateOutput({ naming_template: e.target.value })}
+                    placeholder={t('workflows.naming_placeholder')}
+                    className="w-full"
+                />
+            </div>
+
+            {/* Output toggles */}
+            <div className="flex gap-3">
+                <ToggleCard icon={HardDrive} label={t('workflows.save_to_file')} checked={workflow.output.save_to_file} onChange={(v) => updateOutput({ save_to_file: v })} />
+                <ToggleCard icon={Clipboard} label={t('workflows.copy_to_clipboard')} checked={workflow.output.save_to_clipboard} onChange={(v) => updateOutput({ save_to_clipboard: v })} />
             </div>
         </div>
     );
 };
-
-const ToggleItem: React.FC<{ label: string; checked: boolean; onChange: (val: boolean) => void; disabled?: boolean }> = ({ label, checked, onChange, disabled }) => (
-    <label className={`flex items-center gap-2 transition-opacity ${disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer group'}`}>
-        <div className={`w-6 h-3.5 rounded-full border transition-all relative ${checked
-            ? 'bg-accent border-accent shadow-[0_0_10px_rgba(59,130,246,0.3)]'
-            : 'bg-bg-main border-border-subtle group-hover:border-border-hover shadow-inner'
-            }`}>
-            <div className={`absolute top-0.5 w-2 h-2 rounded-full transition-all ${checked ? 'left-3 bg-white' : 'left-0.5 bg-text-muted'}`} />
-        </div>
-        <input
-            type="checkbox"
-            className="hidden"
-            checked={checked}
-            onChange={e => !disabled && onChange(e.target.checked)}
-            disabled={disabled}
-        />
-        {label && (
-           <span className={`text-[10px] tech-text uppercase tracking-widest transition-colors ${checked ? 'text-text-main font-bold' : 'text-text-muted group-hover:text-text-main'}`}>
-               {label}
-           </span>
-        )}
-    </label>
-);
-
-const ToggleItemHighlight: React.FC<{ label: string; checked: boolean; onChange: (val: boolean) => void }> = ({ label, checked, onChange }) => (
-    <button
-        onClick={() => onChange(!checked)}
-        className={`h-7 px-3 rounded-sm text-[9px] tech-text font-black uppercase transition-all border flex items-center gap-2 ${checked
-            ? 'bg-accent/10 border-accent/40 text-accent shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]'
-            : 'bg-bg-main/30 border-border-subtle text-text-muted opacity-60 grayscale hover:grayscale-0 hover:opacity-100 hover:border-border-hover'
-            }`}
-    >
-        <div className={`w-1.5 h-1.5 rounded-full ${checked ? 'bg-accent shadow-[0_0_5px_rgba(59,130,246,1)]' : 'bg-text-muted/30'}`} />
-        {label}
-    </button>
-);
 
 export default WorkflowForm;

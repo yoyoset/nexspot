@@ -375,6 +375,9 @@
         "kernel_ready": "Kernel Engine: Ready",
         "status_active": "Active Node",
         "industrial_grade": "Industrial Grade Release",
-        "root_dir": "System Root"
+        "root_dir": "System Root",
+        "cancel": "Cancel",
+        "save": "Save",
+        "select": "Browse"
     }
 }
