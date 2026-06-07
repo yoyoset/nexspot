@@ -42,6 +42,13 @@ impl ConfigState {
         // Load config via IO module
         state.config = io::load(&config_path);
 
+        // One-time migration: legacy default accent (blue) → Studio periwinkle.
+        // Runs on the actual startup path (ConfigState::new); user-chosen colors preserved.
+        if state.config.accent_color.eq_ignore_ascii_case("#3b82f6") {
+            state.config.accent_color = "#7a6ff2".to_string();
+            let _ = io::save(&config_path, &state.config);
+        }
+
         // Fonts registration
         let fonts_dir = io::resolve_fonts_path(app_handle);
         if !fonts_dir.exists() {
