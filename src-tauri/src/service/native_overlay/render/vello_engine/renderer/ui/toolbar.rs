@@ -38,17 +38,17 @@ fn draw_bar(
         return;
     }
 
-    // Draw Background (Zinc-950)
+    // Draw Background (Studio bg1)
     let bg_rect = Rect::new(
         rect.left as f64,
         rect.top as f64,
         rect.right as f64,
         rect.bottom as f64,
     );
-    let bg_brush = Brush::Solid(Color::from_rgba8(24, 24, 27, 255));
-    let border_brush = Brush::Solid(Color::from_rgba8(39, 39, 42, 255));
+    let bg_brush = Brush::Solid(Color::from_rgba8(20, 21, 25, 255)); // --bg1
+    let border_brush = Brush::Solid(Color::from_rgba8(35, 36, 43, 255)); // --bg3 / line2
     let border_stroke = Stroke::new(1.0);
-    let rounded_bg = RoundedRect::from_rect(bg_rect, 3.0);
+    let rounded_bg = RoundedRect::from_rect(bg_rect, 11.0);
 
     scene.fill(
         Fill::NonZero,
@@ -131,10 +131,13 @@ fn draw_bar(
         };
 
         if btn.state != ButtonState::Normal || is_active {
-            let btn_color = if btn.state == ButtonState::Pressed || is_active {
-                Color::from_rgba8(63, 63, 70, 255) // Zinc-700
+            // Selected tool → accent fill (periwinkle); hover/press → subtle bg2/bg3.
+            let btn_color = if is_active {
+                Color::from_rgba8(122, 111, 242, 255) // --accent #7a6ff2
+            } else if btn.state == ButtonState::Pressed {
+                Color::from_rgba8(35, 36, 43, 255) // --bg3
             } else {
-                Color::from_rgba8(39, 39, 42, 255) // Zinc-800
+                Color::from_rgba8(27, 28, 33, 255) // --bg2
             };
             let btn_rect = Rect::new(
                 btn.rect.left as f64,
@@ -142,7 +145,7 @@ fn draw_bar(
                 btn.rect.right as f64,
                 btn.rect.bottom as f64,
             );
-            let rounded_btn = RoundedRect::from_rect(btn_rect, 2.0);
+            let rounded_btn = RoundedRect::from_rect(btn_rect, 8.0);
             scene.fill(
                 Fill::NonZero,
                 Affine::IDENTITY,
@@ -150,23 +153,6 @@ fn draw_bar(
                 None,
                 &rounded_btn,
             );
-
-            // Active Marker (Blue-500)
-            if is_active {
-                let marker_rect = Rect::new(
-                    btn_rect.x0 + 2.0,
-                    btn_rect.y0 + 10.0,
-                    btn_rect.x0 + 4.0,
-                    btn_rect.y1 - 10.0,
-                );
-                scene.fill(
-                    Fill::NonZero,
-                    Affine::IDENTITY,
-                    &Brush::Solid(Color::from_rgba8(59, 130, 246, 255)),
-                    None,
-                    &marker_rect,
-                );
-            }
         }
 
         draw_button_icon(scene, btn, is_active);

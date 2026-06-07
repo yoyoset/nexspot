@@ -14,7 +14,7 @@ pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active: 
     let sc = 1.3;
 
     let color = if is_active {
-        Color::from_rgba8(0, 160, 255, 255)
+        Color::WHITE // on-accent，叠在 periwinkle 选中底上
     } else {
         Color::WHITE
     };
