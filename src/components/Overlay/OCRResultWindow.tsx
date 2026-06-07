@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { X, Copy, Pin, Check } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,20 +62,20 @@ const OCRResultWindow: React.FC = () => {
     };
 
     return (
-        <div className="w-full h-full bg-black/5 bg-white/5 backdrop-blur-sm border border-white/5 flex flex-col select-text relative overflow-hidden group">
+        <div className="w-full h-full bg-bg-0/5 backdrop-blur-sm border border-line flex flex-col select-text relative overflow-hidden group rounded-lg">
             {/* Minimalist Header on Hover */}
             <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="flex items-center gap-2 bg-black/60 px-2 py-1 rounded-sm border border-white/10 pointer-events-auto">
-                    <div className="w-1.5 h-1.5 bg-accent animate-pulse" />
-                    <span className="text-[10px] font-bold tech-text uppercase tracking-widest text-text-main">
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-btn pointer-events-auto float-win">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    <span className="text-[12px] font-semibold text-ink">
                         {t('ocr_result.title')}
                     </span>
                 </div>
-                <div className="flex items-center gap-2 pointer-events-auto">
-                    <button onClick={copyAll} className="p-1 px-2 bg-black/60 border border-white/10 rounded-sm text-[9px] tech-text uppercase hover:bg-white/10 transition-colors text-text-main">
+                <div className="flex items-center gap-1.5 pointer-events-auto">
+                    <button onClick={copyAll} className="float-win px-2.5 py-1.5 rounded-btn text-[11.5px] font-semibold hover:text-accent transition-colors text-ink">
                         {t('ocr_result.copy_all')}
                     </button>
-                    <button onClick={close} className="p-1 bg-black/60 border border-white/10 rounded-sm text-text-muted hover:text-text-main transition-colors">
+                    <button onClick={close} className="float-win w-[28px] h-[28px] flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors">
                         <X size={14} />
                     </button>
                 </div>
@@ -111,8 +111,8 @@ const OCRResultWindow: React.FC = () => {
                                 ))}
                             </motion.div>
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center opacity-40">
-                                <span className="tech-text text-[10px] uppercase font-bold tracking-[0.2em]">
+                            <div className="w-full h-full flex items-center justify-center">
+                                <span className="text-[12px] font-semibold text-muted">
                                     {t('ocr_result.no_text_found')}
                                 </span>
                             </div>
@@ -123,7 +123,7 @@ const OCRResultWindow: React.FC = () => {
                                 <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
                                     <Check size={24} className="text-accent" />
                                 </motion.div>
-                                <span className="tech-text text-[10px] uppercase font-bold tracking-[0.2em]">
+                                <span className="text-[12px] font-semibold text-muted">
                                     {t('ocr_result.analyzing')}
                                 </span>
                             </div>

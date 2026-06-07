@@ -192,69 +192,67 @@ const PinCollectionWindow: React.FC = () => {
     };
 
     return (
-        <div className="w-screen h-screen bg-black/80 backdrop-blur-md border border-white/10 flex flex-col overflow-hidden text-text-main select-none rounded-sm shadow-2xl relative">
+        <div className="float-win w-screen h-screen flex flex-col overflow-hidden text-ink select-none relative">
             {/* Custom Titlebar / Drag Region */}
             <div
                 data-tauri-drag-region
-                className="h-10 w-full flex items-center justify-between px-3 bg-black/40 border-b border-white/5 shrink-0"
+                className="h-9 w-full flex items-center justify-between px-3 border-b border-line shrink-0"
             >
-                <div data-tauri-drag-region className="flex items-center gap-2.5 text-text-muted">
-                    <div className="p-1 rounded-sm bg-accent/10 border border-accent/20 text-accent">
-                        <Cpu className="w-3.5 h-3.5" />
-                    </div>
-                    <span data-tauri-drag-region className="text-[10px] font-bold tech-text uppercase tracking-[0.2em] text-accent opacity-80">{t('pin.title')}</span>
-                    <span className="text-[9px] tech-text bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-sm opacity-40 uppercase tracking-tighter">{t('pin.nodes')}: {pins.length}</span>
-                    
-                    <div className="flex items-center gap-0.5 bg-black/40 p-0.5 rounded-sm border border-white/5 ml-2">
+                <div data-tauri-drag-region className="flex items-center gap-2.5">
+                    <Cpu className="w-4 h-4 text-accent" />
+                    <span data-tauri-drag-region className="text-[12px] font-bold text-ink">{t('pin.title')}</span>
+                    <span className="mono text-[10px] text-muted bg-bg-2 border border-line px-1.5 py-0.5 rounded">{pins.length}</span>
+
+                    <div className="flex items-center gap-0.5 bg-bg-2 p-0.5 rounded-btn border border-line ml-2">
                         <button
                             onClick={() => setLayoutMode('small')}
-                            className={`p-1 rounded-[2px] transition-all ${layoutMode === 'small' ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text-main'}`}
+                            className={`p-1 rounded-[6px] transition-colors ${layoutMode === 'small' ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink'}`}
                             title={t('pin.layout_small')}
                         >
-                            <LayoutGrid size={10} />
+                            <LayoutGrid size={12} />
                         </button>
                         <button
                             onClick={() => setLayoutMode('medium')}
-                            className={`p-1 rounded-[2px] transition-all ${layoutMode === 'medium' ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text-main'}`}
+                            className={`p-1 rounded-[6px] transition-colors ${layoutMode === 'medium' ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink'}`}
                             title={t('pin.layout_medium')}
                         >
-                            <Grid2X2 size={10} />
+                            <Grid2X2 size={12} />
                         </button>
                         <button
                             onClick={() => setLayoutMode('large')}
-                            className={`p-1 rounded-[2px] transition-all ${layoutMode === 'large' ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text-main'}`}
+                            className={`p-1 rounded-[6px] transition-colors ${layoutMode === 'large' ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink'}`}
                             title={t('pin.layout_large')}
                         >
-                            <StretchHorizontal size={10} />
+                            <StretchHorizontal size={12} />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 z-10">
+                <div className="flex items-center gap-1 z-10">
                     <button
                         onClick={togglePinned}
-                        className={`p-1.5 flex items-center justify-center rounded-sm transition-all border ${isPinned ? 'text-accent bg-accent/10 border-accent/20' : 'text-text-muted hover:text-text-main hover:bg-white/5 border-transparent'}`}
+                        className={`w-7 h-7 flex items-center justify-center rounded-btn transition-colors ${isPinned ? 'text-accent bg-accent-soft' : 'text-muted hover:text-ink hover:bg-bg-2'}`}
                         title={isPinned ? t('pin.tooltip_pin_on') : t('pin.tooltip_pin_off')}
                     >
-                        {isPinned ? <Lock size={12} className="stroke-[2.5px]" /> : <Unlock size={12} />}
+                        {isPinned ? <Lock size={13} /> : <Unlock size={13} />}
                     </button>
                     <button
                         onClick={toggleCollapse}
-                        className="p-1.5 flex items-center justify-center rounded-sm text-text-muted hover:text-text-main hover:bg-white/5 transition-all"
+                        className="w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink hover:bg-bg-2 transition-colors"
                         title={isCollapsed ? t('pin.tooltip_expand') : t('pin.tooltip_collapse')}
                     >
                         {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                     </button>
                     <button
                         onClick={clearAll}
-                        className="p-1.5 flex items-center justify-center rounded-sm text-text-muted hover:text-red-500 hover:bg-red-500/5 transition-all"
+                        className="w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-bad hover:bg-bad-soft transition-colors"
                         title={t('pin.tooltip_purge')}
                     >
                         <Trash2 size={13} />
                     </button>
                     <button
                         onClick={closeWindow}
-                        className="p-1.5 flex items-center justify-center rounded-sm text-text-muted hover:text-text-main hover:bg-white/5 transition-all"
+                        className="w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink hover:bg-bg-2 transition-colors"
                         title={t('pin.tooltip_close')}
                     >
                         <X size={14} />
@@ -263,7 +261,7 @@ const PinCollectionWindow: React.FC = () => {
             </div>
 
             {/* Masonry or Grid Layout */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 bg-black/20 custom-scrollbar">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                 <div className={`grid gap-3 ${
                     layoutMode === 'small' ? 'grid-cols-3' : 
                     layoutMode === 'medium' ? 'grid-cols-2' : 
@@ -271,31 +269,31 @@ const PinCollectionWindow: React.FC = () => {
                 }`}>
                     <AnimatePresence>
                     {pins.length === 0 && (
-                        <div className="h-full w-full flex flex-col items-center justify-center text-text-muted/20 gap-3 opacity-40">
-                            <Terminal size={40} className="stroke-[1px]" />
-                            <p className="text-[10px] tech-text uppercase tracking-widest font-bold">{t('pin.no_active_data')}</p>
+                        <div className="h-full w-full flex flex-col items-center justify-center text-muted gap-3 py-16">
+                            <Terminal size={36} className="text-faint" />
+                            <p className="text-[12px] font-semibold">{t('pin.no_active_data')}</p>
                         </div>
                     )}
                     {pins.map(pin => (
                         <motion.div
                             key={pin.id}
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
+                            initial={{ y: 7 }}
+                            animate={{ y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="w-full bg-black/30 border border-white/5 rounded-sm p-3.5 flex flex-col gap-3 relative group shadow-lg hover:border-white/10 transition-all"
+                            className="w-full bg-bg-1 border border-line rounded-panel p-3 flex flex-col gap-3 relative group shadow-sm hover:border-line-2 transition-colors"
                         >
                             <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
                                 {pin.isStreaming && (
-                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-accent/10 border border-accent/20 text-accent rounded-sm text-[8px] uppercase font-bold tech-text tracking-widest animate-pulse">
+                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-accent-soft border border-accent-line text-accent rounded text-[10px] font-semibold animate-pulse">
                                         <Loader2 size={10} className="animate-spin" />
                                         {t('pin.streaming_data')}
                                     </div>
                                 )}
-                                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
                                     {pin.data.type === 'ImageBase64' && (
                                         <button
                                             onClick={() => savePinAs(pin)}
-                                            className="p-1.5 bg-black/60 border border-white/10 rounded-sm text-text-muted hover:text-text-main transition-all"
+                                            className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors"
                                             title={t('pin.tooltip_export')}
                                         >
                                             <Download size={12} />
@@ -303,14 +301,14 @@ const PinCollectionWindow: React.FC = () => {
                                     )}
                                     <button
                                         onClick={() => copyPinData(pin)}
-                                        className="p-1.5 bg-black/60 border border-white/10 rounded-sm text-text-muted hover:text-text-main transition-all"
+                                        className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors"
                                         title={t('pin.tooltip_copy')}
                                     >
                                         <Copy size={12} />
                                     </button>
                                     <button
                                         onClick={() => removePin(pin.id)}
-                                        className="p-1.5 bg-black/60 border border-red-500/20 rounded-sm text-text-muted hover:text-red-500 transition-all"
+                                        className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-bad transition-colors"
                                         title={t('pin.delete_segment')}
                                     >
                                         <X size={12} />
@@ -319,7 +317,7 @@ const PinCollectionWindow: React.FC = () => {
                             </div>
 
                             {pin.data.type === 'ImageBase64' ? (
-                                <div className="rounded-sm overflow-hidden border border-white/5 bg-black/40">
+                                <div className="rounded overflow-hidden border border-line bg-bg-0/40">
                                     <img
                                         src={pin.data.payload}
                                         className="w-full h-auto object-contain max-h-[500px] cursor-context-menu"
@@ -328,14 +326,14 @@ const PinCollectionWindow: React.FC = () => {
                                     />
                                 </div>
                             ) : (
-                                <div className="text-[12px] font-bold tech-text text-text-main/80 prose prose-invert prose-sm max-w-none pt-1 uppercase tracking-tight leading-tight">
+                                <div className="text-[12.5px] text-ink prose prose-invert prose-sm max-w-none pt-1 leading-relaxed">
                                     <ReactMarkdown>{pin.data.payload}</ReactMarkdown>
                                 </div>
                             )}
-                            
-                            <div className="flex justify-between items-center mt-1 pt-2 border-t border-white/5 opacity-20">
-                                <span className="text-[8px] tech-text font-bold">{t('pin.node_id')}: {pin.id.split('-')[0].toUpperCase()}</span>
-                                <span className="text-[8px] tech-text">{new Date(pin.timestamp).toISOString().split('T')[1].split('.')[0]}</span>
+
+                            <div className="flex justify-between items-center mt-0.5 pt-2 border-t border-line">
+                                <span className="mono text-[10px] text-faint">{pin.id.split('-')[0]}</span>
+                                <span className="mono text-[10px] text-faint">{new Date(pin.timestamp).toISOString().split('T')[1].split('.')[0]}</span>
                             </div>
                         </motion.div>
                     ))}
@@ -343,16 +341,14 @@ const PinCollectionWindow: React.FC = () => {
                 </div>
             </div>
             
-            <div className="h-1.5 bg-accent/5 w-full shrink-0 border-t border-white/5" />
-
             {/* Custom Context Menu */}
             <AnimatePresence>
                 {contextMenu && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="fixed z-50 bg-bg-sidebar/95 backdrop-blur-xl border border-white/10 rounded-sm shadow-2xl p-1.5 min-w-[160px] flex flex-col gap-1"
+                        exit={{ opacity: 0, scale: 0.97 }}
+                        className="fixed z-50 float-win rounded-panel p-1.5 min-w-[160px] flex flex-col gap-0.5"
                         style={{ left: Math.min(contextMenu.x, window.innerWidth - 170), top: Math.min(contextMenu.y, window.innerHeight - 150) }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -366,7 +362,7 @@ const PinCollectionWindow: React.FC = () => {
                             label={t('pin.export_jpg')}
                             onClick={() => savePinAs(contextMenu.pin, 'jpg')}
                         />
-                        <div className="h-[1px] bg-white/5 my-0.5 mx-1" />
+                        <div className="h-[1px] bg-line my-0.5 mx-1" />
                         <ContextItem
                             icon={<Copy size={12} />}
                             label={t('pin.copy_to_clipboard')}
@@ -394,12 +390,12 @@ const PinCollectionWindow: React.FC = () => {
 const ContextItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, variant?: 'default' | 'danger' }> = ({ icon, label, onClick, variant = 'default' }) => (
     <button
         onClick={onClick}
-        className={`flex items-center gap-3 px-3 py-2 rounded-sm text-[9px] tech-text font-bold transition-all uppercase tracking-widest ${variant === 'danger'
-            ? 'text-red-400 hover:bg-red-500/10'
-            : 'text-text-muted hover:text-text-main hover:bg-white/5'
+        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-btn text-[12px] font-semibold transition-colors ${variant === 'danger'
+            ? 'text-bad hover:bg-bad-soft'
+            : 'text-muted hover:text-ink hover:bg-bg-2'
             }`}
     >
-        <span className="opacity-60">{icon}</span>
+        <span className="opacity-70">{icon}</span>
         {label}
     </button>
 );
