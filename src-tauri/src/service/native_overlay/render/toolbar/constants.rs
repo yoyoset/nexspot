@@ -1,17 +1,17 @@
 pub mod gdi {
-    // 工业级核心配色 (Zinc Palette)
-    pub const BG_MAIN: u32 = 0xFF18181B;       // Zinc-950
-    pub const BORDER_NORMAL: u32 = 0xFF27272A; // Zinc-800
-    pub const BORDER_LIGHT: u32 = 0xFF3F3F46;  // Zinc-700
-    pub const BG_HOVER: u32 = 0xFF27272A;
-    pub const BG_ACTIVE: u32 = 0xFF3F3F46;     // Zinc-700
-    pub const ACCENT_COLOR: u32 = 0xFF3B82F6;  // Blue-500
-    pub const TEXT_PRIMARY: u32 = 0xFFE4E4E7;  // Zinc-200
-    pub const TEXT_SECONDARY: u32 = 0xFFA1A1AA; // Zinc-400
+    // Studio 配色（与 Webview 设计令牌一致）
+    pub const BG_MAIN: u32 = 0xFF141519;       // --bg1
+    pub const BORDER_NORMAL: u32 = 0xFF23242B; // --bg3 / line2
+    pub const BORDER_LIGHT: u32 = 0xFF2E2F37;
+    pub const BG_HOVER: u32 = 0xFF1B1C21;      // --bg2
+    pub const BG_ACTIVE: u32 = 0xFF7A6FF2;     // --accent（选中态填充）
+    pub const ACCENT_COLOR: u32 = 0xFF7A6FF2;  // periwinkle #7a6ff2
+    pub const TEXT_PRIMARY: u32 = 0xFFECECEF;  // --tx
+    pub const TEXT_SECONDARY: u32 = 0xFF9A9AA5; // --mut
 
-    // 工业级几何参数 (Rationalist Geometry)
-    pub const RADIUS_CONTAINER: f32 = 1.0;
-    pub const RADIUS_WIDGET: f32 = 1.0;
+    // Studio 几何（柔和圆角）
+    pub const RADIUS_CONTAINER: f32 = 11.0;
+    pub const RADIUS_WIDGET: f32 = 8.0;
     pub const GAP_SMALL: f32 = 2.0;
 
     // 属性栏尺寸

@@ -75,13 +75,8 @@ pub fn draw_button_widget(
     is_active: bool,
 ) -> anyhow::Result<()> {
     if btn.state != ButtonState::Normal || is_active {
-        let color = if btn.state == ButtonState::Pressed {
-            BG_ACTIVE
-        } else if is_active {
-            BG_ACTIVE
-        } else {
-            BG_HOVER
-        };
+        // 选中工具 → accent 填充；hover/press → bg2（无侧标记，与 Studio 设计一致）
+        let color = if is_active { BG_ACTIVE } else { BG_HOVER };
 
         let brush = gdi::BrushWrapper::new_solid(color)?;
         gdi::fill_rounded_rectangle(
@@ -95,24 +90,6 @@ pub fn draw_button_widget(
             ),
             RADIUS_WIDGET,
         )?;
-        
-        // Active Marker (Blue Indicator bar - 2px wide, 16px high, centered)
-        if is_active {
-            let marker_brush = gdi::BrushWrapper::new_solid(ACCENT_COLOR)?;
-            let h = (btn.rect.bottom - btn.rect.top) as f32;
-            let marker_h = 16.0;
-            gdi::fill_rounded_rectangle(
-                graphics,
-                &marker_brush,
-                (
-                    btn.rect.left as f32 + 2.0,
-                    btn.rect.top as f32 + (h - marker_h) / 2.0,
-                    2.0,
-                    marker_h,
-                ),
-                1.0,
-            )?;
-        }
     }
     Ok(())
 }

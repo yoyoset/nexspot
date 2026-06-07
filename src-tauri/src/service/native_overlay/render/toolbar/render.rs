@@ -47,9 +47,9 @@ pub fn draw_toolbar(
         // Draw Button Background (Normal/Hover/Pressed/Active)
         widgets::draw_button_widget(&graphics, btn, is_active)?;
 
-        // Draw Icon
+        // Draw Icon — 选中态白色（叠在 accent 填充上），否则常规前景色
         let icon_color = if is_active {
-            ACCENT_COLOR
+            0xFFFFFFFF
         } else {
             TEXT_PRIMARY
         };

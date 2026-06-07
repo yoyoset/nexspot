@@ -90,9 +90,9 @@ fn draw_selection_details(
     let sr = sel.right as f64;
     let sb = sel.bottom as f64;
 
-    let border_color = Color::from_rgba8(0, 160, 255, 255);
+    let border_color = Color::from_rgba8(122, 111, 242, 255); // --accent #7a6ff2
     let border_brush = Brush::Solid(border_color);
-    let border_stroke = Stroke::new(1.0);
+    let border_stroke = Stroke::new(1.5);
     let rect = Rect::new(sl, st, sr, sb);
     scene.stroke(&border_stroke, Affine::IDENTITY, &border_brush, None, &rect);
 

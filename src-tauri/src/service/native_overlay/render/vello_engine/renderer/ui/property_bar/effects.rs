@@ -51,7 +51,7 @@ pub fn draw_advanced_effects(
     scene.fill(
         vello::peniko::Fill::NonZero,
         Affine::IDENTITY,
-        Color::from_rgb8(0, 160, 255),
+        Color::from_rgb8(122, 111, 242),
         None,
         &RoundedRect::from_rect(filled_rect, 2.0),
     );

@@ -19,15 +19,15 @@ pub fn draw_selection_overlay(
         return Ok(());
     }
 
-    // Draw Tiffany Blue Border
+    // Draw accent selection border
     let border_rect = RECT {
         left: sel.left - offset_x,
         top: sel.top - offset_y,
         right: sel.right - offset_x,
         bottom: sel.bottom - offset_y,
     };
-    // Tiffany Blue: 0xFFABAB5 (Note: Win32 uses COLORREF 0xBBGGRR format, but create_solid_brush converts from u32)
-    let border_brush = cache.get_brush(0x0ABAB5)?;
+    // Accent periwinkle #7a6ff2 (RGB)
+    let border_brush = cache.get_brush(0x7A6FF2)?;
     gdi::frame_rect(hdc_mem, &border_rect, &border_brush);
 
     draw_handles(hdc_mem, sel, state, cache, offset_x, offset_y)
@@ -46,9 +46,9 @@ pub fn draw_handles(
     let half = handle_size / 2;
     
     // Get handles and copy them to avoid holding mutable borrow on state.gdi.cache
-    let tiffany_brush_handle = cache.get_brush(0x0ABAB5)?.0;
+    let tiffany_brush_handle = cache.get_brush(0x7A6FF2)?.0;
     let white_brush_handle = cache.get_brush(0xFFFFFF)?.0;
-    let tiffany_pen_handle = cache.get_gdi_pen(0, 2, 0x0ABAB5)?.0;
+    let tiffany_pen_handle = cache.get_gdi_pen(0, 2, 0x7A6FF2)?.0;
 
     let prev_pen = unsafe {
         windows::Win32::Graphics::Gdi::SelectObject(

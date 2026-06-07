@@ -39,7 +39,7 @@ pub fn draw_font_size_selectors(
             vello::peniko::Fill::NonZero,
             Affine::IDENTITY,
             if is_selected {
-                Color::from_rgb8(0, 160, 255)
+                Color::from_rgb8(122, 111, 242)
             } else {
                 Color::from_rgba8(255, 255, 255, 200)
             },

@@ -34,7 +34,7 @@ pub fn handle(
             }
             HitZone::BottomRight => {
                 r.right += dx;
-                r.top += dy;
+                r.bottom += dy;
             }
             _ => {}
         }

@@ -14,7 +14,7 @@ pub fn draw_action_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active
     let sc = 1.3;
 
     let color = if is_active {
-        Color::from_rgba8(0, 160, 255, 255)
+        Color::WHITE // on-accent
     } else {
         Color::WHITE
     };

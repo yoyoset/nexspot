@@ -47,7 +47,7 @@ pub fn draw_stroke_selectors(
             vello::peniko::Fill::NonZero,
             Affine::IDENTITY,
             if is_selected {
-                Color::from_rgb8(0, 160, 255)
+                Color::from_rgb8(122, 111, 242)
             } else {
                 Color::from_rgba8(255, 255, 255, 150)
             },
@@ -83,7 +83,7 @@ pub fn draw_stroke_selectors(
             scene.fill(
                 vello::peniko::Fill::NonZero,
                 Affine::IDENTITY,
-                Color::from_rgb8(0, 160, 255),
+                Color::from_rgb8(122, 111, 242),
                 None,
                 &rounded_icon,
             );
