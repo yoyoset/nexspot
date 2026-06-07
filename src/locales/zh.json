@@ -191,6 +191,12 @@
         "pools": "存储池状态",
         "pool_suffix": "池",
         "enter": "进入",
+        "subtitle": "截图、OCR、滚动拼接的实时记录",
+        "section_stream": "实时活动流",
+        "section_pools": "存储池",
+        "open": "打开",
+        "pool_count_one": "{{count}} 条工作流",
+        "pool_count_other": "{{count}} 条工作流",
         "type": {
             "ocr": "OCR 文字识别",
             "scrolling": "滚动截图拼接",

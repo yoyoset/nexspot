@@ -1,144 +1,152 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Clock, FolderOpen, ChevronRight, FileText, Camera, Scroll } from 'lucide-react';
+import { Camera, FileText, Scroll, Folder, ExternalLink, Activity as ActivityIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore, Workflow, ActivityEntry } from '../../store/useAppStore';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { useConfig } from '../../hooks/useConfig';
+
+const TYPE_META: Record<string, { color: string; Icon: React.ComponentType<{ className?: string }> }> = {
+    ocr: { color: '#22d3ee', Icon: FileText },
+    scrolling: { color: '#f59e0b', Icon: Scroll },
+};
+const typeMeta = (type: string) => TYPE_META[type.toLowerCase()] || { color: 'var(--accent)', Icon: Camera };
+
+const dirOf = (p: string) => p.replace(/[/\\][^/\\]*$/, '');
 
 const ActivityHub: React.FC = () => {
     const { config, activity, fetchActivity } = useAppStore();
+    const { openFolder } = useConfig();
     const { t } = useTranslation();
     const workflows = config?.workflows || [];
 
     useEffect(() => {
         fetchActivity();
-        
-        // Listen for real-time updates
         let unlisten: (() => void) | undefined;
-        const setup = async () => {
+        (async () => {
             const { listen } = await import('@tauri-apps/api/event');
-            unlisten = await listen('activity://updated', () => {
-                fetchActivity();
-            });
-        };
-        setup();
-        
-        return () => {
-            if (unlisten) unlisten();
-        };
+            unlisten = await listen('activity://updated', () => fetchActivity());
+        })();
+        return () => { if (unlisten) unlisten(); };
     }, []);
 
-    const getActivityIcon = (type: string) => {
-        switch (type) {
-            case 'ocr': return <FileText className="w-4 h-4 text-amber-400" />;
-            case 'scrolling': return <Scroll className="w-4 h-4 text-blue-400" />;
-            default: return <Camera className="w-4 h-4 text-emerald-400" />;
-        }
+    const pools = useMemo(() => {
+        const map = new Map<string, Workflow[]>();
+        workflows.forEach((w: Workflow) => {
+            const folder = w.output.target_folder || t('common.root_dir');
+            if (!map.has(folder)) map.set(folder, []);
+            map.get(folder)!.push(w);
+        });
+        return Array.from(map.entries());
+    }, [workflows, t]);
+
+    const typeLabel = (type: string) => {
+        const key = `activity.type.${type.toLowerCase()}`;
+        const tr = t(key);
+        return tr === key ? type : tr;
     };
 
     return (
-        <div className="w-full h-full bg-bg-main flex flex-col px-6 py-4 gap-4 overflow-hidden select-none relative">
-            <div className="noise-bg" />
-            <div className="flex flex-col gap-4 flex-1 relative z-10 overflow-hidden">
-            {/* 1. Header with Technical Indicator */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5 pl-1">
-                    <Activity className="w-4 h-4 text-accent" />
-                    <h2 className="text-[12px] font-bold text-text-main tech-text uppercase tracking-widest">{t('activity.title')}</h2>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-0.5 bg-accent/5 border border-accent/20 rounded-sm">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-breathing shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                    <span className="text-[9px] font-bold text-accent tech-text uppercase tracking-widest">{t('activity.live')}</span>
-                </div>
+        <div className="w-full h-full bg-bg-main flex flex-col overflow-hidden select-none">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-6 py-[18px] border-b border-line shrink-0">
+                <h1 className="text-[17px] font-extrabold tracking-[-0.02em] text-ink leading-none whitespace-nowrap">
+                    {t('activity.title')}
+                </h1>
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-bad/60">
+                    <span className="relative flex items-center justify-center w-2 h-2">
+                        <span className="absolute w-2 h-2 rounded-full bg-bad-soft animate-ping" />
+                        <span className="w-2 h-2 rounded-full bg-bad" />
+                    </span>
+                    <span className="mono text-[10.5px] font-semibold tracking-[0.08em] text-bad">LIVE</span>
+                </span>
+                <span className="ml-auto text-[11.5px] text-muted truncate">{t('activity.subtitle')}</span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1 overflow-hidden">
-                {/* 2. Left: Recent History */}
-                <div className="flex flex-col gap-3 overflow-hidden">
-                    <div className="flex items-center gap-2 px-1">
-                        <Clock className="w-3 h-3 text-text-muted opacity-50" />
-                        <span className="text-[9px] font-bold text-text-muted tech-text uppercase tracking-widest opacity-60">{t('activity.recent')}</span>
-                    </div>
-
-                    <div className="flex-1 bg-black/20 border border-white/5 rounded-sm flex flex-col overflow-y-auto custom-scrollbar p-1.5 space-y-1.5">
-                        <AnimatePresence mode='popLayout'>
-                            {activity.length > 0 ? (
-                                activity.map((entry: ActivityEntry) => (
+            {/* Body: 2-col */}
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 px-6 py-5 overflow-hidden">
+                {/* Left · activity stream */}
+                <section className="flex flex-col min-h-0">
+                    <h2 className="mono text-[10.5px] font-semibold tracking-[0.12em] uppercase text-faint mb-3">
+                        {t('activity.section_stream')}
+                    </h2>
+                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
+                        <AnimatePresence mode="popLayout">
+                            {activity.length > 0 ? activity.map((entry: ActivityEntry) => {
+                                const { color, Icon } = typeMeta(entry.activity_type);
+                                const path = entry.file_path || entry.metadata || '';
+                                return (
                                     <motion.div
                                         key={entry.id}
                                         layout
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/5 rounded-sm hover:border-white/10 transition-colors shadow-sm group/row"
+                                        initial={{ y: 7 }}
+                                        animate={{ y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.97 }}
+                                        transition={{ duration: 0.18 }}
+                                        className="group flex items-center gap-3 px-3 py-2.5 rounded-panel bg-bg-2 border border-line hover:border-line-2 transition-colors"
                                     >
-                                        <div className="p-1.5 bg-black/40 rounded-sm border border-white/5">
-                                            {getActivityIcon(entry.activity_type)}
+                                        <div
+                                            className="w-[34px] h-[34px] shrink-0 rounded-[9px] flex items-center justify-center"
+                                            style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}
+                                        >
+                                            <Icon className="w-4 h-4" />
                                         </div>
                                         <div className="flex flex-col min-w-0 flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-text-main tech-text uppercase tracking-wider">
-                                                        {t(`activity.type.${entry.activity_type.toLowerCase()}` as any) || entry.activity_type}
-                                                    </span>
-                                                    <span className="tech-badge opacity-50 uppercase">{entry.activity_type}</span>
-                                                </div>
-                                                <span className="text-[9px] text-text-muted tech-text opacity-40 group-hover/row:opacity-100 transition-opacity">
-                                                    [{new Date(entry.timestamp * 1000).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]
-                                                </span>
-                                            </div>
-                                            <span className="text-[9px] text-text-muted truncate opacity-30 font-mono mt-0.5">
-                                                {entry.file_path || entry.metadata || "SYSTEM_EVENT"}
-                                            </span>
+                                            <span className="text-[12.5px] font-semibold text-ink truncate">{typeLabel(entry.activity_type)}</span>
+                                            {path && <span className="mono text-[10.5px] text-muted truncate">{path}</span>}
                                         </div>
+                                        <span className="mono text-[10.5px] text-faint shrink-0">
+                                            {new Date(entry.timestamp * 1000).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                        </span>
+                                        {path && (
+                                            <button
+                                                onClick={() => openFolder(dirOf(path))}
+                                                title={t('activity.open')}
+                                                className="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded-btn text-muted hover:text-ink hover:bg-bg-3 transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <ExternalLink className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </motion.div>
-                                ))
-                            ) : (
-                                <div className="flex-1 flex flex-col items-center justify-center text-text-muted/10 p-10 text-center">
-                                    <Activity className="w-8 h-8 mb-3 opacity-10" />
-                                    <p className="text-[10px] tech-text font-bold uppercase tracking-widest">{t('activity.empty')}</p>
-                                    <p className="text-[8px] tech-text opacity-30 uppercase mt-1">{t('activity.empty_desc')}</p>
+                                );
+                            }) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center py-16 gap-2">
+                                    <ActivityIcon className="w-8 h-8 text-faint opacity-40 mb-1" />
+                                    <p className="text-[12.5px] font-semibold text-muted">{t('activity.empty')}</p>
+                                    <p className="text-[11.5px] text-faint">{t('activity.empty_desc')}</p>
                                 </div>
                             )}
                         </AnimatePresence>
                     </div>
-                </div>
+                </section>
 
-                {/* 3. Right: Storage Pools & Health */}
-                <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 px-1">
-                        <FolderOpen className="w-3 h-3 text-text-muted opacity-50" />
-                        <span className="text-[9px] font-bold text-text-muted tech-text uppercase tracking-widest opacity-60">{t('activity.pools')}</span>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1.5">
-                        {workflows.map((w: Workflow) => (
-                            <motion.div
-                                key={w.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="group flex items-center justify-between p-2.5 rounded-sm bg-black/10 border border-white/5 hover:border-white/20 transition-all cursor-pointer shadow-sm"
+                {/* Right · storage pools */}
+                <section className="flex flex-col min-h-0">
+                    <h2 className="mono text-[10.5px] font-semibold tracking-[0.12em] uppercase text-faint mb-3">
+                        {t('activity.section_pools')}
+                    </h2>
+                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
+                        {pools.map(([folder, ws]) => (
+                            <button
+                                key={folder}
+                                onClick={() => ws[0]?.output.target_folder && openFolder(ws[0].output.target_folder)}
+                                className="group flex items-center gap-3 px-3 py-2.5 rounded-panel bg-bg-2 border border-line hover:border-line-2 transition-colors text-left"
                             >
-                                <div className="flex flex-col min-w-0 pr-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[11px] font-bold text-text-main tech-text uppercase group-hover:text-accent transition-colors truncate">
-                                            {w.label}
-                                        </span>
-                                        <div className="w-1 h-1 bg-emerald-500 opacity-60" />
-                                    </div>
-                                    <span className="text-[9px] text-text-muted tech-text truncate opacity-40 uppercase tracking-tighter">
-                                        REF: {w.output.target_folder || t('common.root_dir')}
+                                <div className="w-9 h-9 shrink-0 rounded-[9px] bg-bg-0 border border-line flex items-center justify-center">
+                                    <Folder className="w-[18px] h-[18px] text-muted group-hover:text-accent transition-colors" />
+                                </div>
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="mono text-[11px] font-semibold text-ink truncate">{folder}</span>
+                                    <span className="text-[10.5px] text-muted truncate">
+                                        {ws.map((w) => w.label).join(' · ')}
                                     </span>
                                 </div>
-                                <div className="p-1 px-2 rounded-sm bg-bg-subtle text-text-muted group-hover:text-text-main group-hover:bg-white/5 border border-transparent group-hover:border-white/10 transition-all flex items-center gap-1 shrink-0">
-                                    <span className="text-[8px] font-bold tech-text uppercase tracking-widest">{t('activity.enter')}</span>
-                                    <ChevronRight className="w-3 h-3" />
-                                </div>
-                            </motion.div>
+                                <span className="mono text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 bg-accent-soft text-accent">
+                                    {ws.length}
+                                </span>
+                            </button>
                         ))}
                     </div>
-                    </div>
-                </div>
+                </section>
             </div>
         </div>
     );

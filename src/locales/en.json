@@ -189,6 +189,12 @@
         "pools": "Storage Pools",
         "pool_suffix": "Pool",
         "enter": "Enter",
+        "subtitle": "Live log of captures, OCR and scrolling stitches",
+        "section_stream": "Live activity",
+        "section_pools": "Storage pools",
+        "open": "Open",
+        "pool_count_one": "{{count}} workflow",
+        "pool_count_other": "{{count}} workflows",
         "type": {
             "ocr": "OCR Text Recognition",
             "scrolling": "Scrolling Capture Stitching",
