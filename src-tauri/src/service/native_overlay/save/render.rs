@@ -15,7 +15,7 @@ pub fn render_snapshot(
     state_arc: &Arc<RwLock<OverlayState>>,
     app: &AppHandle,
 ) -> anyhow::Result<RenderedSnapshot> {
-    let (sel, capture_engine, canvas_w, canvas_h) = {
+    let (sel, capture_engine, canvas_w, canvas_h, cap_x, cap_y) = {
         let state = state_arc.read().map_err(|_| anyhow::anyhow!("State lock poisoned"))?;
         (
             state.selection.unwrap_or(RECT {
@@ -27,6 +27,8 @@ pub fn render_snapshot(
             state.capture_engine,
             state.width,
             state.height,
+            state.capture_x,
+            state.capture_y,
         )
     };
 
@@ -54,12 +56,26 @@ pub fn render_snapshot(
             })?;
 
             let full_pixels = image_data.data.as_ref();
-            let mut cp = Vec::with_capacity((width * height * 4) as usize);
+            let row_bytes = width as usize * 4;
+            let mut cp = Vec::with_capacity(row_bytes * height as usize);
             let stride = (canvas_w * 4) as usize;
+            // 选区为世界坐标，画布原点为 (cap_x, cap_y)；转换为画布局部坐标后再索引，
+            // 避免负坐标 (多显示器) 经 `as usize` 回绕导致乘法溢出崩溃。
+            let local_left = sel.left - cap_x;
+            let local_top = sel.top - cap_y;
             for y in 0..height {
-                let row_start = ((sel.top + y) as usize * stride) + (sel.left as usize * 4);
-                if row_start + (width as usize * 4) <= full_pixels.len() {
-                    cp.extend_from_slice(&full_pixels[row_start..row_start + (width as usize * 4)]);
+                let src_y = local_top + y;
+                let mut wrote = false;
+                if src_y >= 0 && (src_y as i64) < canvas_h as i64 && local_left >= 0 {
+                    let row_start = src_y as usize * stride + local_left as usize * 4;
+                    if row_start + row_bytes <= full_pixels.len() {
+                        cp.extend_from_slice(&full_pixels[row_start..row_start + row_bytes]);
+                        wrote = true;
+                    }
+                }
+                if !wrote {
+                    // 行越界 → 补透明，保证 cp 尺寸恒为 width*height*4
+                    cp.extend(std::iter::repeat(0u8).take(row_bytes));
                 }
             }
             // Swap BGRA for GDI compatibility and set alpha to 255
