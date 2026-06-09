@@ -376,7 +376,7 @@
     },
     "common": {
         "none": "None",
-        "version_brand": "NexSpot Core Architecture v0.2.1",
+        "version_brand": "NexSpot Core Architecture v0.3.0",
         "kernel_ready": "Kernel Engine: Ready",
         "status_active": "Active Node",
         "industrial_grade": "Industrial Grade Release",

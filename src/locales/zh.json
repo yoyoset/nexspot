@@ -376,7 +376,7 @@
     },
     "common": {
         "none": "无",
-        "version_brand": "NexSpot 核心架构 v0.2.1",
+        "version_brand": "NexSpot 核心架构 v0.3.0",
         "kernel_ready": "内核引擎: 已就绪",
         "status_active": "活跃节点",
         "industrial_grade": "工业级稳定版本",
