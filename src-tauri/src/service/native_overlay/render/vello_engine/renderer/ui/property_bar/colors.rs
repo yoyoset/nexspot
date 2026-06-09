@@ -29,8 +29,8 @@ pub fn draw_color_palette(
         );
 
         if is_selected {
-            // Studio 双层 ring：accent 描边
-            let ring_rect = btn_rect.inset(-2.5);
+            // Studio accent ring：inset 正值=外扩（kurbo 语义），画在色块外侧才可见
+            let ring_rect = btn_rect.inset(2.5);
             let ring = RoundedRect::from_rect(ring_rect, 7.0);
             scene.stroke(
                 &Stroke::new(1.5),
