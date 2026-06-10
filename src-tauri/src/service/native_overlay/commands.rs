@@ -100,11 +100,35 @@ impl CommandExecutor {
             ToolType::Number => Self::set_tool(manager, DrawingTool::Number, ToolType::Number),
             ToolType::Brush => Self::set_tool(manager, DrawingTool::Brush, ToolType::Brush),
             ToolType::Mosaic => Self::set_tool(manager, DrawingTool::Mosaic, ToolType::Mosaic),
+            // OCR/滚动此前 emit 的事件无任何监听者（死链），改为后端直接调用。
             ToolType::Ocr => {
-                let _ = manager.app.emit("overlay://trigger-ocr", ());
+                let app = manager.app.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = crate::service::ocr::execute_ocr(app).await {
+                        log::error!("[Toolbar] OCR failed: {}", e);
+                    }
+                });
             }
             ToolType::Scrolling => {
-                let _ = manager.app.emit("overlay://trigger-scrolling", ());
+                // 切换语义：未在滚动 → 开始会话；滚动中 → 结束并弹出预览窗
+                let is_scrolling = manager
+                    .state
+                    .read()
+                    .map(|s| s.is_scrolling)
+                    .unwrap_or(false);
+                let app = manager.app.clone();
+                tauri::async_runtime::spawn(async move {
+                    let result = if is_scrolling {
+                        crate::service::native_overlay::scrolling::stop_scrolling(app)
+                            .await
+                            .map(|_| ())
+                    } else {
+                        crate::service::native_overlay::scrolling::start_scrolling(app).await
+                    };
+                    if let Err(e) = result {
+                        log::error!("[Toolbar] Scrolling toggle failed: {}", e);
+                    }
+                });
             }
         }
     }

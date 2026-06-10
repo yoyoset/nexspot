@@ -155,6 +155,21 @@ pub fn draw_tool_icon_widget(
                 None,
             )?;
         }
+        ToolType::Scrolling => {
+            // 滚动长截图：上下两段叠放 + 中间向下箭头（GDI+ 原语，避免依赖字体码点）
+            let cx = (rect.left + rect.right) as f32 / 2.0;
+            let cy = (rect.top + rect.bottom) as f32 / 2.0;
+            let pen = gdi::PenWrapper::new(color, 1.6)?;
+            let w = 13.0;
+            let h = 5.5;
+            gdi::draw_rounded_rectangle(graphics, &pen, (cx - w / 2.0, cy - 9.0, w, h), 2.0)?;
+            gdi::draw_rounded_rectangle(graphics, &pen, (cx - w / 2.0, cy + 3.5, w, h), 2.0)?;
+            // 下箭头
+            let a = gdi::PenWrapper::new(color, 1.6)?;
+            gdi::draw_line(graphics, &a, cx, cy - 2.5, cx, cy + 2.0)?;
+            gdi::draw_line(graphics, &a, cx - 2.5, cy - 0.5, cx, cy + 2.0)?;
+            gdi::draw_line(graphics, &a, cx + 2.5, cy - 0.5, cx, cy + 2.0)?;
+        }
         _ => {
             // Standard font icon
             draw_icon_widget(graphics, rect, icon, color, size)?;

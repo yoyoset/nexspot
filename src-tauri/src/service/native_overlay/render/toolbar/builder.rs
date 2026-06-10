@@ -32,6 +32,8 @@ pub fn rebuild_for_mode(
                 (ToolType::Text, "\u{EE60}", "backend.tool.text", "Text"),
                 (ToolType::Mosaic, "\u{EDDF}", "backend.tool.mosaic", "Mosaic"),
                 (ToolType::Ocr, "\u{F327}", "backend.tool.ocr", "OCR"),
+                // GDI 端不走字形：draw_tool_icon_widget 对 Scrolling 用 GDI+ 原语特绘
+                (ToolType::Scrolling, "", "backend.tool.scrolling", "Scrolling"),
             ];
 
             let group = match engine {

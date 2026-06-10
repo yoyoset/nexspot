@@ -349,7 +349,7 @@
             "copy": "复制",
             "cancel": "退出捕捉",
             "ocr": "OCR 文字识别",
-            "scrolling": "滚动截图拼接"
+            "scrolling": "滚动长截图"
         },
         "engine": {
             "switching_to_advanced": "正在切换至高级引擎...",
