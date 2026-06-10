@@ -5,7 +5,8 @@
             "shortcuts": "快捷键",
             "general": "常规设置",
             "engine": "核心日志",
-            "aesthetics": "外观"
+            "aesthetics": "外观",
+            "donate": "捐赠"
         },
         "performance": {
             "title": "导出",
@@ -87,7 +88,8 @@
                 "register_failed": "无法注册快捷键。可能被其他应用占用。",
                 "empty": "快捷键不能为空",
                 "startup_error": "以下快捷键注册失败:\n{{errors}}",
-                "title": "保存失败"
+                "title": "保存失败",
+                "invalid_format": "快捷键格式无效"
             }
         },
         "aesthetics": {
@@ -261,7 +263,8 @@
         "new_workflow": "新建工作流",
         "status_deactivated": "已停用",
         "field_type": "类型:",
-        "no_protocols": "还没有自定义工作流"
+        "no_protocols": "还没有自定义工作流",
+        "new": "新建工作流"
     },
     "hud": {
         "copied": "已复制到剪贴板",

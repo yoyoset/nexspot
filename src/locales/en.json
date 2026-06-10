@@ -5,7 +5,8 @@
             "shortcuts": "Shortcuts",
             "general": "General Settings",
             "engine": "Kernel Logs",
-            "aesthetics": "Appearance"
+            "aesthetics": "Appearance",
+            "donate": "Donate"
         },
         "performance": {
             "title": "Export",
@@ -87,7 +88,8 @@
                 "register_failed": "Failed to register. Likely in use by another app.",
                 "empty": "Shortcut cannot be empty",
                 "startup_error": "Some shortcuts failed to register at startup:\n{{errors}}",
-                "title": "Save Failed"
+                "title": "Save Failed",
+                "invalid_format": "Invalid shortcut format"
             }
         },
         "aesthetics": {
@@ -261,7 +263,8 @@
         "new_workflow": "New workflow",
         "status_deactivated": "Disabled",
         "field_type": "Type:",
-        "no_protocols": "No custom workflows yet"
+        "no_protocols": "No custom workflows yet",
+        "new": "New workflow"
     },
     "hud": {
         "copied": "Copied to Clipboard",
