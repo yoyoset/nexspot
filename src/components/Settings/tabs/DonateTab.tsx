@@ -11,10 +11,10 @@ const DonateTab: React.FC = () => {
     const { i18n } = useTranslation();
     const isZh = i18n.language === 'zh' || i18n.language === 'zh-CN';
 
-    const title = isZh ? "请我喝杯咖啡" : "Buy me a coffee";
+    const title = isZh ? "赞助一点 Token" : "Sponsor a few tokens";
     const blessing = isZh
-        ? "如果 NexSpot 提升了你的效率，欢迎请开发者喝杯咖啡。你的支持是持续维护与开发新功能的动力。"
-        : "If NexSpot improved your workflow, consider supporting the developer. Your support fuels continuous updates and new features.";
+        ? "如果 NexSpot 提升了你的效率，欢迎赞助一点 Token。你的支持会直接变成下一轮的推理算力，让新功能持续产出。"
+        : "If NexSpot improved your workflow, consider sponsoring a few tokens. Your support converts directly into inference compute that keeps new features shipping.";
 
     const qrs = [
         { img: alipayImg, label: isZh ? "支付宝" : "Alipay" },
