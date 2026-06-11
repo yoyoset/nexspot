@@ -100,6 +100,28 @@ pub async fn run_ocr_on_selection(
     let rgba = crate::service::win32::bitmap::bitmap_to_rgba_image(snapshot.hbitmap.0)?;
     let (w0, h0) = rgba.dimensions();
 
+    // --- 引擎分发 ---
+    let (engine_kind, paddle_lang) = {
+        let state = app.state::<crate::app_state::AppState>();
+        let cfg = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+        (cfg.config.ocr_engine.clone(), cfg.config.ocr_paddle_language.clone())
+    };
+    if engine_kind == "paddle" {
+        if crate::service::paddle_ocr::is_installed(&app) {
+            // Paddle 自带多尺度检测，不做放大；坐标即选区像素系。
+            let mut png = std::io::Cursor::new(Vec::new());
+            rgba.write_to(&mut png, image::ImageFormat::Png)?;
+            let app2 = app.clone();
+            let bytes = png.into_inner();
+            // 子进程 IO 为阻塞调用，移到阻塞线程，避免占住 tokio worker
+            return tauri::async_runtime::spawn_blocking(move || {
+                crate::service::paddle_ocr::run_ocr(&app2, &bytes, &paddle_lang)
+            })
+            .await?;
+        }
+        log::warn!("[OCR] 引擎设为 PaddleOCR 但组件未安装，回退 Windows 内置");
+    }
+
     // 2. 仅小选区放大 2x（WinRT 对小字号在放大后识别更好）；
     //    大图放大既慢又无收益。Triangle 滤镜足够且远快于 Lanczos3。
     let upscale: u32 = if w0.min(h0) < 700 && w0.max(h0) < 1600 { 2 } else { 1 };

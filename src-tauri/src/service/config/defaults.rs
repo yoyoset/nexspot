@@ -15,6 +15,8 @@ impl Default for AppConfig {
             selection_engine: "gdi".to_string(),
             snapshot_engine: "vello".to_string(),
             ocr_language: "auto".to_string(),
+            ocr_engine: "winrt".to_string(),
+            ocr_paddle_language: "chinese".to_string(),
             workflows: super::types::default_workflows(),
             theme: "system".to_string(),
             accent_color: "#7a6ff2".to_string(), // Studio periwinkle

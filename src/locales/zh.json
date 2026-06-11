@@ -54,7 +54,14 @@
             "quick_save_desc": "开启后，双击选区将同时执行“保存到文件”和“复制到剪贴板”动作。",
             "ocr_language": "OCR 识别语言",
             "ocr_language_desc": "仅列出系统已安装的识别语言包；缺中文时去 系统设置→语言→中文→选项 添加 OCR",
-            "ocr_language_auto": "自动（中文界面优先中文）"
+            "ocr_language_auto": "自动（中文界面优先中文）",
+            "ocr_engine": "OCR 识别引擎",
+            "ocr_engine_winrt": "Windows 内置",
+            "paddle_component": "PaddleOCR 组件",
+            "paddle_installed": "已安装 · {{count}} 种语言可用",
+            "paddle_not_installed": "未安装：从 GitHub 下载 PaddleOCR-json (hiroi-sora) 的 release 压缩包，解压到组件目录后点「重新检测」",
+            "paddle_open_dir": "打开组件目录",
+            "paddle_recheck": "重新检测"
         },
         "engine": {
             "title": "系统资源审计",
@@ -372,7 +379,8 @@
             "pin_failed_title": "钉选失败",
             "capture_empty_body": "截图内容为空",
             "macro_error_title": "快捷指令错误",
-            "macro_error_body": "快捷指令 '{id}' 在当前视图中不可用。"
+            "macro_error_body": "快捷指令 '{id}' 在当前视图中不可用。",
+            "ocr_failed_title": "OCR 识别失败"
         },
         "property": {
             "size_small": "小",

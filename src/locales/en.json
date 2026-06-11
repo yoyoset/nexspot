@@ -54,7 +54,14 @@
             "quick_save_desc": "When enabled, double-clicking the selection will perform both 'Save to File' and 'Copy to Clipboard' actions.",
             "ocr_language": "OCR language",
             "ocr_language_desc": "Only languages with an installed Windows OCR pack are listed",
-            "ocr_language_auto": "Auto"
+            "ocr_language_auto": "Auto",
+            "ocr_engine": "OCR engine",
+            "ocr_engine_winrt": "Windows built-in",
+            "paddle_component": "PaddleOCR component",
+            "paddle_installed": "Installed · {{count}} languages available",
+            "paddle_not_installed": "Not installed: download a PaddleOCR-json (hiroi-sora) release, extract into the component folder, then Recheck",
+            "paddle_open_dir": "Open folder",
+            "paddle_recheck": "Recheck"
         },
         "engine": {
             "title": "System Audit Logs",
@@ -372,7 +379,8 @@
             "pin_failed_title": "Pin Failed",
             "capture_empty_body": "Captured image was empty",
             "macro_error_title": "Shortcut Error",
-            "macro_error_body": "Shortcut '{id}' not found in current view."
+            "macro_error_body": "Shortcut '{id}' not found in current view.",
+            "ocr_failed_title": "OCR Failed"
         },
         "property": {
             "size_small": "Small",

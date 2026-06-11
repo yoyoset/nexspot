@@ -107,6 +107,12 @@ pub struct AppConfig {
     /// OCR 识别语言："auto"（界面中文优先 zh-Hans，否则用户档案）或 BCP-47 标签
     #[serde(default = "default_ocr_language")]
     pub ocr_language: String,
+    /// OCR 引擎："winrt"（Windows 内置）或 "paddle"（PaddleOCR-json 本地组件）
+    #[serde(default = "default_ocr_engine")]
+    pub ocr_engine: String,
+    /// PaddleOCR 识别语言（组件 models/config_*.txt 的后缀名，如 chinese/en/japan）
+    #[serde(default = "default_paddle_language")]
+    pub ocr_paddle_language: String,
 
 
     // Appearance Configuration
@@ -152,6 +158,14 @@ fn default_accent_color() -> String {
 
 fn default_ocr_language() -> String {
     "auto".to_string()
+}
+
+fn default_ocr_engine() -> String {
+    "winrt".to_string()
+}
+
+fn default_paddle_language() -> String {
+    "chinese".to_string()
 }
 
 fn default_true() -> bool {

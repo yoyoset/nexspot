@@ -100,6 +100,22 @@ pub fn set_ocr_language(state: State<'_, AppState>, lang: String) -> Result<(), 
     Ok(())
 }
 
+#[tauri::command]
+pub fn set_ocr_engine(state: State<'_, AppState>, engine: String) -> Result<(), ConfigError> {
+    let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+    c_state.config.ocr_engine = engine;
+    c_state.save();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_paddle_language(state: State<'_, AppState>, lang: String) -> Result<(), ConfigError> {
+    let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+    c_state.config.ocr_paddle_language = lang;
+    c_state.save();
+    Ok(())
+}
+
 
 #[tauri::command]
 pub fn set_jpg_quality(state: State<'_, AppState>, quality: u8) -> Result<(), ConfigError> {

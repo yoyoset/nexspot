@@ -10,6 +10,23 @@ interface OcrLanguage {
     display_name: string;
 }
 
+interface PaddleStatus {
+    installed: boolean;
+    dir: string;
+    languages: string[];
+}
+
+const PADDLE_LANG_NAMES: Record<string, string> = {
+    chinese: '中文（简体）',
+    chinese_cht: '中文（繁體）',
+    en: 'English',
+    japan: '日本語',
+    korean: '한국어',
+    latin: 'Latin',
+    cyrillic: 'Кириллица',
+    devanagari: 'देवनागरी',
+};
+
 interface GeneralTabProps {
     config: any;
     selectSavePath: () => void;
@@ -20,10 +37,16 @@ interface GeneralTabProps {
 const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFontFamily, fetchConfig }) => {
     const { t, i18n } = useTranslation();
     const [ocrLangs, setOcrLangs] = useState<OcrLanguage[]>([]);
+    const [paddle, setPaddle] = useState<PaddleStatus | null>(null);
+
+    const refreshPaddle = () => invoke<PaddleStatus>('get_paddle_status').then(setPaddle).catch(() => setPaddle(null));
 
     useEffect(() => {
         invoke<OcrLanguage[]>('get_ocr_languages').then(setOcrLangs).catch(() => setOcrLangs([]));
+        refreshPaddle();
     }, []);
+
+    const ocrEngine = config?.ocr_engine || 'winrt';
 
     const setLanguage = async (lang: string) => {
         if (lang === i18n.language) return;
@@ -95,18 +118,67 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
                 <Toggle checked={!!config?.quick_save} onChange={(v) => invoke('set_quick_save', { enabled: v }).then(fetchConfig)} />
             </Row>
 
-            <Row title={t('settings.general.ocr_language')} hint={t('settings.general.ocr_language_desc')} last>
-                <select
-                    value={config?.ocr_language || 'auto'}
-                    onChange={(e) => invoke('set_ocr_language', { lang: e.target.value }).then(fetchConfig)}
-                    className="h-9 bg-bg-3 border border-line rounded-btn px-3 text-[12.5px] text-ink outline-none focus:border-accent transition-colors cursor-pointer max-w-[220px]"
-                >
-                    <option value="auto">{t('settings.general.ocr_language_auto')}</option>
-                    {ocrLangs.map((l) => (
-                        <option key={l.tag} value={l.tag}>{l.display_name}</option>
-                    ))}
-                </select>
+            <Row title={t('settings.general.ocr_engine')}>
+                <Segmented
+                    value={ocrEngine}
+                    onChange={(v) => { invoke('set_ocr_engine', { engine: v }).then(fetchConfig); refreshPaddle(); }}
+                    options={[
+                        { value: 'winrt', label: t('settings.general.ocr_engine_winrt') },
+                        { value: 'paddle', label: 'PaddleOCR' },
+                    ]}
+                />
             </Row>
+
+            {ocrEngine === 'winrt' ? (
+                <Row title={t('settings.general.ocr_language')} hint={t('settings.general.ocr_language_desc')} last>
+                    <select
+                        value={config?.ocr_language || 'auto'}
+                        onChange={(e) => invoke('set_ocr_language', { lang: e.target.value }).then(fetchConfig)}
+                        className="h-9 bg-bg-3 border border-line rounded-btn px-3 text-[12.5px] text-ink outline-none focus:border-accent transition-colors cursor-pointer max-w-[220px]"
+                    >
+                        <option value="auto">{t('settings.general.ocr_language_auto')}</option>
+                        {ocrLangs.map((l) => (
+                            <option key={l.tag} value={l.tag}>{l.display_name}</option>
+                        ))}
+                    </select>
+                </Row>
+            ) : (
+                <>
+                    <Row
+                        title={t('settings.general.paddle_component')}
+                        hint={paddle?.installed
+                            ? t('settings.general.paddle_installed', { count: paddle.languages.length })
+                            : t('settings.general.paddle_not_installed')}
+                    >
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => paddle && invoke('open_folder', { path: paddle.dir })}
+                                className="h-9 px-3 rounded-btn bg-bg-3 border border-line text-[12.5px] font-semibold text-ink hover:border-line-2 transition-colors"
+                            >
+                                {t('settings.general.paddle_open_dir')}
+                            </button>
+                            <button
+                                onClick={refreshPaddle}
+                                className="h-9 px-3 rounded-btn text-[12.5px] font-semibold text-muted hover:text-ink hover:bg-bg-2 transition-colors"
+                            >
+                                {t('settings.general.paddle_recheck')}
+                            </button>
+                        </div>
+                    </Row>
+                    <Row title={t('settings.general.ocr_language')} last>
+                        <select
+                            value={config?.ocr_paddle_language || 'chinese'}
+                            onChange={(e) => invoke('set_paddle_language', { lang: e.target.value }).then(fetchConfig)}
+                            disabled={!paddle?.installed}
+                            className="h-9 bg-bg-3 border border-line rounded-btn px-3 text-[12.5px] text-ink outline-none focus:border-accent transition-colors cursor-pointer max-w-[220px] disabled:opacity-40"
+                        >
+                            {(paddle?.languages.length ? paddle.languages : ['chinese']).map((l) => (
+                                <option key={l} value={l}>{PADDLE_LANG_NAMES[l] || l}</option>
+                            ))}
+                        </select>
+                    </Row>
+                </>
+            )}
         </motion.div>
     );
 };

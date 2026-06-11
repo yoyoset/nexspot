@@ -104,8 +104,20 @@ impl CommandExecutor {
             ToolType::Ocr => {
                 let app = manager.app.clone();
                 tauri::async_runtime::spawn(async move {
-                    if let Err(e) = crate::service::ocr::execute_ocr(app).await {
+                    if let Err(e) = crate::service::ocr::execute_ocr(app.clone()).await {
                         log::error!("[Toolbar] OCR failed: {}", e);
+                        // 失败必须有用户可见反馈（此前静默失败，被误判为"呼不出来"）
+                        use tauri_plugin_notification::NotificationExt;
+                        let _ = app
+                            .notification()
+                            .builder()
+                            .title(crate::service::l10n::t(
+                                &app,
+                                "backend.notification.ocr_failed_title",
+                                "OCR Failed",
+                            ))
+                            .body(e)
+                            .show();
                     }
                 });
             }

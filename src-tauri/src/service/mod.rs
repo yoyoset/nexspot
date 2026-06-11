@@ -6,6 +6,7 @@ pub mod logger;
 pub mod native_overlay;
 pub mod notification;
 pub mod ocr;
+pub mod paddle_ocr;
 pub mod pin;
 pub mod stitch;
 pub mod tray;
