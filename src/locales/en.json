@@ -51,7 +51,10 @@
             "gdi_fallback": "GDI Fallback",
             "vello_accelerated": "Vello Accelerated",
             "quick_save": "Double-click quick save",
-            "quick_save_desc": "When enabled, double-clicking the selection will perform both 'Save to File' and 'Copy to Clipboard' actions."
+            "quick_save_desc": "When enabled, double-clicking the selection will perform both 'Save to File' and 'Copy to Clipboard' actions.",
+            "ocr_language": "OCR language",
+            "ocr_language_desc": "Only languages with an installed Windows OCR pack are listed",
+            "ocr_language_auto": "Auto"
         },
         "engine": {
             "title": "System Audit Logs",

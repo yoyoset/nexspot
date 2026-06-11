@@ -51,7 +51,10 @@
             "gdi_fallback": "GDI 兼容模式",
             "vello_accelerated": "Vello 硬件加速",
             "quick_save": "双击快速保存",
-            "quick_save_desc": "开启后，双击选区将同时执行“保存到文件”和“复制到剪贴板”动作。"
+            "quick_save_desc": "开启后，双击选区将同时执行“保存到文件”和“复制到剪贴板”动作。",
+            "ocr_language": "OCR 识别语言",
+            "ocr_language_desc": "仅列出系统已安装的识别语言包；缺中文时去 系统设置→语言→中文→选项 添加 OCR",
+            "ocr_language_auto": "自动（中文界面优先中文）"
         },
         "engine": {
             "title": "系统资源审计",

@@ -104,6 +104,10 @@ pub struct AppConfig {
     pub selection_engine: String, // "gdi" or "vello"
     pub snapshot_engine: String,  // "gdi" or "vello"
 
+    /// OCR 识别语言："auto"（界面中文优先 zh-Hans，否则用户档案）或 BCP-47 标签
+    #[serde(default = "default_ocr_language")]
+    pub ocr_language: String,
+
 
     // Appearance Configuration
     #[serde(default = "default_theme")]
@@ -144,6 +148,10 @@ fn default_theme() -> String {
 
 fn default_accent_color() -> String {
     "#7a6ff2".to_string() // Studio periwinkle
+}
+
+fn default_ocr_language() -> String {
+    "auto".to_string()
 }
 
 fn default_true() -> bool {

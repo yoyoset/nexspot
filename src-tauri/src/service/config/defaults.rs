@@ -14,6 +14,7 @@ impl Default for AppConfig {
             snapshot_height: 600,
             selection_engine: "gdi".to_string(),
             snapshot_engine: "vello".to_string(),
+            ocr_language: "auto".to_string(),
             workflows: super::types::default_workflows(),
             theme: "system".to_string(),
             accent_color: "#7a6ff2".to_string(), // Studio periwinkle

@@ -63,6 +63,7 @@ features = [
     "Foundation",
     "Foundation_Numerics",
     "Graphics_Imaging",
+    "Globalization",
     "Media_Ocr",
     "Storage_Streams",
     "Win32_Graphics_Direct2D",

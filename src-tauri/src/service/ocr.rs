@@ -26,6 +26,71 @@ pub struct OcrResultData {
     pub full_text: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct OcrLanguageInfo {
+    pub tag: String,
+    pub display_name: String,
+}
+
+/// 枚举系统已安装的 OCR 识别语言包（设置页下拉只列真实可用项）
+#[tauri::command]
+pub fn get_ocr_languages() -> Result<Vec<OcrLanguageInfo>, String> {
+    use windows::Media::Ocr::OcrEngine;
+    let langs = OcrEngine::AvailableRecognizerLanguages().map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for lang in langs {
+        out.push(OcrLanguageInfo {
+            tag: lang.LanguageTag().map_err(|e| e.to_string())?.to_string(),
+            display_name: lang.DisplayName().map_err(|e| e.to_string())?.to_string(),
+        });
+    }
+    Ok(out)
+}
+
+fn try_engine_for_tag(tag: &str) -> Option<windows::Media::Ocr::OcrEngine> {
+    use windows::Globalization::Language;
+    use windows::Media::Ocr::OcrEngine;
+    let lang = Language::CreateLanguage(&windows::core::HSTRING::from(tag)).ok()?;
+    if !OcrEngine::IsLanguageSupported(&lang).unwrap_or(false) {
+        return None;
+    }
+    OcrEngine::TryCreateFromLanguage(&lang).ok()
+}
+
+/// 选择 OCR 引擎语言：
+/// 1) 设置里指定了具体语言 → 用它；
+/// 2) auto + 中文界面 → 优先 zh-Hans（需系统装有中文 OCR 语言包）；
+/// 3) 否则回退 Windows 用户档案语言。
+fn create_ocr_engine(app: &AppHandle) -> anyhow::Result<windows::Media::Ocr::OcrEngine> {
+    use windows::Media::Ocr::OcrEngine;
+
+    let (app_lang, ocr_pref) = {
+        let state = app.state::<crate::app_state::AppState>();
+        let cfg = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+        (cfg.config.language.clone(), cfg.config.ocr_language.clone())
+    };
+
+    if ocr_pref != "auto" && !ocr_pref.is_empty() {
+        if let Some(engine) = try_engine_for_tag(&ocr_pref) {
+            log::info!("[OCR] engine language (user setting): {}", ocr_pref);
+            return Ok(engine);
+        }
+        log::warn!("[OCR] 设置的识别语言 {} 不可用，回退自动选择", ocr_pref);
+    }
+
+    if app_lang.starts_with("zh") {
+        for tag in ["zh-Hans-CN", "zh-Hans", "zh-CN"] {
+            if let Some(engine) = try_engine_for_tag(tag) {
+                log::info!("[OCR] engine language (auto): {}", tag);
+                return Ok(engine);
+            }
+        }
+        log::warn!("[OCR] 中文 OCR 语言包不可用，回退用户档案语言（设置→时间和语言→语言→中文→选项→添加 OCR 功能）");
+    }
+
+    Ok(OcrEngine::TryCreateFromUserProfileLanguages()?)
+}
+
 pub async fn run_ocr_on_selection(
     app: AppHandle,
     state_arc: Arc<RwLock<crate::service::native_overlay::state::OverlayState>>,
@@ -45,10 +110,13 @@ pub async fn run_ocr_on_selection(
     };
     let (w, h) = img.dimensions();
 
-    // 3. RGBA→BGRA 原始字节直构 SoftwareBitmap（跳过 PNG 编码/解码整个往返）
+    // 3. RGBA→BGRA 原始字节直构 SoftwareBitmap（跳过 PNG 编码/解码整个往返）。
+    //    GDI 位图经 GetDIBits 得到的 alpha 恒为 0，必须强制 255，
+    //    否则按预乘 alpha 解释即全黑图，识别归零。
     let mut bgra = img.into_raw();
     for px in bgra.chunks_exact_mut(4) {
         px.swap(0, 2);
+        px[3] = 255;
     }
     // writer/IBuffer 非 Send，限定作用域在 await 前释放
     let software_bitmap = {
@@ -58,8 +126,10 @@ pub async fn run_ocr_on_selection(
         SoftwareBitmap::CreateCopyFromBuffer(&buffer, BitmapPixelFormat::Bgra8, w as i32, h as i32)?
     };
 
-    // 5. Run OCR
-    let engine = windows::Media::Ocr::OcrEngine::TryCreateFromUserProfileLanguages()?;
+    // 5. Run OCR — 引擎语言按应用界面语言优先选择。
+    //    TryCreateFromUserProfileLanguages 跟随 Windows 用户语言档案，
+    //    档案为英文时中文全盲（只识别出拉丁片段）。
+    let engine = create_ocr_engine(&app)?;
     let result = engine.RecognizeAsync(&software_bitmap)?.await?;
 
     let mut lines = Vec::new();

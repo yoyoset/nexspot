@@ -1,9 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FolderOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Row, Segmented, Toggle, TextField } from "../atoms";
+
+interface OcrLanguage {
+    tag: string;
+    display_name: string;
+}
 
 interface GeneralTabProps {
     config: any;
@@ -14,6 +19,11 @@ interface GeneralTabProps {
 
 const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFontFamily, fetchConfig }) => {
     const { t, i18n } = useTranslation();
+    const [ocrLangs, setOcrLangs] = useState<OcrLanguage[]>([]);
+
+    useEffect(() => {
+        invoke<OcrLanguage[]>('get_ocr_languages').then(setOcrLangs).catch(() => setOcrLangs([]));
+    }, []);
 
     const setLanguage = async (lang: string) => {
         if (lang === i18n.language) return;
@@ -81,8 +91,21 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
                 />
             </Row>
 
-            <Row title={t('settings.general.quick_save')} hint={t('settings.general.quick_save_desc')} last>
+            <Row title={t('settings.general.quick_save')} hint={t('settings.general.quick_save_desc')}>
                 <Toggle checked={!!config?.quick_save} onChange={(v) => invoke('set_quick_save', { enabled: v }).then(fetchConfig)} />
+            </Row>
+
+            <Row title={t('settings.general.ocr_language')} hint={t('settings.general.ocr_language_desc')} last>
+                <select
+                    value={config?.ocr_language || 'auto'}
+                    onChange={(e) => invoke('set_ocr_language', { lang: e.target.value }).then(fetchConfig)}
+                    className="h-9 bg-bg-3 border border-line rounded-btn px-3 text-[12.5px] text-ink outline-none focus:border-accent transition-colors cursor-pointer max-w-[220px]"
+                >
+                    <option value="auto">{t('settings.general.ocr_language_auto')}</option>
+                    {ocrLangs.map((l) => (
+                        <option key={l.tag} value={l.tag}>{l.display_name}</option>
+                    ))}
+                </select>
             </Row>
         </motion.div>
     );
