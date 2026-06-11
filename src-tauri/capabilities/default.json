@@ -4,7 +4,9 @@
   "description": "Capability for the main window",
   "windows": [
     "main",
-    "pin-*"
+    "pin-*",
+    "ocr-result",
+    "scrolling-preview"
   ],
   "permissions": [
     "core:default",

@@ -1,7 +1,6 @@
-use windows::Graphics::Imaging::BitmapDecoder;
-use windows::Storage::Streams::{InMemoryRandomAccessStream, DataWriter};
+use windows::Graphics::Imaging::{BitmapPixelFormat, SoftwareBitmap};
+use windows::Storage::Streams::DataWriter;
 use crate::service::native_overlay::save::render::render_snapshot;
-use crate::service::win32::bitmap::bitmap_to_bytes;
 use std::sync::{Arc, RwLock};
 use tauri::{AppHandle, Manager, Emitter};
 use serde::{Deserialize, Serialize};
@@ -31,35 +30,33 @@ pub async fn run_ocr_on_selection(
     app: AppHandle,
     state_arc: Arc<RwLock<crate::service::native_overlay::state::OverlayState>>,
 ) -> anyhow::Result<OcrResultData> {
-    // 1. Render and convert to bytes
-    let png_bytes = {
-        let snapshot = render_snapshot(&state_arc, &app)?;
-        
-        // --- INDUSTRIAL IMPROVEMENT: 2x Up-scaling ---
-        // WinRT OcrEngine performs significantly better on small/technical fonts when the image 
-        // is up-scaled. We perform a 2x Lanczos resize before decoding.
-        if let Ok(rgba) = crate::service::win32::bitmap::bitmap_to_rgba_image(snapshot.hbitmap.0) {
-            let (w, h) = rgba.dimensions();
-            let upscaled = image::imageops::resize(&rgba, w * 2, h * 2, image::imageops::FilterType::Lanczos3);
-            let mut cursor = std::io::Cursor::new(Vec::new());
-            let _ = upscaled.write_to(&mut cursor, image::ImageFormat::Png);
-            cursor.into_inner()
-        } else {
-            bitmap_to_bytes(snapshot.hbitmap.0, image::ImageFormat::Png, 100)?
-        }
-    };
-    
-    // 3. Create WinRT Stream from bytes
-    let stream = InMemoryRandomAccessStream::new()?;
-    let writer = DataWriter::CreateDataWriter(&stream)?;
-    writer.WriteBytes(&png_bytes)?;
-    writer.StoreAsync()?.await?;
-    writer.FlushAsync()?.await?;
-    stream.Seek(0)?;
+    // 1. Render selection
+    let snapshot = render_snapshot(&state_arc, &app)?;
+    let rgba = crate::service::win32::bitmap::bitmap_to_rgba_image(snapshot.hbitmap.0)?;
+    let (w0, h0) = rgba.dimensions();
 
-    // 4. Decode into SoftwareBitmap
-    let decoder = BitmapDecoder::CreateAsync(&stream)?.await?;
-    let software_bitmap = decoder.GetSoftwareBitmapAsync()?.await?;
+    // 2. 仅小选区放大 2x（WinRT 对小字号在放大后识别更好）；
+    //    大图放大既慢又无收益。Triangle 滤镜足够且远快于 Lanczos3。
+    let upscale: u32 = if w0.min(h0) < 700 && w0.max(h0) < 1600 { 2 } else { 1 };
+    let img = if upscale == 2 {
+        image::imageops::resize(&rgba, w0 * 2, h0 * 2, image::imageops::FilterType::Triangle)
+    } else {
+        rgba
+    };
+    let (w, h) = img.dimensions();
+
+    // 3. RGBA→BGRA 原始字节直构 SoftwareBitmap（跳过 PNG 编码/解码整个往返）
+    let mut bgra = img.into_raw();
+    for px in bgra.chunks_exact_mut(4) {
+        px.swap(0, 2);
+    }
+    // writer/IBuffer 非 Send，限定作用域在 await 前释放
+    let software_bitmap = {
+        let writer = DataWriter::new()?;
+        writer.WriteBytes(&bgra)?;
+        let buffer = writer.DetachBuffer()?;
+        SoftwareBitmap::CreateCopyFromBuffer(&buffer, BitmapPixelFormat::Bgra8, w as i32, h as i32)?
+    };
 
     // 5. Run OCR
     let engine = windows::Media::Ocr::OcrEngine::TryCreateFromUserProfileLanguages()?;
@@ -68,18 +65,21 @@ pub async fn run_ocr_on_selection(
     let mut lines = Vec::new();
     let mut full_text = String::new();
 
+    // BoundingRect 在送入 OCR 的（可能已放大的）图像坐标系里，
+    // 必须除回放大倍数才是选区原始像素坐标 —— 否则文字层整体 2x 错位。
+    let inv = 1.0 / upscale as f64;
     for line in result.Lines()? {
         let mut words = Vec::new();
         let line_text = line.Text()?.to_string();
-        
+
         for word in line.Words()? {
             let rect = word.BoundingRect()?;
             words.push(OcrWord {
                 text: word.Text()?.to_string(),
-                x: rect.X as f64,
-                y: rect.Y as f64,
-                width: rect.Width as f64,
-                height: rect.Height as f64,
+                x: rect.X as f64 * inv,
+                y: rect.Y as f64 * inv,
+                width: rect.Width as f64 * inv,
+                height: rect.Height as f64 * inv,
             });
         }
 
@@ -121,12 +121,31 @@ pub async fn execute_ocr(
     };
 
     match run_ocr_on_selection(app.clone(), state_arc).await {
-        Ok(data) => {
+        Ok(mut data) => {
+            // --- Multi-Monitor DPI Awareness ---
+            // 找选区所在显示器；窗口尺寸/位置与文字层坐标统一用逻辑像素。
+            let monitor = app.monitor_from_point(selection_rect.left as f64, selection_rect.top as f64)
+                .ok().flatten();
+            let scale_factor = monitor.as_ref().map(|m| m.scale_factor()).unwrap_or(1.0);
+
+            // 词坐标是选区物理像素，webview CSS 像素 = 逻辑像素（物理/缩放），
+            // 不除以 DPI 缩放会在高分屏整体错位放大。
+            if (scale_factor - 1.0).abs() > 0.001 {
+                for line in &mut data.lines {
+                    for w in &mut line.words {
+                        w.x /= scale_factor;
+                        w.y /= scale_factor;
+                        w.width /= scale_factor;
+                        w.height /= scale_factor;
+                    }
+                }
+            }
+
             // 2. Add to Pin Collection (Silent backend update)
             let pin_state = app.state::<crate::service::pin::PinState>();
             let pin_id = uuid::Uuid::new_v4().to_string();
             pin_state.add_pin(pin_id, crate::service::pin::PinData::Text(data.full_text.clone()));
-            
+
             {
                 let app_state = app.state::<crate::app_state::AppState>();
                 let mgr = app_state.overlay_manager.lock().unwrap();
@@ -137,14 +156,8 @@ pub async fn execute_ocr(
             // 3. Spawn/Position OCR Selectable Window
             let width = (selection_rect.right - selection_rect.left).abs();
             let height = (selection_rect.bottom - selection_rect.top).abs();
-            
+
             let window_label = "ocr-result";
-            
-            // --- INDUSTRIAL FIX: Multi-Monitor DPI Awareness ---
-            // Instead of assuming primary monitor, we find the monitor where the selection started.
-            let monitor = app.monitor_from_point(selection_rect.left as f64, selection_rect.top as f64)
-                .ok().flatten();
-            let scale_factor = monitor.as_ref().map(|m| m.scale_factor()).unwrap_or(1.0);
             
             let logical_w = width as f64 / scale_factor;
             let logical_h = height as f64 / scale_factor;
