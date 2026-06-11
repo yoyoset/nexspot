@@ -87,29 +87,37 @@ const OCRResultWindow: React.FC = () => {
                 <AnimatePresence>
                     {data ? (
                         data.lines.length > 0 ? (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 className="w-full h-full relative"
                             >
-                                {data.lines.flatMap(line => line.words).map((word, idx) => (
-                                    <span 
-                                        key={idx}
-                                        style={{
-                                            position: 'absolute',
-                                            left: `${word.x}px`,
-                                            top: `${word.y}px`,
-                                            width: `${word.width}px`,
-                                            height: `${word.height}px`,
-                                            fontSize: `${word.height * 0.8}px`,
-                                            lineHeight: `${word.height}px`
-                                        }}
-                                        className="inline-flex items-center justify-center bg-[rgba(12,13,16,0.88)] text-ink border border-line hover:bg-accent/30 hover:border-accent/60 rounded-[3px] cursor-text transition-colors leading-none whitespace-nowrap overflow-hidden"
-                                        title={word.text}
-                                    >
-                                        {word.text}
-                                    </span>
-                                ))}
+                                {(() => {
+                                    const words = data.lines.flatMap(line => line.words);
+                                    // 检测框高度天然抖动（±30%），逐词取高会大字小字乱跳。
+                                    // 取中位高为正文基准统一字号；仅明显高于基准的(真标题)保留大字。
+                                    const hs = words.map(w => w.height).sort((a, b) => a - b);
+                                    const med = hs.length ? hs[Math.floor(hs.length / 2)] : 14;
+                                    const fontFor = (h: number) => (h > med * 1.5 ? h * 0.68 : Math.min(h, med) * 0.68);
+                                    return words.map((word, idx) => (
+                                        <span
+                                            key={idx}
+                                            style={{
+                                                position: 'absolute',
+                                                left: `${word.x}px`,
+                                                top: `${word.y}px`,
+                                                minWidth: `${word.width}px`,
+                                                height: `${word.height}px`,
+                                                fontSize: `${fontFor(word.height)}px`,
+                                                lineHeight: `${word.height}px`,
+                                            }}
+                                            className="inline-flex items-center px-1 bg-[rgba(12,13,16,0.88)] text-ink border border-line hover:bg-accent/30 hover:border-accent/60 rounded-[3px] cursor-text transition-colors leading-none whitespace-nowrap"
+                                            title={word.text}
+                                        >
+                                            {word.text}
+                                        </span>
+                                    ));
+                                })()}
                             </motion.div>
                         ) : (
                             <div className="w-full h-full flex items-center justify-center">

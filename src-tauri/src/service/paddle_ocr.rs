@@ -128,6 +128,24 @@ pub fn shutdown() {
     *proc_slot().lock().unwrap_or_else(|e| e.into_inner()) = None;
 }
 
+/// 预热：后台拉起常驻进程（应用启动 / 切到 paddle 引擎 / 切语言时调用），
+/// 把模型加载的数秒延迟从"首次点 OCR"挪到后台，点击即识别。
+pub fn warmup(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let (engine, lang) = {
+            let state = app.state::<crate::app_state::AppState>();
+            let cfg = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+            (cfg.config.ocr_engine.clone(), cfg.config.ocr_paddle_language.clone())
+        };
+        if engine == "paddle" && is_installed(&app) {
+            if let Err(e) = ensure_proc(&app, &lang) {
+                log::warn!("[OCR] paddle warmup failed: {}", e);
+            }
+        }
+    });
+}
+
 // ---------------- 组件下载 / 更新 ----------------
 
 const GH_LATEST: &str = "https://api.github.com/repos/hiroi-sora/PaddleOCR-json/releases/latest";

@@ -101,18 +101,26 @@ pub fn set_ocr_language(state: State<'_, AppState>, lang: String) -> Result<(), 
 }
 
 #[tauri::command]
-pub fn set_ocr_engine(state: State<'_, AppState>, engine: String) -> Result<(), ConfigError> {
-    let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
-    c_state.config.ocr_engine = engine;
-    c_state.save();
+pub fn set_ocr_engine(app: tauri::AppHandle, state: State<'_, AppState>, engine: String) -> Result<(), ConfigError> {
+    {
+        let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+        c_state.config.ocr_engine = engine;
+        c_state.save();
+    }
+    // 切到 paddle 时立即预热，首次点 OCR 不再等模型加载
+    crate::service::paddle_ocr::warmup(&app);
     Ok(())
 }
 
 #[tauri::command]
-pub fn set_paddle_language(state: State<'_, AppState>, lang: String) -> Result<(), ConfigError> {
-    let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
-    c_state.config.ocr_paddle_language = lang;
-    c_state.save();
+pub fn set_paddle_language(app: tauri::AppHandle, state: State<'_, AppState>, lang: String) -> Result<(), ConfigError> {
+    {
+        let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+        c_state.config.ocr_paddle_language = lang;
+        c_state.save();
+    }
+    // 换语言 = 换模型，后台重启进程预热
+    crate::service::paddle_ocr::warmup(&app);
     Ok(())
 }
 

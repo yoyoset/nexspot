@@ -93,13 +93,19 @@ fn create_ocr_engine(app: &AppHandle) -> anyhow::Result<windows::Media::Ocr::Ocr
     Ok(OcrEngine::TryCreateFromUserProfileLanguages()?)
 }
 
-pub async fn run_ocr_on_selection(
+/// 渲染当前选区为 RGBA 图（需在关闭覆盖层之前调用）
+pub fn render_selection_image(
+    app: &AppHandle,
+    state_arc: &Arc<RwLock<crate::service::native_overlay::state::OverlayState>>,
+) -> anyhow::Result<image::RgbaImage> {
+    let snapshot = render_snapshot(state_arc, app)?;
+    Ok(crate::service::win32::bitmap::bitmap_to_rgba_image(snapshot.hbitmap.0)?)
+}
+
+pub async fn run_ocr_on_image(
     app: AppHandle,
-    state_arc: Arc<RwLock<crate::service::native_overlay::state::OverlayState>>,
+    rgba: image::RgbaImage,
 ) -> anyhow::Result<OcrResultData> {
-    // 1. Render selection
-    let snapshot = render_snapshot(&state_arc, &app)?;
-    let rgba = crate::service::win32::bitmap::bitmap_to_rgba_image(snapshot.hbitmap.0)?;
     let (w0, h0) = rgba.dimensions();
 
     // --- 引擎分发 ---
@@ -111,10 +117,13 @@ pub async fn run_ocr_on_selection(
     if engine_kind == "paddle" {
         if crate::service::paddle_ocr::is_installed(&app) {
             // Paddle 自带多尺度检测，不做放大；坐标即选区像素系。
-            let mut png = std::io::Cursor::new(Vec::new());
-            rgba.write_to(&mut png, image::ImageFormat::Png)?;
+            // BMP 编码（无压缩）远快于 PNG，本地管道不在乎体积。
+            let mut buf = std::io::Cursor::new(Vec::new());
+            image::DynamicImage::ImageRgba8(rgba)
+                .to_rgb8()
+                .write_to(&mut buf, image::ImageFormat::Bmp)?;
             let app2 = app.clone();
-            let bytes = png.into_inner();
+            let bytes = buf.into_inner();
             // 子进程 IO 为阻塞调用，移到阻塞线程，避免占住 tokio worker
             return tauri::async_runtime::spawn_blocking(move || {
                 crate::service::paddle_ocr::run_ocr(&app2, &bytes, &paddle_lang)
@@ -208,23 +217,64 @@ pub async fn execute_ocr(
         let manager = state_global.overlay_manager.lock().unwrap();
         manager.state.clone()
     };
-    
+
     // 1. Get selection bounds for window positioning
     let selection_rect = {
         let state = state_arc.read().unwrap();
         state.selection.ok_or_else(|| "No selection active".to_string())?
     };
 
-    match run_ocr_on_selection(app.clone(), state_arc).await {
-        Ok(mut data) => {
-            // --- Multi-Monitor DPI Awareness ---
-            // 找选区所在显示器；窗口尺寸/位置与文字层坐标统一用逻辑像素。
-            let monitor = app.monitor_from_point(selection_rect.left as f64, selection_rect.top as f64)
-                .ok().flatten();
-            let scale_factor = monitor.as_ref().map(|m| m.scale_factor()).unwrap_or(1.0);
+    // 2. 渲染选区图像（必须在关闭覆盖层之前 —— 快照依赖 overlay 状态）
+    let rgba = render_selection_image(&app, &state_arc).map_err(|e| e.to_string())?;
 
-            // 词坐标是选区物理像素，webview CSS 像素 = 逻辑像素（物理/缩放），
-            // 不除以 DPI 缩放会在高分屏整体错位放大。
+    // 3. 几何/DPI：窗口与文字层坐标统一逻辑像素
+    let monitor = app
+        .monitor_from_point(selection_rect.left as f64, selection_rect.top as f64)
+        .ok()
+        .flatten();
+    let scale_factor = monitor.as_ref().map(|m| m.scale_factor()).unwrap_or(1.0);
+    let width = (selection_rect.right - selection_rect.left).abs();
+    let height = (selection_rect.bottom - selection_rect.top).abs();
+    let logical_w = width as f64 / scale_factor;
+    let logical_h = height as f64 / scale_factor;
+    let logical_x = selection_rect.left as f64 / scale_factor;
+    let logical_y = selection_rect.top as f64 / scale_factor;
+
+    // 4. 立即创建结果窗（data 未到 → 前端显示"识别中"动画，给即时反馈）。
+    //    先清上一轮结果，否则窗口挂载时 get_last_ocr_result 会闪现旧数据。
+    {
+        let mut state = state_arc.write().unwrap_or_else(|e| e.into_inner());
+        state.current_ocr_data = None;
+    }
+    let window_label = "ocr-result";
+    if let Some(w) = app.get_webview_window(window_label) {
+        let _ = w.close();
+    }
+    let preview_url = tauri::WebviewUrl::App("index.html#ocr-result".into());
+    let win = tauri::WebviewWindowBuilder::new(&app, window_label, preview_url)
+        .title("OCR Result")
+        .transparent(true)
+        .decorations(false)
+        .always_on_top(true)
+        .inner_size(logical_w, logical_h)
+        .position(logical_x, logical_y)
+        .build()
+        .ok();
+    if let Some(w) = &win {
+        let _ = w.set_focus();
+    }
+
+    // 5. 关闭截图覆盖层：Vello 的 DXGI 覆盖窗同为 topmost 且会压住结果窗，
+    //    识别开始后覆盖层已无用处，直接关闭，z-order 不再竞争（GDI 同样统一此行为）。
+    {
+        let mut manager = state_global.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+        manager.close_and_reset();
+    }
+
+    // 6. 识别
+    match run_ocr_on_image(app.clone(), rgba).await {
+        Ok(mut data) => {
+            // 词坐标是选区物理像素 → 除以 DPI 缩放归一到逻辑像素
             if (scale_factor - 1.0).abs() > 0.001 {
                 for line in &mut data.lines {
                     for w in &mut line.words {
@@ -236,66 +286,38 @@ pub async fn execute_ocr(
                 }
             }
 
-            // 2. Add to Pin Collection (Silent backend update)
+            // Pin Collection（静默）
             let pin_state = app.state::<crate::service::pin::PinState>();
             let pin_id = uuid::Uuid::new_v4().to_string();
             pin_state.add_pin(pin_id, crate::service::pin::PinData::Text(data.full_text.clone()));
 
+            // 存档供 get_last_ocr_result 兜底
             {
-                let app_state = app.state::<crate::app_state::AppState>();
-                let mgr = app_state.overlay_manager.lock().unwrap();
-                let mut state = mgr.state.write().unwrap();
+                let mut state = state_arc.write().unwrap_or_else(|e| e.into_inner());
                 state.current_ocr_data = Some(data.clone());
             }
 
-            // 3. Spawn/Position OCR Selectable Window
-            let width = (selection_rect.right - selection_rect.left).abs();
-            let height = (selection_rect.bottom - selection_rect.top).abs();
-
-            let window_label = "ocr-result";
-            
-            let logical_w = width as f64 / scale_factor;
-            let logical_h = height as f64 / scale_factor;
-            let logical_x = selection_rect.left as f64 / scale_factor;
-            let logical_y = selection_rect.top as f64 / scale_factor;
-
-            // Close existing if any
-            if let Some(w) = app.get_webview_window(window_label) {
-                let _ = w.close();
-            }
-
-            let preview_url = tauri::WebviewUrl::App("index.html#ocr-result".into());
-            if let Ok(w) = tauri::WebviewWindowBuilder::new(&app, window_label, preview_url)
-                .title("OCR Result")
-                .transparent(true)
-                .decorations(false)
-                .always_on_top(true)
-                .inner_size(logical_w, logical_h)
-                .position(logical_x, logical_y)
-                .build() 
-            {
-                // Vello 的 DXGI 覆盖窗同为 topmost，会压住结果窗 ——
-                // 显式夺取前台/再断言置顶，确保文字层浮在覆盖层之上。
-                let _ = w.set_always_on_top(true);
-                let _ = w.set_focus();
-                // Emit data directly to this window
+            if let Some(w) = &win {
                 let _ = w.emit("ocr://data", data.clone());
             }
 
-            // 4. Notify main UI
             let _ = app.emit("pin-collection-updated", ());
-            
-            // 5. Log to Activity Feed
             crate::service::activity::log_activity(
-                &app, 
-                "ocr", 
-                None, 
-                Some(data.full_text.chars().take(50).collect::<String>() + "...")
+                &app,
+                "ocr",
+                None,
+                Some(data.full_text.chars().take(50).collect::<String>() + "..."),
             );
 
             Ok(data)
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => {
+            // 失败：关掉"识别中"窗口，错误交由调用方通知
+            if let Some(w) = &win {
+                let _ = w.close();
+            }
+            Err(e.to_string())
+        }
     }
 }
 

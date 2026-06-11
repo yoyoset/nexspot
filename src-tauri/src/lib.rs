@@ -175,6 +175,9 @@ pub fn run() {
                 OverlayManager::init_vello_async(app.handle().clone());
             }
 
+            // 7. PaddleOCR 预热（引擎为 paddle 且组件已装时后台拉起，点击即识别）
+            crate::service::paddle_ocr::warmup(app.handle());
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
