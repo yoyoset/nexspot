@@ -1,8 +1,13 @@
 use crate::service::native_overlay::render::toolbar::types::{ToolType, ToolbarButton};
-use vello::kurbo::{Affine, BezPath, Circle, Line, Rect};
+use vello::kurbo::{Affine, BezPath, Cap, Circle, Join, Line, Rect, RoundedRect, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 
-pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active: bool) {
+/// lucide 风格描边：1.5px + 圆端帽/圆转角（设计基准 docs/design §C）
+fn lucide_stroke() -> Stroke {
+    Stroke::new(1.5).with_caps(Cap::Round).with_join(Join::Round)
+}
+
+pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active: bool) {
     let rect = Rect::new(
         btn.rect.left as f64,
         btn.rect.top as f64,
@@ -13,107 +18,133 @@ pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active: 
     let cy = rect.center().y;
     let sc = 1.3;
 
-    let color = if is_active {
-        Color::WHITE // on-accent，叠在 periwinkle 选中底上
-    } else {
-        Color::WHITE
-    };
-    let brush = Brush::Solid(color);
-    let stroke = vello::kurbo::Stroke::new(1.5);
+    // 选中态按钮底为 accent 填充，图标恒为白（on-accent）
+    let brush = Brush::Solid(Color::WHITE);
+    let stroke = lucide_stroke();
     let xf = Affine::translate((cx, cy)) * Affine::scale(sc);
 
     match btn.tool {
+        // square
         ToolType::Rect => {
-            let icon_rect = Rect::from_center_size((0.0, 0.0), (14.0, 11.0));
-            scene.stroke(&stroke, xf, &brush, None, &icon_rect);
+            let r = RoundedRect::new(-6.0, -6.0, 6.0, 6.0, 1.5);
+            scene.stroke(&stroke, xf, &brush, None, &r);
         }
+        // circle
         ToolType::Ellipse => {
-            let circle = Circle::new((0.0, 0.0), 7.0);
-            scene.stroke(&stroke, xf, &brush, None, &circle);
-        }
-        ToolType::Line => {
-            let line = Line::new((-7.0, 7.0), (7.0, -7.0));
-            scene.stroke(&stroke, xf, &brush, None, &line);
-        }
-        ToolType::Arrow => {
-            let mut path = BezPath::new();
-            path.move_to((-7.0, 7.0));
-            path.line_to((7.0, -7.0));
-            path.move_to((1.0, -7.0));
-            path.line_to((7.0, -7.0));
-            path.line_to((7.0, -1.0));
-            scene.stroke(&stroke, xf, &brush, None, &path);
-        }
-        ToolType::Brush => {
-            let mut path = BezPath::new();
-            path.move_to((-6.0, 6.0));
-            path.line_to((-3.0, 1.0));
-            path.line_to((0.0, -2.0));
-            path.line_to((2.0, 0.0));
-            path.line_to((-1.0, 3.0));
-            path.close_path();
-
-            let mut barrel = BezPath::new();
-            barrel.move_to((0.0, -2.0));
-            barrel.line_to((4.0, -6.0));
-            barrel.line_to((6.0, -4.0));
-            barrel.line_to((2.0, 0.0));
-
-            let slit = Line::new((-6.0, 6.0), (-2.0, 2.0));
-            let hole = Circle::new((-2.0, 2.0), 0.8);
-
-            scene.stroke(&vello::kurbo::Stroke::new(1.2), xf, &brush, None, &path);
-            scene.stroke(&stroke, xf, &brush, None, &barrel);
-            scene.stroke(&vello::kurbo::Stroke::new(1.0), xf, &brush, None, &slit);
-            scene.stroke(&vello::kurbo::Stroke::new(1.0), xf, &brush, None, &hole);
-        }
-        ToolType::Text => {
-            if let Ok(t_path) = BezPath::from_svg("M -5,-6 L 5,-6 M 0,-6 L 0,6 M -2,6 L 2,6") {
-                scene.stroke(&stroke, xf, &brush, None, &t_path);
-            }
-        }
-        ToolType::Mosaic => {
-            let s = 2.5;
-            for i in -2..=1 {
-                for j in -2..=1 {
-                    if (i + j) % 2 == 0 {
-                        scene.fill(
-                            Fill::NonZero,
-                            xf,
-                            &brush,
-                            None,
-                            &Rect::new(i as f64 * s, j as f64 * s, (i + 1) as f64 * s, (j + 1) as f64 * s),
-                        );
-                    }
-                }
-            }
-        }
-        ToolType::Number => {
             let circle = Circle::new((0.0, 0.0), 6.5);
             scene.stroke(&stroke, xf, &brush, None, &circle);
-            let mut one = BezPath::new();
-            one.move_to((-1.5, -1.0));
-            one.line_to((0.0, -3.0));
-            one.line_to((0.0, 3.0));
-            scene.stroke(&vello::kurbo::Stroke::new(1.2), xf, &brush, None, &one);
         }
-        ToolType::Ocr => {
-            // Document/Scan icon
-            let icon_rect = Rect::from_center_size((0.0, 0.0), (12.0, 14.0));
-            scene.stroke(&stroke, xf, &brush, None, &icon_rect);
+        // minus（水平短线）
+        ToolType::Line => {
+            let line = Line::new((-6.0, 0.0), (6.0, 0.0));
+            scene.stroke(&stroke, xf, &brush, None, &line);
+        }
+        // move-up-right（对角线 + 右上箭头头部）
+        ToolType::Arrow => {
+            let mut path = BezPath::new();
+            path.move_to((-5.5, 5.5));
+            path.line_to((5.5, -5.5));
+            path.move_to((-0.5, -5.5));
+            path.line_to((5.5, -5.5));
+            path.line_to((5.5, 0.5));
+            scene.stroke(&stroke, xf, &brush, None, &path);
+        }
+        // pen-line（斜置钢笔 + 底部短横线）
+        ToolType::Brush => {
+            // 笔身
+            let body = Line::new((-6.0, 5.4), (2.6, -3.2));
+            scene.stroke(&stroke, xf, &brush, None, &body);
+            // 笔头（旋转小方块）
+            let mut nib = BezPath::new();
+            nib.move_to((2.6, -3.2));
+            nib.line_to((4.7, -5.3));
+            nib.line_to((6.1, -3.9));
+            nib.line_to((4.0, -1.8));
+            nib.close_path();
+            scene.stroke(&stroke, xf, &brush, None, &nib);
+            // 底部 line
+            let base = Line::new((0.5, 6.5), (6.5, 6.5));
+            scene.stroke(&stroke, xf, &brush, None, &base);
+        }
+        // type（衬线 T）
+        ToolType::Text => {
+            let mut path = BezPath::new();
+            path.move_to((-6.0, -3.2));
+            path.line_to((-6.0, -5.8));
+            path.line_to((6.0, -5.8));
+            path.line_to((6.0, -3.2));
+            path.move_to((0.0, -5.8));
+            path.line_to((0.0, 5.8));
+            path.move_to((-2.6, 5.8));
+            path.line_to((2.6, 5.8));
+            scene.stroke(&stroke, xf, &brush, None, &path);
+        }
+        // grid-3x3
+        ToolType::Mosaic => {
+            let r = RoundedRect::new(-6.0, -6.0, 6.0, 6.0, 1.5);
+            scene.stroke(&stroke, xf, &brush, None, &r);
             let mut lines = BezPath::new();
-            lines.move_to((-3.0, -3.0)); lines.line_to((3.0, -3.0));
-            lines.move_to((-3.0, 0.0));  lines.line_to((3.0, 0.0));
-            lines.move_to((-3.0, 3.0));  lines.line_to((1.0, 3.0));
-            scene.stroke(&vello::kurbo::Stroke::new(1.0), xf, &brush, None, &lines);
+            lines.move_to((-2.0, -6.0));
+            lines.line_to((-2.0, 6.0));
+            lines.move_to((2.0, -6.0));
+            lines.line_to((2.0, 6.0));
+            lines.move_to((-6.0, -2.0));
+            lines.line_to((6.0, -2.0));
+            lines.move_to((-6.0, 2.0));
+            lines.line_to((6.0, 2.0));
+            scene.stroke(&Stroke::new(1.2).with_caps(Cap::Round), xf, &brush, None, &lines);
         }
+        // hash（#）
+        ToolType::Number => {
+            let mut path = BezPath::new();
+            path.move_to((-6.0, -2.3));
+            path.line_to((6.0, -2.3));
+            path.move_to((-6.0, 2.3));
+            path.line_to((6.0, 2.3));
+            path.move_to((-1.3, -6.2));
+            path.line_to((-2.6, 6.2));
+            path.move_to((2.6, -6.2));
+            path.line_to((1.3, 6.2));
+            scene.stroke(&stroke, xf, &brush, None, &path);
+        }
+        // scan-text（四角括号 + 文本行）
+        ToolType::Ocr => {
+            let mut corners = BezPath::new();
+            corners.move_to((-6.5, -3.5));
+            corners.line_to((-6.5, -6.5));
+            corners.line_to((-3.5, -6.5));
+            corners.move_to((3.5, -6.5));
+            corners.line_to((6.5, -6.5));
+            corners.line_to((6.5, -3.5));
+            corners.move_to((-6.5, 3.5));
+            corners.line_to((-6.5, 6.5));
+            corners.line_to((-3.5, 6.5));
+            corners.move_to((6.5, 3.5));
+            corners.line_to((6.5, 6.5));
+            corners.line_to((3.5, 6.5));
+            scene.stroke(&stroke, xf, &brush, None, &corners);
+            let mut lines = BezPath::new();
+            lines.move_to((-3.0, -1.8));
+            lines.line_to((3.0, -1.8));
+            lines.move_to((-3.0, 1.8));
+            lines.line_to((1.5, 1.8));
+            scene.stroke(&Stroke::new(1.3).with_caps(Cap::Round), xf, &brush, None, &lines);
+        }
+        // 滚动长截图（顶部面板 + 向下箭头）
         ToolType::Scrolling => {
-            // Stacked squares/layers icon
-            let r1 = Rect::from_center_size((0.0, -3.0), (12.0, 8.0));
-            let r2 = Rect::from_center_size((0.0, 3.0), (12.0, 8.0));
-            scene.stroke(&stroke, xf, &brush, None, &r1);
-            scene.stroke(&stroke, xf, &brush, None, &r2);
+            let panel = RoundedRect::new(-6.0, -6.5, 6.0, -1.5, 1.2);
+            scene.stroke(&stroke, xf, &brush, None, &panel);
+            let mut arrow = BezPath::new();
+            arrow.move_to((0.0, 0.8));
+            arrow.line_to((0.0, 5.8));
+            arrow.move_to((-2.8, 3.2));
+            arrow.line_to((0.0, 6.0));
+            arrow.line_to((2.8, 3.2));
+            scene.stroke(&stroke, xf, &brush, None, &arrow);
         }
-        _ => {}
+        _ => {
+            // 兜底：小圆点占位（不应到达）
+            scene.fill(Fill::NonZero, xf, &brush, None, &Circle::new((0.0, 0.0), 2.0));
+        }
     }
 }
