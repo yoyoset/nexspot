@@ -24,6 +24,8 @@ pub struct OcrLine {
 pub struct OcrResultData {
     pub lines: Vec<OcrLine>,
     pub full_text: String,
+    #[serde(default)]
+    pub engine: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -193,6 +195,7 @@ pub async fn run_ocr_on_selection(
     Ok(OcrResultData {
         lines,
         full_text,
+        engine: "Windows OCR".to_string(),
     })
 }
 
@@ -271,6 +274,10 @@ pub async fn execute_ocr(
                 .position(logical_x, logical_y)
                 .build() 
             {
+                // Vello 的 DXGI 覆盖窗同为 topmost，会压住结果窗 ——
+                // 显式夺取前台/再断言置顶，确保文字层浮在覆盖层之上。
+                let _ = w.set_always_on_top(true);
+                let _ = w.set_focus();
                 // Emit data directly to this window
                 let _ = w.emit("ocr://data", data.clone());
             }

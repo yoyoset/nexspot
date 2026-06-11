@@ -429,5 +429,9 @@ pub fn run_ocr(app: &AppHandle, png_bytes: &[u8], language: &str) -> anyhow::Res
         anyhow::bail!("No text detected in selection");
     }
 
-    Ok(OcrResultData { lines, full_text })
+    Ok(OcrResultData {
+        lines,
+        full_text,
+        engine: "PaddleOCR".to_string(),
+    })
 }

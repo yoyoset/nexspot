@@ -21,6 +21,7 @@ interface OcrLine {
 interface OcrResultData {
     lines: OcrLine[];
     full_text: string;
+    engine?: string;
 }
 
 const OCRResultWindow: React.FC = () => {
@@ -103,7 +104,7 @@ const OCRResultWindow: React.FC = () => {
                                             fontSize: `${word.height * 0.8}px`,
                                             lineHeight: `${word.height}px`
                                         }}
-                                        className="inline-flex items-center justify-center bg-accent/5 hover:bg-accent/40 border border-transparent hover:border-accent/50 rounded-[1px] cursor-text transition-all text-ink/0 hover:text-ink leading-none whitespace-nowrap overflow-hidden"
+                                        className="inline-flex items-center justify-center bg-[rgba(12,13,16,0.88)] text-ink border border-line hover:bg-accent/30 hover:border-accent/60 rounded-[3px] cursor-text transition-colors leading-none whitespace-nowrap overflow-hidden"
                                         title={word.text}
                                     >
                                         {word.text}
@@ -135,7 +136,7 @@ const OCRResultWindow: React.FC = () => {
             {/* Branding Indicator (Subtle) */}
             <div className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-20 transition-opacity pointer-events-none">
                 <span className="mono text-[9px] text-muted">
-                    {t('ocr_result.engine_info')}
+                    {data?.engine || ''}
                 </span>
             </div>
         </div>
