@@ -29,8 +29,8 @@ pub fn rebuild_for_mode(
                 (ToolType::Line, "\u{F1AF}", "backend.tool.line", "Line"), // subtract-line = minus
                 (ToolType::Arrow, "\u{EA70}", "backend.tool.arrow", "Arrow"), // arrow-right-up-line = move-up-right
                 (ToolType::Brush, "\u{EC86}", "backend.tool.brush", "Brush"), // edit-line ≈ pen-line
-                (ToolType::Number, "\u{EDFC}", "backend.tool.sequence", "Sequence"), // hashtag = hash
                 (ToolType::Text, "\u{F201}", "backend.tool.text", "Text"), // text = type
+                (ToolType::Number, "\u{EDFC}", "backend.tool.sequence", "Sequence"), // hashtag = hash
                 (ToolType::Mosaic, "\u{EDDF}", "backend.tool.mosaic", "Mosaic"), // grid-line ≈ grid-3x3
                 (ToolType::Ocr, "\u{F0BD}", "backend.tool.ocr", "OCR"), // scan-line
                 (ToolType::Scrolling, "\u{F4AF}", "backend.tool.scrolling", "Scrolling"), // scroll-to-bottom-line
