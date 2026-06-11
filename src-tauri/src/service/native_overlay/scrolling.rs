@@ -15,20 +15,26 @@ pub fn start_scrolling_session(
     app: AppHandle,
     manager_arc: Arc<Mutex<OverlayManager>>,
 ) -> anyhow::Result<()> {
-    // 1. Prepare initial frame
-    let first_frame = {
+    // 死锁防线：render_snapshot 的 Wgc 分支内部会锁 overlay_manager 取 vello_ctx，
+    // 绝不能持 manager 锁调用它（此前在此自死锁，拖垮全部后续截图操作）。
+    // state / scroll_stitcher 都是 Arc，先克隆出来、立即放锁，渲染全程不碰 manager 锁。
+    let (state_arc, stitcher_arc) = {
         let mgr = manager_arc.lock().unwrap();
-        let snapshot = render_snapshot(&mgr.state, &app)?;
+        (mgr.state.clone(), mgr.scroll_stitcher.clone())
+    };
+
+    // 1. Prepare initial frame（锁外渲染）
+    let first_frame = {
+        let snapshot = render_snapshot(&state_arc, &app)?;
         bitmap_to_rgba_image(snapshot.hbitmap.0)?
     };
 
-    // 2. Initialize Stitcher in Manager
+    // 2. Initialize Stitcher
     {
-        let mgr = manager_arc.lock().unwrap();
-        let mut stitcher_lock = mgr.scroll_stitcher.lock().unwrap();
+        let mut stitcher_lock = stitcher_arc.lock().unwrap();
         *stitcher_lock = Some(Stitcher::new(first_frame));
-        
-        let mut state = mgr.state.write().unwrap();
+
+        let mut state = state_arc.write().unwrap();
         state.is_scrolling = true;
     }
 
@@ -36,36 +42,28 @@ pub fn start_scrolling_session(
     let is_active = Arc::new(AtomicBool::new(true));
     let is_active_clone = is_active.clone();
     let app_clone = app.clone();
-    
+
     tauri::async_runtime::spawn(async move {
         log::info!("[Scrolling] Started background capture loop");
         let mut interval = tokio::time::interval(Duration::from_millis(150));
-        
+
         while is_active_clone.load(Ordering::SeqCst) {
             interval.tick().await;
 
-            // Capture and stitch
-            let result = {
-                let state = app_clone.state::<crate::app_state::AppState>();
-                let mgr = state.overlay_manager.lock().unwrap();
-                
-                let inner_res: anyhow::Result<u32> = match render_snapshot(&mgr.state, &app_clone) {
-                    Ok(snapshot) => {
-                        match bitmap_to_rgba_image(snapshot.hbitmap.0) {
-                            Ok(img) => {
-                                let mut stitcher_lock = mgr.scroll_stitcher.lock().unwrap();
-                                if let Some(ref mut stitcher) = *stitcher_lock {
-                                    stitcher.add_frame(&img)
-                                } else {
-                                    Err(anyhow::anyhow!("Stitcher lost"))
-                                }
-                            }
-                            Err(e) => Err(e),
+            // Capture and stitch（同样不持 manager 锁）
+            let result: anyhow::Result<u32> = match render_snapshot(&state_arc, &app_clone) {
+                Ok(snapshot) => match bitmap_to_rgba_image(snapshot.hbitmap.0) {
+                    Ok(img) => {
+                        let mut stitcher_lock = stitcher_arc.lock().unwrap();
+                        if let Some(ref mut stitcher) = *stitcher_lock {
+                            stitcher.add_frame(&img)
+                        } else {
+                            Err(anyhow::anyhow!("Stitcher lost"))
                         }
                     }
                     Err(e) => Err(e),
-                };
-                inner_res
+                },
+                Err(e) => Err(e),
             };
 
             match result {
