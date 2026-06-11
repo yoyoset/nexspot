@@ -13,7 +13,20 @@ interface OcrLanguage {
 interface PaddleStatus {
     installed: boolean;
     dir: string;
+    version: string | null;
     languages: string[];
+}
+
+interface PaddleUpdateInfo {
+    current: string | null;
+    latest: string | null;
+    has_update: boolean;
+}
+
+interface PaddleProgress {
+    phase: 'download' | 'extract' | 'done' | 'error';
+    downloaded: number;
+    total: number;
 }
 
 const PADDLE_LANG_NAMES: Record<string, string> = {
@@ -38,13 +51,44 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
     const { t, i18n } = useTranslation();
     const [ocrLangs, setOcrLangs] = useState<OcrLanguage[]>([]);
     const [paddle, setPaddle] = useState<PaddleStatus | null>(null);
+    const [paddleUpdate, setPaddleUpdate] = useState<PaddleUpdateInfo | null>(null);
+    const [paddleProgress, setPaddleProgress] = useState<PaddleProgress | null>(null);
+    const [paddleError, setPaddleError] = useState<string | null>(null);
 
-    const refreshPaddle = () => invoke<PaddleStatus>('get_paddle_status').then(setPaddle).catch(() => setPaddle(null));
+    const refreshPaddle = () => invoke<PaddleStatus>('get_paddle_status').then((s) => {
+        setPaddle(s);
+        if (s.installed) {
+            invoke<PaddleUpdateInfo>('check_paddle_update').then(setPaddleUpdate).catch(() => {});
+        }
+    }).catch(() => setPaddle(null));
 
     useEffect(() => {
         invoke<OcrLanguage[]>('get_ocr_languages').then(setOcrLangs).catch(() => setOcrLangs([]));
         refreshPaddle();
+
+        let unlisten: (() => void) | undefined;
+        (async () => {
+            const { listen } = await import('@tauri-apps/api/event');
+            unlisten = await listen<PaddleProgress>('paddle://progress', (e) => {
+                setPaddleProgress(e.payload.phase === 'done' || e.payload.phase === 'error' ? null : e.payload);
+            });
+        })();
+        return () => { if (unlisten) unlisten(); };
     }, []);
+
+    const installPaddle = async () => {
+        setPaddleError(null);
+        setPaddleProgress({ phase: 'download', downloaded: 0, total: 0 });
+        try {
+            await invoke('download_paddle_component');
+            setPaddleUpdate(null);
+        } catch (e) {
+            setPaddleError(String(e));
+        } finally {
+            setPaddleProgress(null);
+            refreshPaddle();
+        }
+    };
 
     const ocrEngine = config?.ocr_engine || 'winrt';
 
@@ -146,22 +190,46 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ config, selectSavePath, setFont
                 <>
                     <Row
                         title={t('settings.general.paddle_component')}
-                        hint={paddle?.installed
-                            ? t('settings.general.paddle_installed', { count: paddle.languages.length })
-                            : t('settings.general.paddle_not_installed')}
+                        hint={paddleError
+                            ? `${t('settings.general.paddle_error')}: ${paddleError}`
+                            : paddle?.installed
+                                ? t('settings.general.paddle_installed', { version: paddle.version || '?', count: paddle.languages.length })
+                                : t('settings.general.paddle_not_installed')}
                     >
                         <div className="flex items-center gap-2">
+                            {paddleProgress ? (
+                                <button disabled className="h-9 px-3.5 rounded-btn bg-accent-soft text-accent text-[12.5px] font-semibold cursor-wait min-w-[130px]">
+                                    {paddleProgress.phase === 'extract'
+                                        ? t('settings.general.paddle_extracting')
+                                        : t('settings.general.paddle_downloading', {
+                                            pct: paddleProgress.total > 0
+                                                ? Math.round((paddleProgress.downloaded / paddleProgress.total) * 100)
+                                                : Math.round(paddleProgress.downloaded / 1048576),
+                                        })}
+                                </button>
+                            ) : !paddle?.installed ? (
+                                <button
+                                    onClick={installPaddle}
+                                    className="h-9 px-3.5 rounded-btn bg-accent text-on-accent text-[12.5px] font-semibold hover:bg-[var(--accent-press)] transition-colors"
+                                >
+                                    {t('settings.general.paddle_download')}
+                                </button>
+                            ) : paddleUpdate?.has_update ? (
+                                <button
+                                    onClick={installPaddle}
+                                    className="h-9 px-3.5 rounded-btn bg-accent text-on-accent text-[12.5px] font-semibold hover:bg-[var(--accent-press)] transition-colors"
+                                >
+                                    {t('settings.general.paddle_update_to', { ver: paddleUpdate.latest })}
+                                </button>
+                            ) : (
+                                <span className="text-[12px] font-semibold text-ok px-1">{t('settings.general.paddle_latest')}</span>
+                            )}
                             <button
                                 onClick={() => paddle && invoke('open_folder', { path: paddle.dir })}
-                                className="h-9 px-3 rounded-btn bg-bg-3 border border-line text-[12.5px] font-semibold text-ink hover:border-line-2 transition-colors"
+                                title={t('settings.general.paddle_open_dir')}
+                                className="h-9 px-2.5 rounded-btn text-[12.5px] text-muted hover:text-ink hover:bg-bg-2 transition-colors"
                             >
-                                {t('settings.general.paddle_open_dir')}
-                            </button>
-                            <button
-                                onClick={refreshPaddle}
-                                className="h-9 px-3 rounded-btn text-[12.5px] font-semibold text-muted hover:text-ink hover:bg-bg-2 transition-colors"
-                            >
-                                {t('settings.general.paddle_recheck')}
+                                <FolderOpen className="w-4 h-4" />
                             </button>
                         </div>
                     </Row>

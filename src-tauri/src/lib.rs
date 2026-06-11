@@ -183,6 +183,8 @@ pub fn run() {
             crate::service::ocr::execute_ocr,
             crate::service::ocr::get_ocr_languages,
             crate::service::paddle_ocr::get_paddle_status,
+            crate::service::paddle_ocr::check_paddle_update,
+            crate::service::paddle_ocr::download_paddle_component,
             crate::service::ocr::get_last_ocr_result,
             crate::service::native_overlay::scrolling::start_scrolling,
             crate::service::native_overlay::scrolling::stop_scrolling,

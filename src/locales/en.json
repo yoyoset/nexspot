@@ -58,10 +58,15 @@
             "ocr_engine": "OCR engine",
             "ocr_engine_winrt": "Windows built-in",
             "paddle_component": "PaddleOCR component",
-            "paddle_installed": "Installed · {{count}} languages available",
-            "paddle_not_installed": "Not installed: download a PaddleOCR-json (hiroi-sora) release, extract into the component folder, then Recheck",
+            "paddle_installed": "Installed {{version}} · {{count}} languages",
+            "paddle_not_installed": "Not installed — click to download & install automatically (~100MB from GitHub)",
             "paddle_open_dir": "Open folder",
-            "paddle_recheck": "Recheck"
+            "paddle_download": "Download & Install",
+            "paddle_downloading": "Downloading {{pct}}%",
+            "paddle_extracting": "Extracting…",
+            "paddle_update_to": "Update to {{ver}}",
+            "paddle_latest": "Up to date",
+            "paddle_error": "Install failed"
         },
         "engine": {
             "title": "System Audit Logs",

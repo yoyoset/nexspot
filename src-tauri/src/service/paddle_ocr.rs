@@ -92,7 +92,15 @@ fn list_languages_in(exe: &Path) -> Vec<String> {
 pub struct PaddleStatus {
     pub installed: bool,
     pub dir: String,
+    pub version: Option<String>,
     pub languages: Vec<String>,
+}
+
+fn installed_version(dir: &Path) -> Option<String> {
+    std::fs::read_to_string(dir.join("version.txt"))
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 #[tauri::command]
@@ -103,14 +111,172 @@ pub fn get_paddle_status(app: AppHandle) -> PaddleStatus {
         Some(exe) => PaddleStatus {
             installed: true,
             dir: dir.to_string_lossy().to_string(),
+            version: installed_version(&dir),
             languages: list_languages_in(&exe),
         },
         None => PaddleStatus {
             installed: false,
             dir: dir.to_string_lossy().to_string(),
+            version: None,
             languages: Vec::new(),
         },
     }
+}
+
+/// 关停常驻进程（更新/卸载前必须，否则 exe 被占用无法替换）
+pub fn shutdown() {
+    *proc_slot().lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
+// ---------------- 组件下载 / 更新 ----------------
+
+const GH_LATEST: &str = "https://api.github.com/repos/hiroi-sora/PaddleOCR-json/releases/latest";
+
+#[derive(Debug, Serialize, Clone)]
+pub struct PaddleUpdateInfo {
+    pub current: Option<String>,
+    pub latest: Option<String>,
+    pub has_update: bool,
+}
+
+/// 取最新 release 的 (tag, 资产下载 url)
+async fn fetch_latest() -> anyhow::Result<(String, String)> {
+    let client = reqwest::Client::new();
+    let v: serde_json::Value = client
+        .get(GH_LATEST)
+        .header("User-Agent", "NexSpot")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    let tag = v
+        .get("tag_name")
+        .and_then(|t| t.as_str())
+        .ok_or_else(|| anyhow::anyhow!("release tag missing"))?
+        .to_string();
+    let assets = v
+        .get("assets")
+        .and_then(|a| a.as_array())
+        .ok_or_else(|| anyhow::anyhow!("release assets missing"))?;
+    // 选 Windows 包：排除 linux/docker/source，优先 .7z / .zip
+    let url = assets
+        .iter()
+        .filter_map(|a| a.get("browser_download_url").and_then(|u| u.as_str()))
+        .filter(|u| {
+            let l = u.to_lowercase();
+            (l.ends_with(".7z") || l.ends_with(".zip"))
+                && !l.contains("linux")
+                && !l.contains("docker")
+                && !l.contains("source")
+        })
+        .max_by_key(|u| {
+            let l = u.to_lowercase();
+            (l.contains("win") as u8) * 2 + l.ends_with(".7z") as u8
+        })
+        .ok_or_else(|| anyhow::anyhow!("no suitable windows asset in latest release"))?
+        .to_string();
+    Ok((tag, url))
+}
+
+#[tauri::command]
+pub async fn check_paddle_update(app: AppHandle) -> Result<PaddleUpdateInfo, String> {
+    let current = installed_version(&component_dir(&app));
+    match fetch_latest().await {
+        Ok((tag, _)) => {
+            let has_update = current.as_deref() != Some(tag.as_str());
+            Ok(PaddleUpdateInfo { current, latest: Some(tag), has_update })
+        }
+        Err(e) => {
+            log::warn!("[OCR] check paddle update failed: {}", e);
+            Ok(PaddleUpdateInfo { current, latest: None, has_update: false })
+        }
+    }
+}
+
+fn emit_progress(app: &AppHandle, phase: &str, downloaded: u64, total: u64) {
+    use tauri::Emitter;
+    let _ = app.emit(
+        "paddle://progress",
+        serde_json::json!({ "phase": phase, "downloaded": downloaded, "total": total }),
+    );
+}
+
+/// 一键下载并安装最新组件（也用于更新：覆盖安装）。
+#[tauri::command]
+pub async fn download_paddle_component(app: AppHandle) -> Result<(), String> {
+    download_inner(&app).await.map_err(|e| {
+        emit_progress(&app, "error", 0, 0);
+        e.to_string()
+    })
+}
+
+async fn download_inner(app: &AppHandle) -> anyhow::Result<()> {
+    let (tag, url) = fetch_latest().await?;
+    log::info!("[OCR] downloading PaddleOCR {} from {}", tag, url);
+
+    // 1. 流式下载到临时文件
+    let client = reqwest::Client::new();
+    let mut resp = client
+        .get(&url)
+        .header("User-Agent", "NexSpot")
+        .send()
+        .await?
+        .error_for_status()?;
+    let total = resp.content_length().unwrap_or(0);
+    let ext = if url.to_lowercase().ends_with(".7z") { "7z" } else { "zip" };
+    let tmp = std::env::temp_dir().join(format!("nexspot_paddle_{}.{}", tag, ext));
+    {
+        use std::io::Write;
+        let mut file = std::fs::File::create(&tmp)?;
+        let mut downloaded: u64 = 0;
+        let mut last_emit = 0u64;
+        while let Some(chunk) = resp.chunk().await? {
+            file.write_all(&chunk)?;
+            downloaded += chunk.len() as u64;
+            // 每 ~512KB 发一次进度，避免事件风暴
+            if downloaded - last_emit > 512 * 1024 {
+                emit_progress(app, "download", downloaded, total);
+                last_emit = downloaded;
+            }
+        }
+        emit_progress(app, "download", downloaded, total);
+    }
+
+    // 2. 关停旧进程、清空旧版本目录
+    shutdown();
+    let dir = component_dir(app);
+    if dir.exists() {
+        std::fs::remove_dir_all(&dir)?;
+    }
+    std::fs::create_dir_all(&dir)?;
+
+    // 3. 解压（阻塞操作，移到阻塞线程）
+    emit_progress(app, "extract", 0, 0);
+    let tmp2 = tmp.clone();
+    let dir2 = dir.clone();
+    let is_7z = ext == "7z";
+    tauri::async_runtime::spawn_blocking(move || -> anyhow::Result<()> {
+        if is_7z {
+            sevenz_rust::decompress_file(&tmp2, &dir2)?;
+        } else {
+            let f = std::fs::File::open(&tmp2)?;
+            zip::ZipArchive::new(f)?.extract(&dir2)?;
+        }
+        Ok(())
+    })
+    .await??;
+
+    // 4. 校验 + 版本标记
+    if find_exe(&dir).is_none() {
+        anyhow::bail!("extracted package does not contain PaddleOCR-json.exe");
+    }
+    std::fs::write(dir.join("version.txt"), &tag)?;
+    let _ = std::fs::remove_file(&tmp);
+
+    emit_progress(app, "done", 0, 0);
+    log::info!("[OCR] PaddleOCR {} installed", tag);
+    Ok(())
 }
 
 pub fn is_installed(app: &AppHandle) -> bool {

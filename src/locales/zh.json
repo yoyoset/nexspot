@@ -58,10 +58,15 @@
             "ocr_engine": "OCR 识别引擎",
             "ocr_engine_winrt": "Windows 内置",
             "paddle_component": "PaddleOCR 组件",
-            "paddle_installed": "已安装 · {{count}} 种语言可用",
-            "paddle_not_installed": "未安装：从 GitHub 下载 PaddleOCR-json (hiroi-sora) 的 release 压缩包，解压到组件目录后点「重新检测」",
+            "paddle_installed": "已安装 {{version}} · {{count}} 种语言",
+            "paddle_not_installed": "未安装 —— 点击自动下载安装（组件约 100MB，来自 GitHub）",
             "paddle_open_dir": "打开组件目录",
-            "paddle_recheck": "重新检测"
+            "paddle_download": "下载并安装",
+            "paddle_downloading": "下载中 {{pct}}%",
+            "paddle_extracting": "解压中…",
+            "paddle_update_to": "更新到 {{ver}}",
+            "paddle_latest": "已是最新",
+            "paddle_error": "安装失败"
         },
         "engine": {
             "title": "系统资源审计",
