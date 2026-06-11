@@ -51,9 +51,20 @@ pub fn render_snapshot(
                 }
             }
             
-            let image_data = tauri::async_runtime::block_on(async {
-                ctx.render_to_image(canvas_w as u32, canvas_h as u32, &scene).await
-            })?;
+            // 不能直接 block_on：本函数可能在 tokio worker 上被调（OCR/滚动），
+            // runtime 内嵌套 block_on 会 panic。改为 spawn 到 runtime + 通道同步等待，
+            // 在任意线程上下文都安全（普通线程/UI 线程/worker 均可）。
+            let image_data = {
+                let (tx, rx) = std::sync::mpsc::channel();
+                let ctx_task = ctx.clone();
+                let (w, h) = (canvas_w as u32, canvas_h as u32);
+                tauri::async_runtime::spawn(async move {
+                    let res = ctx_task.render_to_image(w, h, &scene).await;
+                    let _ = tx.send(res);
+                });
+                rx.recv()
+                    .map_err(|_| anyhow::anyhow!("Offscreen render channel closed"))??
+            };
 
             let full_pixels = image_data.data.as_ref();
             let row_bytes = width as usize * 4;
