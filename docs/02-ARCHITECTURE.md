@@ -111,7 +111,7 @@ src-tauri/src/
 | `trigger_capture(action)` | 按 workflow id 直接触发（仪表盘 ZAP 按钮用） |
 
 ### 配置（`get_config` + setter 群）
-`get_config`, `set_save_path`, `set_font_family`, `set_vello_enabled`, `set_vello_advanced_effects`, `set_vello_aesthetic_style`, `set_theme`, `set_accent_color`, `set_jpg_quality`, `set_concurrency`, `set_default_export_format`, `set_language`, `set_quick_save`, `set_snapshot_enabled`, `set_snapshot_size`, `set_selection_engine`, `set_snapshot_engine`, `emergency_reset_to_gdi`
+`get_config`, `get_startup_errors`, `set_save_path`, `set_font_family`, `set_vello_enabled`, `set_vello_advanced_effects`, `set_vello_aesthetic_style`, `set_theme`, `set_accent_color`, `set_jpg_quality`, `set_concurrency`, `set_default_export_format`, `set_language`, `set_quick_save`, `set_snapshot_enabled`, `set_snapshot_size`, `set_selection_engine`, `set_snapshot_engine`, `emergency_reset_to_gdi`
 
 ### 工作流 / 热键 / 引擎
 `add_workflow`, `remove_workflow`, `update_workflow`, `get_vello_status`, `suspend_hotkeys`, `resume_hotkeys`, `refresh_hotkeys`
@@ -122,8 +122,11 @@ src-tauri/src/
 ### PIN
 `create_text_pin`, `get_all_pins`, `remove_pin`, `clear_all_pins`, `toggle_pin_always_on_top`, `is_pin_always_on_top`, `set_pin_window_size`, `set_pin_min_size`, `save_pin_as`
 
-### OCR / 滚动 / 活动
-`execute_ocr`, `get_last_ocr_result`, `start_scrolling`, `stop_scrolling`, `get_last_scrolled_image`, `save_scrolled_image_to`, `copy_image_to_clipboard`, `get_activity`
+### OCR（双引擎：WinRT / PaddleOCR 组件）
+`execute_ocr`, `get_last_ocr_result`, `get_ocr_languages`（WinRT 已装语言包）, `set_ocr_language`, `set_ocr_engine`（winrt/paddle）, `set_paddle_language`, `get_paddle_status`（组件安装状态+可用语言）, `check_paddle_update`, `download_paddle_component`（应用内一键下载/安装/更新）
+
+### 滚动 / 活动
+`start_scrolling`, `stop_scrolling`, `get_last_scrolled_image`, `save_scrolled_image_to`, `copy_image_to_clipboard`, `get_activity`
 
 ## 后端 → 前端事件（`emit`）
 
@@ -132,6 +135,14 @@ src-tauri/src/
 | `shortcut-startup-error` | 启动时热键注册冲突 | `StartupErrorToast` / `TauriEventListener` |
 | `mixed-dpi-detected` | 多屏混合 DPI | 前端提示 |
 | `activity://updated` | 活动记录新增 | `ActivityHub` |
+| `screenshot-saved` | 文件保存成功 | 前端提示 |
+| `ocr://data` | OCR 识别完成（直发结果窗） | `OCRResultWindow` |
+| `scrolling://progress` | 滚动拼接高度增长 | （预留） |
+| `pin-collection-updated` | PIN 集合变化 | `PinCollectionWindow` |
+| `paddle://progress` | 组件下载/安装进度（phase+字节数） | `GeneralTab` |
+
+> 注：工具栏的 OCR / 滚动按钮由**后端直接调用**（`commands.rs` → `execute_ocr` / `start_scrolling`），
+> 不走前端事件 —— 历史上 `overlay://trigger-*` 事件无监听者导致功能死链，已于 2026-06 修复。
 
 ## 核心数据流（一次截图）
 

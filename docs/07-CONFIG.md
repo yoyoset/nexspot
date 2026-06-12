@@ -19,7 +19,10 @@
 | `selection_engine` | `String` | `"gdi"/"vello"` | 选区默认引擎（独立） |
 | `snapshot_engine` | `String` | 同上 | 快照默认引擎（独立） |
 | `theme` | `String` | `"system"` | light/dark/system |
-| `accent_color` | `String` | `#3b82f6` | 强调色 |
+| `accent_color` | `String` | `#7a6ff2` | 强调色（Studio periwinkle；加载时自动迁移旧默认 `#3b82f6`） |
+| `ocr_engine` | `String` | `"winrt"` | OCR 引擎：`winrt`（Windows 内置）/ `paddle`（PaddleOCR-json 组件） |
+| `ocr_language` | `String` | `"auto"` | WinRT 识别语言（auto = 中文界面优先 zh-Hans，否则用户档案） |
+| `ocr_paddle_language` | `String` | `"chinese"` | Paddle 识别语言（组件 `models/config_*.txt` 后缀） |
 | `jpg_quality` | `u8` | `90` | JPG 质量 |
 | `concurrency` | `usize` | `4` | 并发度 |
 | `default_export_format` | `String` | `"png"` | png/jpg |
