@@ -1,7 +1,7 @@
 # NexSpot Pilot Distribution Manifest
 
-> Date: 2026-07-05  
-> Version: NexSpot v0.3.0 Commercial Trial  
+> Date: 2026-07-10
+> Version: NexSpot v0.3.0 RC1 · Commercial Trial
 > Scope: internal trial and small commercial pilot package checklist.
 
 ## Purpose

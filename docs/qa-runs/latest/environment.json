@@ -1,0 +1,26 @@
+{
+  "node": {
+    "platform": "win32",
+    "release": "10.0.22631",
+    "arch": "x64",
+    "cpuModels": [
+      "Intel(R) Xeon(R) CPU E5-2698 v3 @ 2.30GHz"
+    ],
+    "logicalCpuCount": 32,
+    "totalMemory": 68616884224,
+    "freeMemory": 44887404544
+  },
+  "windows": {
+    "osCaption": null,
+    "osVersion": null,
+    "osBuildNumber": null,
+    "architecture": null,
+    "manufacturer": null,
+    "model": null,
+    "totalPhysicalMemory": null,
+    "logicalProcessors": null,
+    "appliedDpi": null,
+    "videoControllers": [],
+    "desktopMonitors": []
+  }
+}

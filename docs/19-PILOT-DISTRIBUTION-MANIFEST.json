@@ -1,0 +1,114 @@
+{
+  "schema": "nexspot.pilot-distribution-manifest.v1",
+  "generatedAt": "2026-07-10T05:20:33.610Z",
+  "productName": "NexSpot",
+  "version": "0.3.0",
+  "channel": "internal-trial-and-small-commercial-pilot",
+  "decisions": {
+    "internalTrial": "Go",
+    "smallCommercialPilot": "Go with unsigned notice",
+    "publicStableRelease": "No-Go"
+  },
+  "artifacts": {
+    "exe": {
+      "path": "src-tauri/target/release/nexspot.exe",
+      "exists": true,
+      "bytes": 35648000,
+      "modifiedAt": "2026-07-10T05:17:04.108Z",
+      "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+    },
+    "nsisInstaller": {
+      "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+      "exists": true,
+      "bytes": 9265367,
+      "modifiedAt": "2026-07-10T05:17:03.989Z",
+      "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+    }
+  },
+  "releaseEvidenceMatchesCurrent": true,
+  "materials": [
+    {
+      "path": "docs/11-RELEASE-EVIDENCE.json",
+      "exists": true,
+      "bytes": 16243,
+      "modifiedAt": "2026-07-10T05:20:16.792Z",
+      "sha256": "f666d935d123915a046ae011df6dc4a30195e8529ddacd01f4c9db2de9fc1efb"
+    },
+    {
+      "path": "docs/12-MANUAL-QA-MATRIX.md",
+      "exists": true,
+      "bytes": 12629,
+      "modifiedAt": "2026-07-10T05:19:35.641Z",
+      "sha256": "db3062a8c101fc0afca81ba25963bb41e042e48b1ec1279da5afcb8fdfb097bf"
+    },
+    {
+      "path": "docs/15-UNSIGNED-PILOT-DISTRIBUTION-NOTICE.md",
+      "exists": true,
+      "bytes": 2706,
+      "modifiedAt": "2026-07-10T05:19:37.603Z",
+      "sha256": "6f05625d5590c339781bf91f8a83b87013355473983d5cb3e21f61db39ed5b5e"
+    },
+    {
+      "path": "docs/16-COMMERCIAL-QA-ISSUE-LOG.md",
+      "exists": true,
+      "bytes": 6146,
+      "modifiedAt": "2026-07-10T05:19:39.545Z",
+      "sha256": "4135fbb40bc3a072530a6809d2b9e41002b35cc195114844ea0fdcc2a5d63f7b"
+    },
+    {
+      "path": "docs/17-MANUAL-QA-GATE.json",
+      "exists": true,
+      "bytes": 5221,
+      "modifiedAt": "2026-07-10T05:20:33.326Z",
+      "sha256": "afe34d83afd415ff5ec913d7e715c15f89c8910c06631e5f47c5bd04cb67086a"
+    },
+    {
+      "path": "docs/18-SIGNING-READINESS.json",
+      "exists": true,
+      "bytes": 2104,
+      "modifiedAt": "2026-07-10T05:19:59.566Z",
+      "sha256": "d55990c5d80f3bd54eaffdbf1fff4dab128cb53904782e4aa8d2d48f89385e3f"
+    },
+    {
+      "path": "docs/18-SIGNING-READINESS.md",
+      "exists": true,
+      "bytes": 1495,
+      "modifiedAt": "2026-07-10T05:19:41.501Z",
+      "sha256": "c787420de1f63a0d710b4a9107e6cfeb8f60d497e2616f652aa4cfc936572e60"
+    },
+    {
+      "path": "docs/qa-runs/latest/qa-run.md",
+      "exists": true,
+      "bytes": 3190,
+      "modifiedAt": "2026-07-10T05:20:31.434Z",
+      "sha256": "846915434310dd112f1c60123ad6344f18dab4456c9633fb2a553a2cccd32fb2"
+    },
+    {
+      "path": "docs/qa-runs/latest/environment.json",
+      "exists": true,
+      "bytes": 564,
+      "modifiedAt": "2026-07-10T05:20:31.434Z",
+      "sha256": "40e9aa1466869602256179871e14f09e3ff7b56855ae1943c8269d591157fc04"
+    },
+    {
+      "path": "docs/qa-runs/latest/qa-evidence-pack.json",
+      "exists": true,
+      "bytes": 2686,
+      "modifiedAt": "2026-07-10T05:20:31.433Z",
+      "sha256": "1b0077a0b3ae28569e06efdc7268d812a53e6b58f7e5c2b67b4b509dce51906b"
+    },
+    {
+      "path": "docs/qa-runs/latest/results-template.json",
+      "exists": true,
+      "bytes": 3187,
+      "modifiedAt": "2026-07-10T05:20:31.434Z",
+      "sha256": "4dac57bd7db17e871c530ab524d63f0441bc31f31fa8a6238bd350b69aea12c4"
+    }
+  ],
+  "requiredRecipientNotice": {
+    "path": "docs/15-UNSIGNED-PILOT-DISTRIBUTION-NOTICE.md",
+    "mustMentionUnknownPublisher": true,
+    "mustMentionSha256Verification": true
+  },
+  "blockers": []
+}

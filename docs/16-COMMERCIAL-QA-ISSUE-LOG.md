@@ -1,19 +1,19 @@
 # NexSpot Commercial QA Issue Log
 
-> Date: 2026-07-07  
-> Version: NexSpot v0.3.0 Commercial Trial  
+> Date: 2026-07-10
+> Version: NexSpot v0.3.0 RC1 · Commercial Trial
 > Scope: public-stable release blockers and pilot watch items.
 
 ## Release Position
 
-NexSpot v0.3.0 now has refreshed 2026-07-07 19:49 Asia/Taipei release artifacts that include the OCR capture-failure fix, the manual QA gate script, conservative scrolling stitch safeguards in `src-tauri/src/service/stitch.rs`, scrolling partial-result error visibility, and QA tooling that rejects missing evidence files. The current EXE smoke and installer smoke pass. It is suitable for internal trial and small commercial pilot with the unsigned-build notice attached. It is not yet a public stable commercial release because the required real-device matrix, toolbar visual consistency sign-off, and code signing are still open.
+NexSpot v0.3.0 RC1 now has refreshed 2026-07-10 13:17 Asia/Taipei release artifacts that include the OCR capture-failure fix, the manual QA gate script, conservative scrolling stitch safeguards in `src-tauri/src/service/stitch.rs`, scrolling partial-result error visibility, and QA tooling that rejects missing evidence files. The current EXE smoke and installer smoke pass. It is suitable for internal trial and small commercial pilot with the unsigned-build notice attached. It is not yet a public stable commercial release because the required real-device matrix, toolbar visual consistency sign-off, and code signing are still open.
 
 Current artifacts:
 
 - EXE: `src-tauri/target/release/nexspot.exe`
-- EXE SHA256: `3f271498d97efea76c4b6005aa238c0a238ea9a50a0686a52eb73e0e105b79cc`
+- EXE SHA256: `86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e`
 - Installer: `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe`
-- Installer SHA256: `38ac84dde57680e5bfa54c16a45c4f27abd054f038cf5dc7836a9a541fa2a0e0`
+- Installer SHA256: `e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc`
 - Release evidence: `docs/11-RELEASE-EVIDENCE.json`
 - Manual QA matrix: `docs/12-MANUAL-QA-MATRIX.md`
 - Manual QA gate evidence: `docs/17-MANUAL-QA-GATE.json`
@@ -46,7 +46,7 @@ Current artifacts:
 | REL-06 pilot notice | Unsigned pilot distribution notice | `docs/15-UNSIGNED-PILOT-DISTRIBUTION-NOTICE.md` | Pilot-only warning and hash-verification guidance documented. |
 | QA-006 | Pin/performance polish | `src/components/Pin/PinCollectionWindow.tsx`; `scripts/release-verify.mjs`; `npm.cmd run release:verify` | Pin cards are memoized, image pins stay on the non-Markdown render path with async image decoding, `react-markdown` is lazy-loaded only for text pins, and release verification enforces the source gate. |
 | QA-007 | Failure reporting quality | `src-tauri/src/service/notification.rs`; `src-tauri/src/service/native_overlay/commands.rs`; `src/components/Overlay/TauriEventListener.tsx`; `scripts/release-verify.mjs` | OCR and scrolling command failures emit structured `capture://error` events with area/code/title/message, the frontend shows an error HUD, OCR result windows preserve error/no-text metadata, and initial scrolling failures reset transient state. |
-| QA-008 | Release artifact freshness | `npm.cmd run release`, `docs/13-SMOKE-EVIDENCE.json`, `docs/14-INSTALLER-SMOKE-EVIDENCE.json` | Current artifacts include scrolling stitch quality reports, seeded stitch performance diagnostics, explicit partial-result error messages for scrolling loop failures, OCR overlay-hide diagnostics with visible overlay-risk warnings, shared toolbar style tokens, Pin performance gating, structured failure-reporting events, P1 toolbar polish gating, and QA tooling that rejects missing evidence files; EXE SHA256 `3f271498d97efea76c4b6005aa238c0a238ea9a50a0686a52eb73e0e105b79cc`; installer SHA256 `38ac84dde57680e5bfa54c16a45c4f27abd054f038cf5dc7836a9a541fa2a0e0`. |
+| QA-008 | Release artifact freshness | `npm.cmd run release`, `docs/13-SMOKE-EVIDENCE.json`, `docs/14-INSTALLER-SMOKE-EVIDENCE.json` | Current artifacts include scrolling stitch quality reports, seeded stitch performance diagnostics, explicit partial-result error messages for scrolling loop failures, OCR overlay-hide diagnostics with visible overlay-risk warnings, shared toolbar style tokens, Pin performance gating, structured failure-reporting events, P1 toolbar polish gating, and QA tooling that rejects missing evidence files; EXE SHA256 `86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e`; installer SHA256 `e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc`. |
 
 ## Update Rules
 

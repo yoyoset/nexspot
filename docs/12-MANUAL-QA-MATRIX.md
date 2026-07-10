@@ -1,12 +1,12 @@
 # NexSpot Commercial Manual QA Matrix
 
-> Date: 2026-07-05  
-> Version: NexSpot v0.3.0 Commercial Trial  
+> Date: 2026-07-10
+> Version: NexSpot v0.3.0 RC1 · Commercial Trial
 > Artifacts:
 > - EXE: `src-tauri/target/release/nexspot.exe`
 > - Installer: `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe`
 >
-> Status: Release artifacts rebuilt at 2026-07-07 19:49 Asia/Taipei and automated EXE/installer smoke has passed. Public-stable readiness still depends on real-device completion for GUI flows, toolbar visual consistency, and code-signing/Windows-warning review.
+> Status: RC1 artifacts rebuilt at 2026-07-10 13:17 Asia/Taipei and automated EXE/installer smoke has passed. Public-stable readiness still depends on real-device completion for GUI flows, toolbar visual consistency, and code-signing/Windows-warning review.
 
 ## Decision
 

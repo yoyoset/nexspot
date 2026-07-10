@@ -1,7 +1,7 @@
 # NexSpot Unsigned Pilot Distribution Notice
 
-> Date: 2026-07-07  
-> Version: NexSpot v0.3.0 Commercial Trial  
+> Date: 2026-07-10
+> Version: NexSpot v0.3.0 RC1 · Commercial Trial
 > Scope: Internal trial and small commercial pilot only
 
 ## Decision
@@ -10,8 +10,8 @@ The current NexSpot pilot build is intentionally documented as unsigned:
 
 | Artifact | Path | Authenticode status | SHA256 |
 |---|---|---|---|
-| Release EXE | `src-tauri/target/release/nexspot.exe` | `NotSigned` | `3f271498d97efea76c4b6005aa238c0a238ea9a50a0686a52eb73e0e105b79cc` |
-| NSIS installer | `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe` | `NotSigned` | `38ac84dde57680e5bfa54c16a45c4f27abd054f038cf5dc7836a9a541fa2a0e0` |
+| Release EXE | `src-tauri/target/release/nexspot.exe` | `NotSigned` | `86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e` |
+| NSIS installer | `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe` | `NotSigned` | `e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc` |
 
 REL-06 is acceptable for pilot scope only when this notice is attached to the release evidence and the pilot recipient is told that the installer is unsigned.
 

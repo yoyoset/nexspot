@@ -1,7 +1,7 @@
 # NexSpot Commercial Release Review
 
-> Date: 2026-07-07  
-> Version: NexSpot v0.3.0 Commercial Trial  
+> Date: 2026-07-10
+> Version: NexSpot v0.3.0 RC1 · Commercial Trial
 > Scope: commercial readiness, release artifacts, screenshot/OCR/scrolling capture risk, QA gates, and remaining blockers.
 
 ## Executive Decision
@@ -18,8 +18,8 @@ NexSpot is ready for controlled internal and small-pilot use, not for public sta
 
 | Artifact | Path | SHA256 | Signature |
 |---|---|---|---|
-| Release EXE | `src-tauri/target/release/nexspot.exe` | `3f271498d97efea76c4b6005aa238c0a238ea9a50a0686a52eb73e0e105b79cc` | `NotSigned` |
-| NSIS installer | `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe` | `38ac84dde57680e5bfa54c16a45c4f27abd054f038cf5dc7836a9a541fa2a0e0` | `NotSigned` |
+| Release EXE | `src-tauri/target/release/nexspot.exe` | `86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e` | `NotSigned` |
+| NSIS installer | `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe` | `e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc` | `NotSigned` |
 
 The installer name is `NexSpot_0.3.0_x64-setup.exe`. Current automated smoke evidence is recorded in `docs/13-SMOKE-EVIDENCE.json` and `docs/14-INSTALLER-SMOKE-EVIDENCE.json`.
 

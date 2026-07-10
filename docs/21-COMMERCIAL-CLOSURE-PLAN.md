@@ -1,6 +1,6 @@
 # NexSpot Commercial Closure Plan
 
-Generated: 2026-07-07T11:58:28.031Z
+Generated: 2026-07-10T05:20:40.663Z
 
 ## Decision
 

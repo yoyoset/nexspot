@@ -1,0 +1,531 @@
+{
+  "schema": "nexspot.release-evidence.v1",
+  "generatedAt": "2026-07-10T05:20:40.430Z",
+  "productName": "NexSpot",
+  "version": "0.3.0",
+  "bundleTargets": [
+    "nsis"
+  ],
+  "timezone": "Asia/Taipei",
+  "artifacts": {
+    "exe": {
+      "path": "src-tauri/target/release/nexspot.exe",
+      "bytes": 35648000,
+      "modifiedAt": "2026-07-10T05:17:04.108Z",
+      "modifiedAtLocal": "2026-07-10 13:17:04 Asia/Taipei",
+      "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+      "authenticode": {
+        "status": "NotSigned",
+        "subject": ""
+      },
+      "versionInfo": {
+        "fileVersion": "0.3.0",
+        "productVersion": "0.3.0",
+        "productName": "NexSpot",
+        "fileDescription": "NexSpot",
+        "originalFilename": ""
+      }
+    },
+    "nsisInstaller": {
+      "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+      "bytes": 9265367,
+      "modifiedAt": "2026-07-10T05:17:03.989Z",
+      "modifiedAtLocal": "2026-07-10 13:17:03 Asia/Taipei",
+      "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc",
+      "authenticode": {
+        "status": "NotSigned",
+        "subject": ""
+      },
+      "versionInfo": {
+        "fileVersion": "0.3.0",
+        "productVersion": "0.3.0",
+        "productName": "NexSpot",
+        "fileDescription": "NexSpot",
+        "originalFilename": ""
+      }
+    }
+  },
+  "frontend": {
+    "largestJsAssets": [
+      {
+        "file": "index-ZqgWc29q.js",
+        "bytes": 442236
+      },
+      {
+        "file": "index-CHns6Y75.js",
+        "bytes": 118061
+      },
+      {
+        "file": "SettingsPanel-CeHZQZFW.js",
+        "bytes": 20659
+      },
+      {
+        "file": "WorkflowModal-BnYDzVyP.js",
+        "bytes": 13269
+      },
+      {
+        "file": "PinCollectionWindow-BF4exTAL.js",
+        "bytes": 9543
+      },
+      {
+        "file": "ActivityHub--tH9SFZE.js",
+        "bytes": 8441
+      },
+      {
+        "file": "Dashboard-BaWbN_j3.js",
+        "bytes": 8199
+      },
+      {
+        "file": "OCRResultWindow-Bo7FyLzJ.js",
+        "bytes": 7261
+      }
+    ],
+    "maxChunkBytes": 512000
+  },
+  "releaseSourceSnapshot": {
+    "fileCount": 210,
+    "latestFile": {
+      "path": "src/locales/zh.json",
+      "modifiedAt": "2026-07-07T12:01:21.830Z",
+      "modifiedAtLocal": "2026-07-07 20:01:21 Asia/Taipei"
+    },
+    "roots": [
+      {
+        "root": "package.json",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "package.json",
+          "modifiedAt": "2026-07-07T11:16:43.937Z",
+          "modifiedAtLocal": "2026-07-07 19:16:43 Asia/Taipei"
+        }
+      },
+      {
+        "root": "index.html",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "index.html",
+          "modifiedAt": "2026-02-01T14:47:42.823Z",
+          "modifiedAtLocal": "2026-02-01 22:47:42 Asia/Taipei"
+        }
+      },
+      {
+        "root": "tsconfig.json",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "tsconfig.json",
+          "modifiedAt": "2026-02-01T14:46:23.212Z",
+          "modifiedAtLocal": "2026-02-01 22:46:23 Asia/Taipei"
+        }
+      },
+      {
+        "root": "tsconfig.app.json",
+        "present": false,
+        "fileCount": 0,
+        "latestFile": null
+      },
+      {
+        "root": "tsconfig.node.json",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "tsconfig.node.json",
+          "modifiedAt": "2026-02-01T14:46:31.673Z",
+          "modifiedAtLocal": "2026-02-01 22:46:31 Asia/Taipei"
+        }
+      },
+      {
+        "root": "vite.config.ts",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "vite.config.ts",
+          "modifiedAt": "2026-03-26T14:02:53.263Z",
+          "modifiedAtLocal": "2026-03-26 22:02:53 Asia/Taipei"
+        }
+      },
+      {
+        "root": "src",
+        "present": true,
+        "fileCount": 39,
+        "latestFile": {
+          "path": "src/locales/zh.json",
+          "modifiedAt": "2026-07-07T12:01:21.830Z",
+          "modifiedAtLocal": "2026-07-07 20:01:21 Asia/Taipei"
+        }
+      },
+      {
+        "root": "src-tauri/Cargo.toml",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "src-tauri/Cargo.toml",
+          "modifiedAt": "2026-06-11T13:18:29.608Z",
+          "modifiedAtLocal": "2026-06-11 21:18:29 Asia/Taipei"
+        }
+      },
+      {
+        "root": "src-tauri/Cargo.lock",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "src-tauri/Cargo.lock",
+          "modifiedAt": "2026-06-11T13:19:50.022Z",
+          "modifiedAtLocal": "2026-06-11 21:19:50 Asia/Taipei"
+        }
+      },
+      {
+        "root": "src-tauri/tauri.conf.json",
+        "present": true,
+        "fileCount": 1,
+        "latestFile": {
+          "path": "src-tauri/tauri.conf.json",
+          "modifiedAt": "2026-07-06T11:08:27.701Z",
+          "modifiedAtLocal": "2026-07-06 19:08:27 Asia/Taipei"
+        }
+      },
+      {
+        "root": "src-tauri/src",
+        "present": true,
+        "fileCount": 163,
+        "latestFile": {
+          "path": "src-tauri/src/service/native_overlay/scrolling.rs",
+          "modifiedAt": "2026-07-07T11:43:19.839Z",
+          "modifiedAtLocal": "2026-07-07 19:43:19 Asia/Taipei"
+        }
+      }
+    ]
+  },
+  "automatedGates": {
+    "versionMatchesTauriConfig": true,
+    "windowsVersionInfoMatches": true,
+    "nsisTargetConfigured": true,
+    "windowsInstallerModeExplicit": true,
+    "reportMentionsInstaller": true,
+    "reportContainsCurrentHashes": true,
+    "manualQaMatrixPresent": true,
+    "manualQaMatrixHasRows": true,
+    "commercialIssueLogPresent": true,
+    "releaseArtifactsNewerThanSource": true,
+    "smokeEvidenceMatchesRelease": true,
+    "smokeMainWindowProofPresent": true,
+    "installerSmokeMatchesRelease": true,
+    "installerSmokeEndToEndPassed": true,
+    "installerInstalledExeVersionMatches": true,
+    "unsignedPilotNoticeMatchesRelease": true,
+    "manualQaGateEvidenceMatchesRelease": true,
+    "pilotDistributionManifestMatchesRelease": true,
+    "commercialSourceGatePassed": true,
+    "noOversizedJsChunks": true,
+    "releaseVerifyPassed": true
+  },
+  "commercialSourceGate": {
+    "scrollingStartedReportsTargetAndSettings": true,
+    "scrollingProgressReportsStopChecks": true,
+    "scrollingResultCarriesDiagnosticSettings": true,
+    "scrollingStitcherRejectsTinyOrAmbiguousMatches": true,
+    "scrollingStitcherUsesSeededPerformancePath": true,
+    "ocrLiveCaptureConfirmsOverlayHide": true,
+    "ocrFailureKeepsDiagnosticMetadata": true,
+    "captureFailuresEmitStructuredFrontendErrors": true,
+    "toolbarUsesSharedCommercialStyleTokens": true,
+    "velloToolbarUsesSharedStyleTokens": true,
+    "pinWindowKeepsMarkdownOutOfImagePath": true,
+    "frontendShowsStartedTargetAndStopRule": true,
+    "frontendShowsNoGrowthProgress": true,
+    "previewShowsStitchingDiagnostics": true,
+    "scrollingLoopErrorsStayVisibleInPreview": true,
+    "frontendShowsOcrCaptureDiagnostics": true,
+    "localesCoverScrollingDiagnostics": true,
+    "localesCoverOcrCaptureDiagnostics": true,
+    "localesCoverCaptureFailureHud": true
+  },
+  "releaseSmoke": {
+    "path": "docs/13-SMOKE-EVIDENCE.json",
+    "generatedAt": "2026-07-10T05:17:24.536Z",
+    "passed": true,
+    "durationMs": 6000,
+    "exeSha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+    "matchesCurrentRelease": true,
+    "launchReason": "alive-after-duration",
+    "mainWindowSeen": true,
+    "mainWindowTitle": ""
+  },
+  "installerSmoke": {
+    "path": "docs/14-INSTALLER-SMOKE-EVIDENCE.json",
+    "generatedAt": "2026-07-10T05:17:57.810Z",
+    "passed": true,
+    "installerSha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc",
+    "matchesCurrentRelease": true,
+    "installDir": "C:\\tmp\\nexspot-installer-smoke",
+    "freshInstallExitCode": 0,
+    "overwriteInstallExitCode": 0,
+    "freshInstalledExeSha256": "b4a3fa14723f84c9e81ebc9f99ec0454c86940125d1a11ec3ca66faf726f68e9",
+    "installedExeSha256": "b4a3fa14723f84c9e81ebc9f99ec0454c86940125d1a11ec3ca66faf726f68e9",
+    "installedExeHashStableAfterOverwrite": true,
+    "installedExeBytes": 35648000,
+    "installedExeVersionInfo": {
+      "fileVersion": "0.3.0",
+      "productVersion": "0.3.0",
+      "productName": "NexSpot",
+      "fileDescription": "NexSpot",
+      "originalFilename": ""
+    },
+    "mainWindowSeen": true,
+    "mainWindowTitle": "NexSpot",
+    "uninstallExitCode": 0,
+    "finalAppExeRemoved": true,
+    "installDirRemoved": true
+  },
+  "unsignedPilotNotice": {
+    "path": "docs/15-UNSIGNED-PILOT-DISTRIBUTION-NOTICE.md",
+    "rel06Status": "Passed unsigned pilot notice",
+    "appliesToUnsignedArtifacts": true,
+    "containsCurrentExeHash": true,
+    "containsCurrentInstallerHash": true,
+    "pilotScopeOnly": true,
+    "publicStableNoGo": true
+  },
+  "manualQaMatrix": {
+    "path": "docs/12-MANUAL-QA-MATRIX.md",
+    "status": "pending-real-device-completion",
+    "summary": {
+      "totalRows": 34,
+      "requiredRows": 29,
+      "byStatus": {
+        "Pending": 28,
+        "Passed automated smoke": 1,
+        "Passed automated installer smoke": 4,
+        "Passed unsigned pilot notice": 1
+      },
+      "statusById": {
+        "ENV-01": "Pending",
+        "ENV-02": "Pending",
+        "ENV-03": "Pending",
+        "ENV-04": "Pending",
+        "ENV-05": "Pending",
+        "ENV-06": "Pending",
+        "ENV-07": "Pending",
+        "ENV-08": "Pending",
+        "ENV-09": "Pending",
+        "CAP-01": "Pending",
+        "CAP-02": "Pending",
+        "CAP-03": "Pending",
+        "CAP-04": "Pending",
+        "CAP-05": "Pending",
+        "CAP-06": "Pending",
+        "OCR-01": "Pending",
+        "OCR-02": "Pending",
+        "OCR-03": "Pending",
+        "OCR-04": "Pending",
+        "OCR-05": "Pending",
+        "SCR-01": "Pending",
+        "SCR-02": "Pending",
+        "SCR-03": "Pending",
+        "SCR-04": "Pending",
+        "SCR-05": "Pending",
+        "SCR-06": "Pending",
+        "PIN-01": "Pending",
+        "PIN-02": "Pending",
+        "REL-01": "Passed automated smoke",
+        "REL-02": "Passed automated installer smoke",
+        "REL-03": "Passed automated installer smoke",
+        "REL-04": "Passed automated installer smoke",
+        "REL-05": "Passed automated installer smoke",
+        "REL-06": "Passed unsigned pilot notice"
+      },
+      "pendingRequired": [
+        "ENV-01",
+        "ENV-02",
+        "ENV-03",
+        "ENV-05",
+        "ENV-06",
+        "ENV-08",
+        "CAP-01",
+        "CAP-02",
+        "CAP-03",
+        "CAP-04",
+        "CAP-05",
+        "CAP-06",
+        "OCR-01",
+        "OCR-02",
+        "OCR-03",
+        "OCR-04",
+        "OCR-05",
+        "SCR-01",
+        "SCR-02",
+        "SCR-03",
+        "SCR-04",
+        "SCR-05",
+        "SCR-06"
+      ],
+      "failedRequired": []
+    },
+    "requiredSuites": [
+      "capture-toolbar",
+      "vello-ocr",
+      "scrolling-capture",
+      "multi-display-dpi",
+      "installer-uninstaller-overwrite",
+      "code-signing-review"
+    ]
+  },
+  "manualQaGate": {
+    "path": "docs/17-MANUAL-QA-GATE.json",
+    "generatedAt": "2026-07-10T05:20:33.322Z",
+    "decisions": {
+      "internalTrial": "Go",
+      "smallCommercialPilot": "Go with unsigned notice",
+      "publicStableRelease": "No-Go"
+    },
+    "pendingRequired": [
+      "ENV-01",
+      "ENV-02",
+      "ENV-03",
+      "ENV-05",
+      "ENV-06",
+      "ENV-08",
+      "CAP-01",
+      "CAP-02",
+      "CAP-03",
+      "CAP-04",
+      "CAP-05",
+      "CAP-06",
+      "OCR-01",
+      "OCR-02",
+      "OCR-03",
+      "OCR-04",
+      "OCR-05",
+      "SCR-01",
+      "SCR-02",
+      "SCR-03",
+      "SCR-04",
+      "SCR-05",
+      "SCR-06"
+    ],
+    "failedRequired": [],
+    "openP0": [
+      "QA-001",
+      "QA-002",
+      "QA-003",
+      "QA-004"
+    ],
+    "openP1": [
+      "QA-005"
+    ],
+    "unsignedArtifacts": [
+      {
+        "name": "exe",
+        "status": "NotSigned",
+        "path": "src-tauri/target/release/nexspot.exe",
+        "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+      },
+      {
+        "name": "nsisInstaller",
+        "status": "NotSigned",
+        "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+        "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+      }
+    ],
+    "signingReadiness": {
+      "present": true,
+      "path": "docs/18-SIGNING-READINESS.json",
+      "generatedAt": "2026-07-10T05:19:59.565Z",
+      "publicStableReady": false,
+      "unsignedPilotReady": true,
+      "matchesCurrentArtifacts": true,
+      "artifactStatuses": {
+        "exe": "NotSigned",
+        "nsisInstaller": "NotSigned"
+      },
+      "blockers": [
+        "signing readiness is not public-stable ready"
+      ]
+    },
+    "publicStableBlockers": [
+      "manual matrix pending: ENV-01",
+      "manual matrix pending: ENV-02",
+      "manual matrix pending: ENV-03",
+      "manual matrix pending: ENV-05",
+      "manual matrix pending: ENV-06",
+      "manual matrix pending: ENV-08",
+      "manual matrix pending: CAP-01",
+      "manual matrix pending: CAP-02",
+      "manual matrix pending: CAP-03",
+      "manual matrix pending: CAP-04",
+      "manual matrix pending: CAP-05",
+      "manual matrix pending: CAP-06",
+      "manual matrix pending: OCR-01",
+      "manual matrix pending: OCR-02",
+      "manual matrix pending: OCR-03",
+      "manual matrix pending: OCR-04",
+      "manual matrix pending: OCR-05",
+      "manual matrix pending: SCR-01",
+      "manual matrix pending: SCR-02",
+      "manual matrix pending: SCR-03",
+      "manual matrix pending: SCR-04",
+      "manual matrix pending: SCR-05",
+      "manual matrix pending: SCR-06",
+      "open P0 blocker: QA-001",
+      "open P0 blocker: QA-002",
+      "open P0 blocker: QA-003",
+      "open P0 blocker: QA-004",
+      "open P1 polish blocker: QA-005",
+      "artifact not signed: exe (NotSigned)",
+      "artifact not signed: nsisInstaller (NotSigned)",
+      "signing readiness: signing readiness is not public-stable ready"
+    ]
+  },
+  "pilotDistributionManifest": {
+    "path": "docs/19-PILOT-DISTRIBUTION-MANIFEST.json",
+    "generatedAt": "2026-07-10T05:20:33.610Z",
+    "decisions": {
+      "internalTrial": "Go",
+      "smallCommercialPilot": "Go with unsigned notice",
+      "publicStableRelease": "No-Go"
+    },
+    "artifacts": {
+      "exe": {
+        "path": "src-tauri/target/release/nexspot.exe",
+        "exists": true,
+        "bytes": 35648000,
+        "modifiedAt": "2026-07-10T05:17:04.108Z",
+        "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+      },
+      "nsisInstaller": {
+        "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+        "exists": true,
+        "bytes": 9265367,
+        "modifiedAt": "2026-07-10T05:17:03.989Z",
+        "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+      }
+    },
+    "materialCount": 11,
+    "blockers": []
+  },
+  "commercialIssueLog": {
+    "path": "docs/16-COMMERCIAL-QA-ISSUE-LOG.md",
+    "publicStableBlockersTracked": true,
+    "requiredBlockers": [
+      "QA-001",
+      "QA-002",
+      "QA-003",
+      "QA-004",
+      "QA-005"
+    ]
+  },
+  "manualGatesRemaining": [
+    "GUI matrix for Vello OCR, scrolling capture, multi-display/DPI",
+    "Code-signing and Windows warning prompt review"
+  ],
+  "warnings": [
+    "release EXE Authenticode status: NotSigned.",
+    "NSIS installer Authenticode status: NotSigned.",
+    "Manual QA matrix required rows still pending: 23.",
+    "Smoke evidence main window title is not exposed; using main window handle as launch proof.",
+    "Manual gate still required: GUI matrix for Vello OCR, scrolling capture, multi-display/DPI.",
+    "Manual gate still required: code-signing and Windows warning prompt review."
+  ]
+}
