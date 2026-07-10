@@ -5,10 +5,7 @@ use vello::wgpu;
 
 impl VelloContext {
     pub fn load_fonts(&self, fonts_dir: &std::path::Path) -> anyhow::Result<()> {
-        let mut font_context = self
-            .font_context
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let mut font_context = self.font_context.lock().unwrap_or_else(|e| e.into_inner());
 
         if let Ok(entries) = std::fs::read_dir(fonts_dir) {
             for entry in entries.flatten() {
@@ -48,7 +45,10 @@ impl VelloContext {
             s
         };
 
-        let mut configs = self.surface_configs.lock().unwrap_or_else(|e| e.into_inner());
+        let mut configs = self
+            .surface_configs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let mut caps_cache = self.surface_caps.lock().unwrap_or_else(|e| e.into_inner());
 
         let key = hwnd.0 as isize;
@@ -56,9 +56,9 @@ impl VelloContext {
             let c = surface.get_capabilities(&self.adapter);
             caps_cache.insert(key, c);
         }
-        let caps = caps_cache.get(&key).unwrap_or_else(|| {
-            unreachable!("Cache insertion failed unexpectedly")
-        });
+        let caps = caps_cache
+            .get(&key)
+            .unwrap_or_else(|| unreachable!("Cache insertion failed unexpectedly"));
 
         let alpha_mode = if caps
             .alpha_modes
@@ -109,7 +109,10 @@ impl VelloContext {
             surface.configure(&self.device, &target_config);
             configs.insert(hwnd.0 as isize, target_config);
 
-            let mut proxies = self.proxy_textures.lock().unwrap_or_else(|e| e.into_inner());
+            let mut proxies = self
+                .proxy_textures
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             let proxy_format = wgpu::TextureFormat::Rgba8Unorm;
             let proxy = self.device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("Vello Proxy Texture"),
@@ -135,7 +138,10 @@ impl VelloContext {
             proxies.insert(hwnd.0 as isize, (proxy, view));
         }
 
-        let proxies = self.proxy_textures.lock().unwrap_or_else(|e| e.into_inner());
+        let proxies = self
+            .proxy_textures
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let (proxy_tex, proxy_view) = proxies
             .get(&(hwnd.0 as isize))
             .ok_or_else(|| anyhow::anyhow!("Proxy texture missing"))?;
@@ -143,7 +149,10 @@ impl VelloContext {
         let surface_texture = match surface.get_current_texture() {
             Ok(t) => t,
             Err(wgpu::SurfaceError::Lost) | Err(wgpu::SurfaceError::Outdated) => {
-                let mut configs = self.surface_configs.lock().unwrap_or_else(|e| e.into_inner());
+                let mut configs = self
+                    .surface_configs
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 configs.remove(&(hwnd.0 as isize));
                 return Ok(());
             }
@@ -204,18 +213,30 @@ impl VelloContext {
     }
 
     pub fn update_background(&self, monitor_id: &str, data: &[u8], width: u32, height: u32) {
-        if width == 0 || height == 0 { return; }
+        if width == 0 || height == 0 {
+            return;
+        }
 
-        let mut backgrounds = self.monitor_backgrounds.lock().unwrap_or_else(|e| e.into_inner());
-        
+        let mut backgrounds = self
+            .monitor_backgrounds
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+
         // 1. Get or Create Resource
-        let resource = backgrounds.entry(monitor_id.to_string()).or_insert_with(|| {
-            self.create_monitor_resource(width, height)
-        });
+        let resource = backgrounds
+            .entry(monitor_id.to_string())
+            .or_insert_with(|| self.create_monitor_resource(width, height));
 
         // 2. Handle Resolution Changes (Strict Bound Re-init)
         if resource.width != width || resource.height != height {
-            log::info!("[Vello] Resolution changed for {}: {}x{} -> {}x{}", monitor_id, resource.width, resource.height, width, height);
+            log::info!(
+                "[Vello] Resolution changed for {}: {}x{} -> {}x{}",
+                monitor_id,
+                resource.width,
+                resource.height,
+                width,
+                height
+            );
             *resource = self.create_monitor_resource(width, height);
         }
 
@@ -258,7 +279,7 @@ impl VelloContext {
         );
 
         // FORCE GARBAGE COLLECTION:
-        // WGPU buffers `write_texture` commands in a staging pool. 
+        // WGPU buffers `write_texture` commands in a staging pool.
         // If the overlay is hidden (pre-heating), `render` is never called, so `queue.submit` is never called.
         // This causes staging buffers to pile up infinitely (100MB/s leak).
         // Submitting an empty command forces WGPU to process the writes and reclaim CPU memory immediately.
@@ -269,10 +290,10 @@ impl VelloContext {
         // Initialize with a single texture to start the rolling cache
         let mut textures = VecDeque::new();
         let mut views = VecDeque::new();
-        
+
         let tex = Arc::new(self.create_one_background_texture(width, height));
         let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
-        
+
         textures.push_back(tex);
         views.push_back(view);
 
@@ -296,17 +317,28 @@ impl VelloContext {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::COPY_SRC,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         })
     }
 
     pub fn purge_surfaces(&self) {
         let mut surfaces = self.surfaces.lock().unwrap_or_else(|e| e.into_inner());
-        let mut configs = self.surface_configs.lock().unwrap_or_else(|e| e.into_inner());
+        let mut configs = self
+            .surface_configs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let mut caps = self.surface_caps.lock().unwrap_or_else(|e| e.into_inner());
-        let mut proxies = self.proxy_textures.lock().unwrap_or_else(|e| e.into_inner());
-        let mut backgrounds = self.monitor_backgrounds.lock().unwrap_or_else(|e| e.into_inner());
+        let mut proxies = self
+            .proxy_textures
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let mut backgrounds = self
+            .monitor_backgrounds
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
 
         surfaces.clear();
         configs.clear();

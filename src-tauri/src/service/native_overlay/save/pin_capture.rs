@@ -1,8 +1,8 @@
+use super::render::render_snapshot;
 use crate::service::native_overlay::state::OverlayState;
+use base64::Engine;
 use std::sync::{Arc, RwLock};
 use tauri::AppHandle;
-use super::render::render_snapshot;
-use base64::Engine;
 
 pub fn capture_to_base64(
     state_arc: &Arc<RwLock<OverlayState>>,

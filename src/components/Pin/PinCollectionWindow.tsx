@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
-import { X, Trash2, Maximize2, Copy, Download, Loader2, Lock, Unlock, ChevronUp, ChevronDown, Terminal, Cpu, LayoutGrid, Grid2X2, StretchHorizontal } from 'lucide-react';
+import { X, Trash2, Copy, Download, Lock, Unlock, ChevronUp, ChevronDown, Terminal, Cpu, LayoutGrid, Grid2X2, StretchHorizontal } from 'lucide-react';
 import { save } from '@tauri-apps/plugin-dialog';
-import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+
+const ReactMarkdown = React.lazy(() => import('react-markdown'));
 
 type PinData =
     | { type: 'Text'; payload: string }
@@ -16,7 +17,6 @@ interface PinItem {
     id: string;
     data: PinData;
     timestamp: number;
-    isStreaming?: boolean;
 }
 
 const PinCollectionWindow: React.FC = () => {
@@ -49,49 +49,11 @@ const PinCollectionWindow: React.FC = () => {
             fetchPins();
         });
 
-        const unlistenChunk = listen<{ id: string, content: string }>('ai-stream://chunk', (event) => {
-            setPins(prev => prev.map(p => {
-                if (p.id === event.payload.id && p.data.type === 'Text') {
-                    return {
-                        ...p,
-                        isStreaming: true,
-                        data: { ...p.data, payload: p.data.payload + event.payload.content }
-                    };
-                }
-                return p;
-            }));
-        });
-
-        const unlistenError = listen<{ id: string, error: string }>('ai-stream://error', (event) => {
-            setPins(prev => prev.map(p => {
-                if (p.id === event.payload.id && p.data.type === 'Text') {
-                    return {
-                        ...p,
-                        isStreaming: false,
-                        data: { ...p.data, payload: p.data.payload + `\n\n**Error:** ${event.payload.error}` }
-                    };
-                }
-                return p;
-            }));
-        });
-
-        const unlistenDone = listen<{ id: string }>('ai-stream://done', (event) => {
-            setPins(prev => prev.map(p => {
-                if (p.id === event.payload.id) {
-                    return { ...p, isStreaming: false };
-                }
-                return p;
-            }));
-        });
-
         const handleGlobalClick = () => setContextMenu(null);
         window.addEventListener('click', handleGlobalClick);
 
         return () => {
             unlistenUpdated.then(f => f());
-            unlistenChunk.then(f => f());
-            unlistenError.then(f => f());
-            unlistenDone.then(f => f());
             window.removeEventListener('click', handleGlobalClick);
         };
     }, []);
@@ -109,7 +71,7 @@ const PinCollectionWindow: React.FC = () => {
         }
     };
 
-    const savePinAs = async (pin: PinItem, ext?: 'png' | 'jpg') => {
+    const savePinAs = useCallback(async (pin: PinItem, ext?: 'png' | 'jpg') => {
         const defaultExt = ext || (config?.default_export_format as 'png' | 'jpg') || 'png';
         try {
             const path = await save({
@@ -127,12 +89,12 @@ const PinCollectionWindow: React.FC = () => {
             console.error("Failed to save pin:", e);
         }
         setContextMenu(null);
-    };
+    }, [config?.default_export_format]);
 
-    const handleContextMenu = (e: React.MouseEvent, pin: PinItem) => {
+    const handleContextMenu = useCallback((e: React.MouseEvent, pin: PinItem) => {
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY, pin });
-    };
+    }, []);
 
     const togglePinned = async () => {
         try {
@@ -166,16 +128,16 @@ const PinCollectionWindow: React.FC = () => {
         }
     };
 
-    const removePin = async (id: string) => {
+    const removePin = useCallback(async (id: string) => {
         try {
             await invoke('remove_pin', { id });
             fetchPins();
         } catch (e) {
             console.error(e);
         }
-    };
+    }, []);
 
-    const copyPinData = async (pin: PinItem) => {
+    const copyPinData = useCallback(async (pin: PinItem) => {
         try {
             if (pin.data.type === 'Text') {
                 await navigator.clipboard.writeText(pin.data.payload);
@@ -189,7 +151,7 @@ const PinCollectionWindow: React.FC = () => {
         } catch (err) {
             console.error("Failed to copy:", err);
         }
-    };
+    }, []);
 
     return (
         <div className="float-win w-screen h-screen flex flex-col overflow-hidden text-ink select-none relative">
@@ -275,67 +237,15 @@ const PinCollectionWindow: React.FC = () => {
                         </div>
                     )}
                     {pins.map(pin => (
-                        <motion.div
+                        <PinCard
                             key={pin.id}
-                            initial={{ y: 7 }}
-                            animate={{ y: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="w-full bg-bg-1 border border-line rounded-panel p-3 flex flex-col gap-3 relative group shadow-sm hover:border-line-2 transition-colors"
-                        >
-                            <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
-                                {pin.isStreaming && (
-                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-accent-soft border border-accent-line text-accent rounded text-[10px] font-semibold animate-pulse">
-                                        <Loader2 size={10} className="animate-spin" />
-                                        {t('pin.streaming_data')}
-                                    </div>
-                                )}
-                                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                                    {pin.data.type === 'ImageBase64' && (
-                                        <button
-                                            onClick={() => savePinAs(pin)}
-                                            className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors"
-                                            title={t('pin.tooltip_export')}
-                                        >
-                                            <Download size={12} />
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => copyPinData(pin)}
-                                        className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors"
-                                        title={t('pin.tooltip_copy')}
-                                    >
-                                        <Copy size={12} />
-                                    </button>
-                                    <button
-                                        onClick={() => removePin(pin.id)}
-                                        className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-bad transition-colors"
-                                        title={t('pin.delete_segment')}
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {pin.data.type === 'ImageBase64' ? (
-                                <div className="rounded overflow-hidden border border-line bg-bg-0/40">
-                                    <img
-                                        src={pin.data.payload}
-                                        className="w-full h-auto object-contain max-h-[500px] cursor-context-menu"
-                                        alt="Pin Asset"
-                                        onContextMenu={(e) => handleContextMenu(e, pin)}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="text-[12.5px] text-ink prose prose-invert prose-sm max-w-none pt-1 leading-relaxed">
-                                    <ReactMarkdown>{pin.data.payload}</ReactMarkdown>
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-center mt-0.5 pt-2 border-t border-line">
-                                <span className="mono text-[10px] text-faint">{pin.id.split('-')[0]}</span>
-                                <span className="mono text-[10px] text-faint">{new Date(pin.timestamp).toISOString().split('T')[1].split('.')[0]}</span>
-                            </div>
-                        </motion.div>
+                            pin={pin}
+                            t={t}
+                            savePinAs={savePinAs}
+                            copyPinData={copyPinData}
+                            removePin={removePin}
+                            handleContextMenu={handleContextMenu}
+                        />
                     ))}
                     </AnimatePresence>
                 </div>
@@ -386,6 +296,81 @@ const PinCollectionWindow: React.FC = () => {
         </div>
     );
 };
+
+const PinCard = React.memo(({
+    pin,
+    t,
+    savePinAs,
+    copyPinData,
+    removePin,
+    handleContextMenu,
+}: {
+    pin: PinItem;
+    t: (key: string) => string;
+    savePinAs: (pin: PinItem, ext?: 'png' | 'jpg') => void;
+    copyPinData: (pin: PinItem) => void;
+    removePin: (id: string) => void;
+    handleContextMenu: (event: React.MouseEvent, pin: PinItem) => void;
+}) => (
+    <motion.div
+        key={pin.id}
+        initial={{ y: 7 }}
+        animate={{ y: 0 }}
+        exit={{ opacity: 0 }}
+        className="w-full bg-bg-1 border border-line rounded-panel p-3 flex flex-col gap-3 relative group shadow-sm hover:border-line-2 transition-colors"
+    >
+        <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
+            <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                {pin.data.type === 'ImageBase64' && (
+                    <button
+                        onClick={() => savePinAs(pin)}
+                        className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors"
+                        title={t('pin.tooltip_export')}
+                    >
+                        <Download size={12} />
+                    </button>
+                )}
+                <button
+                    onClick={() => copyPinData(pin)}
+                    className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-ink transition-colors"
+                    title={t('pin.tooltip_copy')}
+                >
+                    <Copy size={12} />
+                </button>
+                <button
+                    onClick={() => removePin(pin.id)}
+                    className="float-win w-7 h-7 flex items-center justify-center rounded-btn text-muted hover:text-bad transition-colors"
+                    title={t('pin.delete_segment')}
+                >
+                    <X size={12} />
+                </button>
+            </div>
+        </div>
+
+        {pin.data.type === 'ImageBase64' ? (
+            <div className="rounded overflow-hidden border border-line bg-bg-0/40">
+                <img
+                    src={pin.data.payload}
+                    className="w-full h-auto object-contain max-h-[500px] cursor-context-menu"
+                    alt="Pin Asset"
+                    decoding="async"
+                    onContextMenu={(event) => handleContextMenu(event, pin)}
+                />
+            </div>
+        ) : (
+            <div className="text-[12.5px] text-ink prose prose-invert prose-sm max-w-none pt-1 leading-relaxed">
+                <Suspense fallback={<div className="h-12 rounded-panel bg-bg-2/70 animate-pulse" />}>
+                    <ReactMarkdown>{pin.data.payload}</ReactMarkdown>
+                </Suspense>
+            </div>
+        )}
+
+        <div className="flex justify-between items-center mt-0.5 pt-2 border-t border-line">
+            <span className="mono text-[10px] text-faint">{pin.id.split('-')[0]}</span>
+            <span className="mono text-[10px] text-faint">{new Date(pin.timestamp).toISOString().split('T')[1].split('.')[0]}</span>
+        </div>
+    </motion.div>
+));
 
 const ContextItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, variant?: 'default' | 'danger' }> = ({ icon, label, onClick, variant = 'default' }) => (
     <button

@@ -1,5 +1,5 @@
-use crate::service::native_overlay::state::OverlayState;
 use crate::service::native_overlay::manager::MonitorRenderContext;
+use crate::service::native_overlay::state::OverlayState;
 use crate::service::win32;
 
 pub mod drawing;
@@ -27,7 +27,7 @@ pub fn render_frame(
     let win_h = monitor_rect.bottom - monitor_rect.top;
 
     // --- 0. Update Toolbar Layout (ONLY for Vello or if explicit) ---
-    // Note: For GDI multi-monitor, toolbar layout is updated in the input handler 
+    // Note: For GDI multi-monitor, toolbar layout is updated in the input handler
     // to avoid per-monitor clamping conflicts.
     if state.capture_engine == crate::service::native_overlay::state::CaptureEngine::Wgc {
         if let Some(sel) = state.selection {
@@ -49,7 +49,7 @@ pub fn render_frame(
             let _ = win32::window::set_layered_attribute(hwnd, false);
             let _ = win32::window::enable_transparency_composition(hwnd);
 
-            // 1. Scene building is now handled at the Frame level in actions.rs 
+            // 1. Scene building is now handled at the Frame level in actions.rs
             // to ensure "One Frame, One Scene" performance across multiple monitors.
 
             // 2. Execute Vello Render to Surface
@@ -67,17 +67,22 @@ pub fn render_frame(
 
     // 1. Prepare/Reuse Backbuffer (PREMIUM PERFORMANCE)
     let hdc_screen = win32::gdi::get_dc(None)?;
-    
+
     // Check if we need to re-initialize the backbuffer
-    let needs_reinit = ctx.hdc_backbuffer.is_none() 
+    let needs_reinit = ctx.hdc_backbuffer.is_none()
         || ctx.hbm_backbuffer.is_none()
         || ctx.backbuffer_size != (win_w, win_h);
 
     if needs_reinit {
-        log::debug!("Re-initializing GDI backbuffer for monitor {} (size: {}x{})", monitor_id, win_w, win_h);
+        log::debug!(
+            "Re-initializing GDI backbuffer for monitor {} (size: {}x{})",
+            monitor_id,
+            win_w,
+            win_h
+        );
         let hbm_buffer = win32::gdi::create_compatible_bitmap(&hdc_screen, win_w, win_h)?;
         let hdc_mem = win32::gdi::create_compatible_dc(Some(&hdc_screen))?;
-        
+
         ctx.hbm_backbuffer = Some(hbm_buffer);
         ctx.hdc_backbuffer = Some(hdc_mem);
         ctx.backbuffer_size = (win_w, win_h);
@@ -101,7 +106,7 @@ pub fn render_frame(
             ctx.hdc_bg_src = Some(win32::gdi::create_compatible_dc(Some(&hdc_screen))?);
         }
         let hdc_src = ctx.hdc_bg_src.as_ref().unwrap();
-        
+
         let prev_hbm_src = win32::gdi::select_object(
             hdc_src,
             windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_dim.0 .0),
@@ -153,7 +158,7 @@ pub fn render_frame(
                 // Map absolute intersection to local space for both Target and Source
                 let local_target_x = draw_left - monitor_rect.left;
                 let local_target_y = draw_top - monitor_rect.top;
-                let local_source_x = draw_left - state.capture_x; 
+                let local_source_x = draw_left - state.capture_x;
                 let local_source_y = draw_top - state.capture_y;
 
                 win32::gdi::bit_blt(
@@ -186,17 +191,26 @@ pub fn render_frame(
     // Initialize GDI+ context ONCE per frame and share it with tools/UI.
     {
         if ctx.graphics.is_none() {
-            ctx.graphics = Some(crate::service::win32::gdiplus::GraphicsWrapper::new(hdc_mem.0)?);
+            ctx.graphics = Some(crate::service::win32::gdiplus::GraphicsWrapper::new(
+                hdc_mem.0,
+            )?);
         }
         let graphics = ctx.graphics.as_mut().unwrap();
-        
+
         // --- SYNC COORDINATE SPACE ---
         let _ = graphics.reset_transform();
         // Align GDI+ with Global coordinates by offsetting by the monitor's top-left.
         let _ = graphics.translate(-(monitor_rect.left as f32), -(monitor_rect.top as f32));
 
         // 4. Draw Drawing Objects
-        drawing::draw_all_objects(&hdc_mem, Some(&graphics), state, &mut ctx.cache, monitor_rect.left, monitor_rect.top)?;
+        drawing::draw_all_objects(
+            &hdc_mem,
+            Some(&graphics),
+            state,
+            &mut ctx.cache,
+            monitor_rect.left,
+            monitor_rect.top,
+        )?;
 
         // 5. Draw UI Elements (Toolbar)
         let tb_rect = &toolbar.rect;
@@ -220,9 +234,9 @@ pub fn render_frame(
     }
 
     // --- CROSS-MONITOR COORDINATE ISOLATION ---
-    let mouse_in_this_monitor = state.mouse_x >= monitor_rect.left 
-        && state.mouse_x < monitor_rect.right 
-        && state.mouse_y >= monitor_rect.top 
+    let mouse_in_this_monitor = state.mouse_x >= monitor_rect.left
+        && state.mouse_x < monitor_rect.right
+        && state.mouse_y >= monitor_rect.top
         && state.mouse_y < monitor_rect.bottom;
 
     if mouse_in_this_monitor {
@@ -248,7 +262,14 @@ pub fn render_frame(
             && state.mouse_y < toolbar.rect.bottom;
 
         if (is_adjusting || is_outside) && !is_over_toolbar {
-            magnifier::draw_magnifier(&hdc_mem, state.mouse_x, state.mouse_y, state, ctx, monitor_rect)?;
+            magnifier::draw_magnifier(
+                &hdc_mem,
+                state.mouse_x,
+                state.mouse_y,
+                state,
+                ctx,
+                monitor_rect,
+            )?;
         }
 
         // 6. Draw Custom Brush/Mosaic Circle Preview
@@ -265,7 +286,7 @@ pub fn render_frame(
                     && state.mouse_y >= sel.top
                     && state.mouse_y <= sel.bottom
             } else {
-                true 
+                true
             };
 
             if is_in_selection {
@@ -277,7 +298,11 @@ pub fn render_frame(
                     20 // Mosaic size matches renderer
                 };
 
-                let pen = ctx.cache.get_gdi_pen(windows::Win32::Graphics::Gdi::PS_SOLID.0 as _, 1, 0xFFFFFF)?; // White outline
+                let pen = ctx.cache.get_gdi_pen(
+                    windows::Win32::Graphics::Gdi::PS_SOLID.0 as _,
+                    1,
+                    0xFFFFFF,
+                )?; // White outline
                 let old_p = win32::gdi::select_object(
                     &hdc_mem,
                     windows::Win32::Graphics::Gdi::HGDIOBJ(pen.0 .0),

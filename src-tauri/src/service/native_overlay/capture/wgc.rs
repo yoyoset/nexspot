@@ -1,6 +1,6 @@
 use crate::service::native_overlay::state::OverlayState;
 use crate::service::win32;
-use std::sync::{Arc, RwLock, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use windows::Win32::Foundation::{POINT, RECT};
 
 pub fn capture_wgc(

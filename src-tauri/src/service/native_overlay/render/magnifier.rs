@@ -1,5 +1,5 @@
-use crate::service::native_overlay::state::OverlayState;
 use crate::service::native_overlay::manager::MonitorRenderContext;
+use crate::service::native_overlay::state::OverlayState;
 use crate::service::win32;
 use crate::service::win32::gdi::SafeHDC;
 use windows::Win32::Foundation::RECT;
@@ -36,7 +36,7 @@ pub fn draw_magnifier(
         right: x + mag_size,
         bottom: y + mag_size,
     };
-    
+
     let brush_bg = ctx.cache.get_brush(0x202020)?;
     let local_rect = RECT {
         left: x - current_monitor_rect.left,
@@ -52,11 +52,11 @@ pub fn draw_magnifier(
     if let Some(hbm_bright) = &state.gdi.hbitmap_bright {
         // OPTIMIZATION: Reuse hdc_selection_src as a generic scratch DC
         if ctx.hdc_selection_src.is_none() {
-             ctx.hdc_selection_src = Some(win32::gdi::create_compatible_dc(None)?);
+            ctx.hdc_selection_src = Some(win32::gdi::create_compatible_dc(None)?);
         }
-        
+
         let hdc_src = ctx.hdc_selection_src.as_ref().unwrap();
-        
+
         let prev = win32::gdi::select_object(
             hdc_src,
             windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_bright.0 .0),

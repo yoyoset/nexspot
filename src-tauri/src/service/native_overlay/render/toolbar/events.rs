@@ -61,20 +61,41 @@ pub fn handle_property_click(
         return None;
     }
 
-    if x < property_bar_rect.left || x > property_bar_rect.right || y < property_bar_rect.top || y > property_bar_rect.bottom {
+    if x < property_bar_rect.left
+        || x > property_bar_rect.right
+        || y < property_bar_rect.top
+        || y > property_bar_rect.bottom
+    {
         return None;
     }
 
     // Constants branching based on Engine
-    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine == CaptureEngine::Gdi {
+    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine
+        == CaptureEngine::Gdi
+    {
         use super::constants::gdi::*;
-        (ITEM_STEP, COLOR_ITEM_STEP, PB_HPADDING, GROUP_GAP, 80.0 /* SLIDER_WIDTH */)
+        (
+            ITEM_STEP,
+            COLOR_ITEM_STEP,
+            PB_HPADDING,
+            GROUP_GAP,
+            80.0, /* SLIDER_WIDTH */
+        )
     } else {
         use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
-        (ITEM_SIZE as f32 + ITEM_GAP as f32, COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32, PB_HPADDING as f32, GROUP_GAP as f32, SLIDER_WIDTH as f32)
+        (
+            ITEM_SIZE as f32 + ITEM_GAP as f32,
+            COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32,
+            PB_HPADDING as f32,
+            GROUP_GAP as f32,
+            SLIDER_WIDTH as f32,
+        )
     };
-    
-    let tool = current_tool.as_ref().map(tool_type_to_drawing_tool).unwrap_or(DrawingTool::None);
+
+    let tool = current_tool
+        .as_ref()
+        .map(tool_type_to_drawing_tool)
+        .unwrap_or(DrawingTool::None);
     let mut offset_x = property_bar_rect.left + pb_hpadding as i32;
 
     // Group 1: Base Tool Params
@@ -82,7 +103,11 @@ pub fn handle_property_click(
     if matches!(tool, DrawingTool::Text) {
         let sizes = [14.0, 24.0, 36.0];
         for &size in &sizes {
-            if x >= offset_x && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 }) && y >= property_bar_rect.top + 6 && y <= property_bar_rect.bottom - 6 {
+            if x >= offset_x
+                && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 })
+                && y >= property_bar_rect.top + 6
+                && y <= property_bar_rect.bottom - 6
+            {
                 return Some(PropertyChange::FontSize(size));
             }
             offset_x += item_step as i32;
@@ -90,13 +115,21 @@ pub fn handle_property_click(
     } else if tool != DrawingTool::None {
         let strokes = [2.0, 4.0, 8.0];
         for &stroke in &strokes {
-            if x >= offset_x && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 }) && y >= property_bar_rect.top + 6 && y <= property_bar_rect.bottom - 6 {
+            if x >= offset_x
+                && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 })
+                && y >= property_bar_rect.top + 6
+                && y <= property_bar_rect.bottom - 6
+            {
                 return Some(PropertyChange::Stroke(stroke));
             }
             offset_x += item_step as i32;
         }
         if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) {
-            if x >= offset_x && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 }) && y >= property_bar_rect.top + 6 && y <= property_bar_rect.bottom - 6 {
+            if x >= offset_x
+                && x <= offset_x + (if engine == CaptureEngine::Gdi { 40 } else { 28 })
+                && y >= property_bar_rect.top + 6
+                && y <= property_bar_rect.bottom - 6
+            {
                 return Some(PropertyChange::Fill(!current_is_filled));
             }
             offset_x += item_step as i32;
@@ -113,7 +146,11 @@ pub fn handle_property_click(
         for color in colors {
             let hit_l = offset_x;
             let hit_r = offset_x + color_step as i32;
-            if x >= hit_l && x < hit_r && y >= property_bar_rect.top && y <= property_bar_rect.bottom {
+            if x >= hit_l
+                && x < hit_r
+                && y >= property_bar_rect.top
+                && y <= property_bar_rect.bottom
+            {
                 return Some(PropertyChange::Color(color));
             }
             offset_x += color_step as i32;
@@ -124,7 +161,7 @@ pub fn handle_property_click(
     if enable_advanced_effects && tool != DrawingTool::Mosaic {
         offset_x += group_gap as i32;
         let sw = slider_width as i32;
-        
+
         // Opacity Slider
         offset_x += 10;
         if x >= offset_x && x <= offset_x + sw {
@@ -153,16 +190,35 @@ pub fn handle_property_move(
         return None;
     }
 
-    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine == CaptureEngine::Gdi {
+    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine
+        == CaptureEngine::Gdi
+    {
         use super::constants::gdi::*;
-        (ITEM_STEP, COLOR_ITEM_STEP, PB_HPADDING, GROUP_GAP, SLIDER_WIDTH)
+        (
+            ITEM_STEP,
+            COLOR_ITEM_STEP,
+            PB_HPADDING,
+            GROUP_GAP,
+            SLIDER_WIDTH,
+        )
     } else {
         use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
-        (ITEM_SIZE as f32 + ITEM_GAP as f32, COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32, PB_HPADDING as f32, GROUP_GAP as f32, SLIDER_WIDTH as f32)
+        (
+            ITEM_SIZE as f32 + ITEM_GAP as f32,
+            COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32,
+            PB_HPADDING as f32,
+            GROUP_GAP as f32,
+            SLIDER_WIDTH as f32,
+        )
     };
 
-    let tool = current_tool.as_ref().map(tool_type_to_drawing_tool).unwrap_or(DrawingTool::None);
-    if tool == DrawingTool::Mosaic { return None; }
+    let tool = current_tool
+        .as_ref()
+        .map(tool_type_to_drawing_tool)
+        .unwrap_or(DrawingTool::None);
+    if tool == DrawingTool::Mosaic {
+        return None;
+    }
 
     let mut offset_x = property_bar_rect.left + pb_hpadding as i32;
     let g1_start = offset_x;
@@ -214,20 +270,44 @@ pub fn hit_test_property_bar(
     enable_advanced_effects: bool,
     engine: CaptureEngine,
 ) -> PropertyHit {
-    if !property_bar_visible || x < property_bar_rect.left || x > property_bar_rect.right || y < property_bar_rect.top || y > property_bar_rect.bottom {
+    if !property_bar_visible
+        || x < property_bar_rect.left
+        || x > property_bar_rect.right
+        || y < property_bar_rect.top
+        || y > property_bar_rect.bottom
+    {
         return PropertyHit::None;
     }
 
-    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine == CaptureEngine::Gdi {
+    let (item_step, color_step, pb_hpadding, group_gap, slider_width) = if engine
+        == CaptureEngine::Gdi
+    {
         use super::constants::gdi::*;
-        (ITEM_STEP, COLOR_ITEM_STEP, PB_HPADDING, GROUP_GAP, SLIDER_WIDTH)
+        (
+            ITEM_STEP,
+            COLOR_ITEM_STEP,
+            PB_HPADDING,
+            GROUP_GAP,
+            SLIDER_WIDTH,
+        )
     } else {
         use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
-        (ITEM_SIZE as f32 + ITEM_GAP as f32, COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32, PB_HPADDING as f32, GROUP_GAP as f32, SLIDER_WIDTH as f32)
+        (
+            ITEM_SIZE as f32 + ITEM_GAP as f32,
+            COLOR_ITEM_SIZE as f32 + COLOR_ITEM_GAP as f32,
+            PB_HPADDING as f32,
+            GROUP_GAP as f32,
+            SLIDER_WIDTH as f32,
+        )
     };
 
-    let tool = current_tool.as_ref().map(tool_type_to_drawing_tool).unwrap_or(DrawingTool::None);
-    if tool == DrawingTool::Mosaic || !enable_advanced_effects { return PropertyHit::Other; }
+    let tool = current_tool
+        .as_ref()
+        .map(tool_type_to_drawing_tool)
+        .unwrap_or(DrawingTool::None);
+    if tool == DrawingTool::Mosaic || !enable_advanced_effects {
+        return PropertyHit::Other;
+    }
 
     let mut offset_x = property_bar_rect.left + pb_hpadding as i32;
     let g1_start = offset_x;
@@ -237,8 +317,8 @@ pub fn hit_test_property_bar(
         offset_x += (3.0 * item_step) as i32;
     } else if tool != DrawingTool::None {
         offset_x += (3.0 * item_step) as i32;
-        if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) { 
-            offset_x += item_step as i32; 
+        if matches!(tool, DrawingTool::Rect | DrawingTool::Ellipse) {
+            offset_x += item_step as i32;
         }
     }
 
@@ -253,7 +333,7 @@ pub fn hit_test_property_bar(
     // Group 3
     offset_x += group_gap as i32;
     let sw = slider_width as i32;
-    
+
     // Opacity
     offset_x += 10;
     if x >= offset_x && x <= offset_x + sw {

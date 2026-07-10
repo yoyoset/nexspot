@@ -96,7 +96,10 @@ fn draw_point(
     // Apply Style-specific rendering
     use crate::service::config::types::AestheticStyle;
     match obj.style {
-        AestheticStyle::Default | AestheticStyle::PaperCut | AestheticStyle::Sketch | AestheticStyle::Glass => {
+        AestheticStyle::Default
+        | AestheticStyle::PaperCut
+        | AestheticStyle::Sketch
+        | AestheticStyle::Glass => {
             scene.fill(Fill::NonZero, Affine::IDENTITY, &fill_brush, None, &circle);
             scene.stroke(
                 &border_stroke,

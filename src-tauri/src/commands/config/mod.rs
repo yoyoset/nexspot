@@ -101,7 +101,11 @@ pub fn set_ocr_language(state: State<'_, AppState>, lang: String) -> Result<(), 
 }
 
 #[tauri::command]
-pub fn set_ocr_engine(app: tauri::AppHandle, state: State<'_, AppState>, engine: String) -> Result<(), ConfigError> {
+pub fn set_ocr_engine(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    engine: String,
+) -> Result<(), ConfigError> {
     {
         let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
         c_state.config.ocr_engine = engine;
@@ -113,7 +117,11 @@ pub fn set_ocr_engine(app: tauri::AppHandle, state: State<'_, AppState>, engine:
 }
 
 #[tauri::command]
-pub fn set_paddle_language(app: tauri::AppHandle, state: State<'_, AppState>, lang: String) -> Result<(), ConfigError> {
+pub fn set_paddle_language(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    lang: String,
+) -> Result<(), ConfigError> {
     {
         let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
         c_state.config.ocr_paddle_language = lang;
@@ -123,7 +131,6 @@ pub fn set_paddle_language(app: tauri::AppHandle, state: State<'_, AppState>, la
     crate::service::paddle_ocr::warmup(&app);
     Ok(())
 }
-
 
 #[tauri::command]
 pub fn set_jpg_quality(state: State<'_, AppState>, quality: u8) -> Result<(), ConfigError> {
@@ -140,7 +147,10 @@ pub fn set_concurrency(state: State<'_, AppState>, concurrency: usize) -> Result
 }
 
 #[tauri::command]
-pub fn set_default_export_format(state: State<'_, AppState>, format: String) -> Result<(), ConfigError> {
+pub fn set_default_export_format(
+    state: State<'_, AppState>,
+    format: String,
+) -> Result<(), ConfigError> {
     let mut c_state = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
     c_state.set_default_export_format(format);
     Ok(())

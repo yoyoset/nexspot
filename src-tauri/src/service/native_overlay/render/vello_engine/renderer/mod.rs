@@ -44,8 +44,14 @@ pub fn render_state_to_scene(
     let clip_rect = vello::kurbo::Rect::new(-1000000.0, -1000000.0, 1000000.0, 1000000.0);
     let mut inner_scene = vello::Scene::new();
 
-    let mut font_context = vello_ctx.font_context.lock().unwrap_or_else(|e| e.into_inner());
-    let mut layout_context = vello_ctx.layout_context.lock().unwrap_or_else(|e| e.into_inner());
+    let mut font_context = vello_ctx
+        .font_context
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    let mut layout_context = vello_ctx
+        .layout_context
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     // 3. Render Drawing Objects
     for obj in &state.objects {
@@ -66,7 +72,13 @@ pub fn render_state_to_scene(
                 &clip_rect,
             );
             let bg = state.vello.background.as_ref();
-            draw_object(&mut inner_scene, &glow_obj, bg, &mut font_context, &mut layout_context);
+            draw_object(
+                &mut inner_scene,
+                &glow_obj,
+                bg,
+                &mut font_context,
+                &mut layout_context,
+            );
             inner_scene.pop_layer();
         }
 
@@ -81,7 +93,13 @@ pub fn render_state_to_scene(
                 &clip_rect,
             );
             let bg = state.vello.background.as_ref();
-            draw_object(&mut inner_scene, &shadow_obj, bg, &mut font_context, &mut layout_context);
+            draw_object(
+                &mut inner_scene,
+                &shadow_obj,
+                bg,
+                &mut font_context,
+                &mut layout_context,
+            );
             inner_scene.pop_layer();
         }
 
@@ -97,7 +115,13 @@ pub fn render_state_to_scene(
         }
 
         let bg = state.vello.background.as_ref();
-        draw_object(&mut inner_scene, obj, bg, &mut font_context, &mut layout_context);
+        draw_object(
+            &mut inner_scene,
+            obj,
+            bg,
+            &mut font_context,
+            &mut layout_context,
+        );
 
         if has_opacity {
             inner_scene.pop_layer();
@@ -128,7 +152,13 @@ pub fn render_state_to_scene(
                     &clip_rect,
                 );
                 let bg = state.vello.background.as_ref();
-                draw_object(&mut inner_scene, &glow_obj, bg, &mut font_context, &mut layout_context);
+                draw_object(
+                    &mut inner_scene,
+                    &glow_obj,
+                    bg,
+                    &mut font_context,
+                    &mut layout_context,
+                );
                 inner_scene.pop_layer();
             }
 
@@ -144,7 +174,13 @@ pub fn render_state_to_scene(
             }
 
             let bg = state.vello.background.as_ref();
-            draw_object(&mut inner_scene, current, bg, &mut font_context, &mut layout_context);
+            draw_object(
+                &mut inner_scene,
+                current,
+                bg,
+                &mut font_context,
+                &mut layout_context,
+            );
 
             if has_opacity {
                 inner_scene.pop_layer();
@@ -154,17 +190,21 @@ pub fn render_state_to_scene(
         ui::magnifier::draw_magnifier(&mut inner_scene, state);
         ui::handles::draw_object_handles(&mut inner_scene, state);
         ui::toolbar::draw_toolbar_ui(&mut inner_scene, state, toolbar);
-        ui::tooltip::draw_tooltip_ui(&mut inner_scene, state, toolbar, &mut font_context, &mut layout_context);
+        ui::tooltip::draw_tooltip_ui(
+            &mut inner_scene,
+            state,
+            toolbar,
+            &mut font_context,
+            &mut layout_context,
+        );
         draw_tool_preview(&mut inner_scene, state, toolbar);
     }
     // ------------------------------------
 
     // 5. Append Inner Scene with Global Normalization (B-Scheme)
     // Map world coordinates to local window space
-    let global_transform = vello::kurbo::Affine::translate((
-        -(state.capture_x as f64),
-        -(state.capture_y as f64),
-    ));
+    let global_transform =
+        vello::kurbo::Affine::translate((-(state.capture_x as f64), -(state.capture_y as f64)));
     scene.append(&inner_scene, Some(global_transform));
 }
 
@@ -187,7 +227,9 @@ fn draw_object(
     };
 
     let renderer: &dyn tools::VelloToolRenderer = match obj.tool {
-        DrawingTool::Rect | DrawingTool::Ellipse | DrawingTool::Line => &tools::shapes::ShapesRenderer,
+        DrawingTool::Rect | DrawingTool::Ellipse | DrawingTool::Line => {
+            &tools::shapes::ShapesRenderer
+        }
         DrawingTool::Arrow => &tools::arrow::ArrowRenderer,
         DrawingTool::Brush => &tools::freehand::BrushRenderer,
         DrawingTool::Mosaic => &tools::effects::MosaicRenderer,

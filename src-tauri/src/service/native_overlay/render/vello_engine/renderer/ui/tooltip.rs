@@ -22,7 +22,6 @@ pub fn draw_tooltip_ui(
         None => return,
     };
 
-
     let text = btn.tooltip.clone();
     if text.is_empty() {
         return;

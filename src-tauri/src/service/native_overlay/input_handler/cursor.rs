@@ -12,9 +12,10 @@ pub fn handle_cursor(
     // This is a wrapper to match the InputHandler signature
     if let Ok(cursor) = get_current_cursor(state_arc, toolbar) {
         unsafe {
-            windows::Win32::UI::WindowsAndMessaging::SetCursor(
-                Some(windows::Win32::UI::WindowsAndMessaging::LoadCursorW(None, cursor).unwrap_or_default()),
-            );
+            windows::Win32::UI::WindowsAndMessaging::SetCursor(Some(
+                windows::Win32::UI::WindowsAndMessaging::LoadCursorW(None, cursor)
+                    .unwrap_or_default(),
+            ));
         }
         return true;
     }
@@ -31,7 +32,7 @@ pub fn get_current_cursor(
     };
 
     use windows::Win32::UI::WindowsAndMessaging::{
-        IDC_ARROW, IDC_CROSS, IDC_SIZEALL, IDC_SIZENS, IDC_SIZEWE, IDC_SIZENWSE, IDC_SIZENESW,
+        IDC_ARROW, IDC_CROSS, IDC_SIZEALL, IDC_SIZENESW, IDC_SIZENS, IDC_SIZENWSE, IDC_SIZEWE,
     };
 
     // 1. Toolbar Precedence

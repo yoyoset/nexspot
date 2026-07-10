@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
+use crate::service::config::types::AestheticStyle;
 use crate::service::config::ConfigError;
 use crate::service::native_overlay::OverlayManager;
-use crate::service::config::types::AestheticStyle;
 use tauri::State;
 
 #[tauri::command]
@@ -17,7 +17,10 @@ pub fn set_vello_enabled(
     }
 
     // Update OverlayManager's pre-heat stream lifecycle
-    let mut overlay_mgr = state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+    let mut overlay_mgr = state
+        .overlay_manager
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     if enabled {
         overlay_mgr.start_pre_heat();
         // If Vello isn't ready yet, trigger initialization
@@ -108,7 +111,10 @@ pub fn emergency_reset_to_gdi(
 
     // 4. Force stop pre-heat and cleanup
     drop(c_state); // Release lock before manager lock
-    let mut overlay_mgr = state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+    let mut overlay_mgr = state
+        .overlay_manager
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     overlay_mgr.stop_pre_heat();
     // Also clear existing Vello context if any
     overlay_mgr.vello_ctx = None;

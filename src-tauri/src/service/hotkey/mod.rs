@@ -22,10 +22,8 @@ pub fn spawn_hotkey_listener<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
 
                     let crate::service::config::types::HotkeyAction::Workflow(workflow) = action;
                     tauri::async_runtime::spawn(async move {
-                        crate::service::workflow::execute_capture_workflow(
-                            app_handle, workflow,
-                        )
-                        .await;
+                        crate::service::workflow::execute_capture_workflow(app_handle, workflow)
+                            .await;
                     });
                 }
             }

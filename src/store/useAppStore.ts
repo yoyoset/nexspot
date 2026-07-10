@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import { HUDType } from '../components/Overlay/GlobalHUD';
 
 
@@ -181,7 +182,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     fetchActivity: async () => {
         try {
-            const { invoke } = await import('@tauri-apps/api/core');
             const data = await invoke<ActivityEntry[]>('get_activity');
             set({ activity: data });
         } catch (e) {

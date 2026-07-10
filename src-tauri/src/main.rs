@@ -10,11 +10,18 @@ fn main() {
         if let Some(parent) = exe_path.parent() {
             let log_path = parent.join("nexspot_debug.log");
             let log_file = std::fs::File::create(log_path).unwrap_or_else(|e| {
-                eprintln!("Warning: Failed to create log file: {}. Falling back to null device.", e);
+                eprintln!(
+                    "Warning: Failed to create log file: {}. Falling back to null device.",
+                    e
+                );
                 #[cfg(target_os = "windows")]
-                { std::fs::File::create("NUL").expect("Failed to open NUL") }
+                {
+                    std::fs::File::create("NUL").expect("Failed to open NUL")
+                }
                 #[cfg(not(target_os = "windows"))]
-                { std::fs::File::create("/dev/null").expect("Failed to open /dev/null") }
+                {
+                    std::fs::File::create("/dev/null").expect("Failed to open /dev/null")
+                }
             });
 
             let _ = simplelog::WriteLogger::init(

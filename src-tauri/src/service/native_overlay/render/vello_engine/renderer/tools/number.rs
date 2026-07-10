@@ -23,8 +23,10 @@ impl VelloToolRenderer for NumberRenderer {
         // 2. Render the Number Text
         if let Some(text) = &obj.text {
             let font_size = 16.0;
-            
-            let mut builder = ctx.layout_context.ranged_builder(ctx.font_context, text, 1.0, false);
+
+            let mut builder = ctx
+                .layout_context
+                .ranged_builder(ctx.font_context, text, 1.0, false);
             builder.push_default(parley::style::StyleProperty::FontSize(font_size));
             builder.push_default(parley::style::StyleProperty::Brush([255, 255, 255, 255]));
 

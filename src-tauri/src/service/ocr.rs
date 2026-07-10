@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
+use std::sync::{Arc, RwLock};
+use std::time::Instant;
+use tauri::{AppHandle, Emitter, Manager};
 use windows::Graphics::Imaging::{BitmapPixelFormat, SoftwareBitmap};
 use windows::Storage::Streams::DataWriter;
-use crate::service::native_overlay::save::render::render_snapshot;
-use std::sync::{Arc, RwLock};
-use tauri::{AppHandle, Manager, Emitter};
-use serde::{Deserialize, Serialize};
+use windows::Win32::Foundation::RECT;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OcrWord {
@@ -21,11 +22,42 @@ pub struct OcrLine {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OcrCaptureMetadata {
+    pub capture_source: String,
+    pub overlay_hidden: bool,
+    pub overlay_hide_confirmed: bool,
+    pub overlay_window_count: usize,
+    pub overlay_visible_after_hide: usize,
+    pub overlay_hide_wait_ms: u128,
+    pub capture_engine: String,
+    pub physical_width: i32,
+    pub physical_height: i32,
+    pub logical_width: f64,
+    pub logical_height: f64,
+    pub scale_factor: f64,
+    pub duration_ms: u128,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OcrResultData {
     pub lines: Vec<OcrLine>,
     pub full_text: String,
     #[serde(default)]
     pub engine: String,
+    #[serde(default)]
+    pub status: String,
+    #[serde(default)]
+    pub message: String,
+    #[serde(default)]
+    pub metadata: Option<OcrCaptureMetadata>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct OverlayHideStatus {
+    window_count: usize,
+    visible_after_hide: usize,
+    wait_ms: u128,
 }
 
 #[derive(Debug, Serialize)]
@@ -95,11 +127,18 @@ fn create_ocr_engine(app: &AppHandle) -> anyhow::Result<windows::Media::Ocr::Ocr
 
 /// 渲染当前选区为 RGBA 图（需在关闭覆盖层之前调用）
 pub fn render_selection_image(
-    app: &AppHandle,
+    _app: &AppHandle,
     state_arc: &Arc<RwLock<crate::service::native_overlay::state::OverlayState>>,
 ) -> anyhow::Result<image::RgbaImage> {
-    let snapshot = render_snapshot(state_arc, app)?;
-    Ok(crate::service::win32::bitmap::bitmap_to_rgba_image(snapshot.hbitmap.0)?)
+    let selection = {
+        let state = state_arc
+            .read()
+            .map_err(|_| anyhow::anyhow!("State lock poisoned"))?;
+        state
+            .selection
+            .ok_or_else(|| anyhow::anyhow!("No selection active"))?
+    };
+    capture_live_screen_rect(selection)
 }
 
 pub async fn run_ocr_on_image(
@@ -112,7 +151,10 @@ pub async fn run_ocr_on_image(
     let (engine_kind, paddle_lang) = {
         let state = app.state::<crate::app_state::AppState>();
         let cfg = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
-        (cfg.config.ocr_engine.clone(), cfg.config.ocr_paddle_language.clone())
+        (
+            cfg.config.ocr_engine.clone(),
+            cfg.config.ocr_paddle_language.clone(),
+        )
     };
     if engine_kind == "paddle" {
         if crate::service::paddle_ocr::is_installed(&app) {
@@ -135,7 +177,11 @@ pub async fn run_ocr_on_image(
 
     // 2. 仅小选区放大 2x（WinRT 对小字号在放大后识别更好）；
     //    大图放大既慢又无收益。Triangle 滤镜足够且远快于 Lanczos3。
-    let upscale: u32 = if w0.min(h0) < 700 && w0.max(h0) < 1600 { 2 } else { 1 };
+    let upscale: u32 = if w0.min(h0) < 700 && w0.max(h0) < 1600 {
+        2
+    } else {
+        1
+    };
     let img = if upscale == 2 {
         image::imageops::resize(&rgba, w0 * 2, h0 * 2, image::imageops::FilterType::Triangle)
     } else {
@@ -205,27 +251,34 @@ pub async fn run_ocr_on_image(
         lines,
         full_text,
         engine: "Windows OCR".to_string(),
+        status: "ok".to_string(),
+        message: String::new(),
+        metadata: None,
     })
 }
 
 #[tauri::command]
-pub async fn execute_ocr(
-    app: AppHandle,
-) -> Result<OcrResultData, String> {
+pub async fn execute_ocr(app: AppHandle) -> Result<OcrResultData, String> {
     let state_global = app.state::<crate::app_state::AppState>();
     let state_arc = {
-        let manager = state_global.overlay_manager.lock().unwrap();
+        let manager = state_global
+            .overlay_manager
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         manager.state.clone()
     };
 
     // 1. Get selection bounds for window positioning
     let selection_rect = {
-        let state = state_arc.read().unwrap();
-        state.selection.ok_or_else(|| "No selection active".to_string())?
+        let state = state_arc.read().unwrap_or_else(|e| e.into_inner());
+        state
+            .selection
+            .ok_or_else(|| "No selection active".to_string())?
     };
-
-    // 2. 渲染选区图像（必须在关闭覆盖层之前 —— 快照依赖 overlay 状态）
-    let rgba = render_selection_image(&app, &state_arc).map_err(|e| e.to_string())?;
+    let capture_engine = {
+        let state = state_arc.read().unwrap_or_else(|e| e.into_inner());
+        format!("{:?}", state.capture_engine)
+    };
 
     // 3. 几何/DPI：窗口与文字层坐标统一逻辑像素
     let monitor = app
@@ -240,40 +293,83 @@ pub async fn execute_ocr(
     let logical_x = selection_rect.left as f64 / scale_factor;
     let logical_y = selection_rect.top as f64 / scale_factor;
 
-    // 4. 立即创建结果窗（data 未到 → 前端显示"识别中"动画，给即时反馈）。
-    //    先清上一轮结果，否则窗口挂载时 get_last_ocr_result 会闪现旧数据。
+    let ocr_started_at = Instant::now();
+
+    // Clear the previous result before any fallible live capture so a failed capture cannot flash stale text.
     {
         let mut state = state_arc.write().unwrap_or_else(|e| e.into_inner());
         state.current_ocr_data = None;
     }
-    let window_label = "ocr-result";
-    if let Some(w) = app.get_webview_window(window_label) {
-        let _ = w.close();
+
+    let hide_started_at = Instant::now();
+    hide_overlay_for_live_capture(&app);
+    let mut hide_status = overlay_hide_status(&app, hide_started_at.elapsed().as_millis());
+    while hide_status.visible_after_hide > 0 && hide_started_at.elapsed().as_millis() < 260 {
+        tokio::time::sleep(std::time::Duration::from_millis(40)).await;
+        hide_status = overlay_hide_status(&app, hide_started_at.elapsed().as_millis());
     }
-    let preview_url = tauri::WebviewUrl::App("index.html#ocr-result".into());
-    let win = tauri::WebviewWindowBuilder::new(&app, window_label, preview_url)
-        .title("OCR Result")
-        .transparent(true)
-        .decorations(false)
-        .always_on_top(true)
-        .inner_size(logical_w, logical_h)
-        .position(logical_x, logical_y)
-        .build()
-        .ok();
+    if hide_status.visible_after_hide > 0 {
+        log::warn!(
+            "[OCR] {} overlay windows still visible after {}ms before live capture",
+            hide_status.visible_after_hide,
+            hide_status.wait_ms
+        );
+    }
+
+    let metadata = || OcrCaptureMetadata {
+        capture_source: "live_screen_after_overlay_hide".to_string(),
+        overlay_hidden: true,
+        overlay_hide_confirmed: hide_status.window_count > 0 && hide_status.visible_after_hide == 0,
+        overlay_window_count: hide_status.window_count,
+        overlay_visible_after_hide: hide_status.visible_after_hide,
+        overlay_hide_wait_ms: hide_status.wait_ms,
+        capture_engine: capture_engine.clone(),
+        physical_width: width,
+        physical_height: height,
+        logical_width: logical_w,
+        logical_height: logical_h,
+        scale_factor,
+        duration_ms: ocr_started_at.elapsed().as_millis(),
+    };
+
+    let rgba = match capture_live_screen_rect(selection_rect) {
+        Ok(rgba) => rgba,
+        Err(e) => {
+            close_overlay_for_ocr(&app);
+            let win = open_ocr_result_window(&app, logical_w, logical_h, logical_x, logical_y);
+            let data = OcrResultData {
+                lines: Vec::new(),
+                full_text: String::new(),
+                engine: configured_ocr_engine_label(&app),
+                status: "error".to_string(),
+                message: format!("Screen capture failed before OCR: {}", e),
+                metadata: Some(metadata()),
+            };
+            {
+                let mut state = state_arc.write().unwrap_or_else(|e| e.into_inner());
+                state.current_ocr_data = Some(data.clone());
+            }
+            if let Some(w) = &win {
+                let _ = w.emit("ocr://data", data.clone());
+            }
+            return Ok(data);
+        }
+    };
+
+    // 4. 立即创建结果窗（data 未到 → 前端显示"识别中"动画，给即时反馈）。
+    let win = open_ocr_result_window(&app, logical_w, logical_h, logical_x, logical_y);
     if let Some(w) = &win {
         let _ = w.set_focus();
     }
 
     // 5. 关闭截图覆盖层：Vello 的 DXGI 覆盖窗同为 topmost 且会压住结果窗，
     //    识别开始后覆盖层已无用处，直接关闭，z-order 不再竞争（GDI 同样统一此行为）。
-    {
-        let mut manager = state_global.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
-        manager.close_and_reset();
-    }
+    close_overlay_for_ocr(&app);
 
     // 6. 识别
     match run_ocr_on_image(app.clone(), rgba).await {
         Ok(mut data) => {
+            data.metadata = Some(metadata());
             // 词坐标是选区物理像素 → 除以 DPI 缩放归一到逻辑像素
             if (scale_factor - 1.0).abs() > 0.001 {
                 for line in &mut data.lines {
@@ -289,7 +385,10 @@ pub async fn execute_ocr(
             // Pin Collection（静默）
             let pin_state = app.state::<crate::service::pin::PinState>();
             let pin_id = uuid::Uuid::new_v4().to_string();
-            pin_state.add_pin(pin_id, crate::service::pin::PinData::Text(data.full_text.clone()));
+            pin_state.add_pin(
+                pin_id,
+                crate::service::pin::PinData::Text(data.full_text.clone()),
+            );
 
             // 存档供 get_last_ocr_result 兜底
             {
@@ -312,19 +411,192 @@ pub async fn execute_ocr(
             Ok(data)
         }
         Err(e) => {
-            // 失败：关掉"识别中"窗口，错误交由调用方通知
-            if let Some(w) = &win {
-                let _ = w.close();
+            if is_no_text_error(&e) {
+                let data = OcrResultData {
+                    lines: Vec::new(),
+                    full_text: String::new(),
+                    engine: configured_ocr_engine_label(&app),
+                    status: "no_text".to_string(),
+                    message: "No text detected in selection".to_string(),
+                    metadata: Some(metadata()),
+                };
+                {
+                    let mut state = state_arc.write().unwrap_or_else(|e| e.into_inner());
+                    state.current_ocr_data = Some(data.clone());
+                }
+                if let Some(w) = &win {
+                    let _ = w.emit("ocr://data", data.clone());
+                }
+                return Ok(data);
             }
-            Err(e.to_string())
+
+            let data = OcrResultData {
+                lines: Vec::new(),
+                full_text: String::new(),
+                engine: configured_ocr_engine_label(&app),
+                status: "error".to_string(),
+                message: e.to_string(),
+                metadata: Some(metadata()),
+            };
+            {
+                let mut state = state_arc.write().unwrap_or_else(|e| e.into_inner());
+                state.current_ocr_data = Some(data.clone());
+            }
+            if let Some(w) = &win {
+                let _ = w.emit("ocr://data", data.clone());
+            }
+            Ok(data)
         }
     }
+}
+
+fn is_no_text_error(error: &anyhow::Error) -> bool {
+    error
+        .to_string()
+        .to_ascii_lowercase()
+        .contains("no text detected")
+}
+
+fn configured_ocr_engine_label(app: &AppHandle) -> String {
+    let state = app.state::<crate::app_state::AppState>();
+    let cfg = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+    if cfg.config.ocr_engine == "paddle" && crate::service::paddle_ocr::is_installed(app) {
+        "PaddleOCR".to_string()
+    } else {
+        "Windows OCR".to_string()
+    }
+}
+
+fn open_ocr_result_window(
+    app: &AppHandle,
+    logical_w: f64,
+    logical_h: f64,
+    logical_x: f64,
+    logical_y: f64,
+) -> Option<tauri::WebviewWindow> {
+    let window_label = "ocr-result";
+    if let Some(w) = app.get_webview_window(window_label) {
+        let _ = w.close();
+    }
+    let preview_url = tauri::WebviewUrl::App("index.html#ocr-result".into());
+    tauri::WebviewWindowBuilder::new(app, window_label, preview_url)
+        .title("OCR Result")
+        .transparent(true)
+        .decorations(false)
+        .always_on_top(true)
+        .inner_size(logical_w.max(360.0), logical_h.max(220.0))
+        .position(logical_x, logical_y)
+        .build()
+        .ok()
+}
+
+fn close_overlay_for_ocr(app: &AppHandle) {
+    let state = app.state::<crate::app_state::AppState>();
+    let mut manager = state
+        .overlay_manager
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    manager.close_and_reset();
+}
+
+fn hide_overlay_for_live_capture(app: &AppHandle) {
+    let state = app.state::<crate::app_state::AppState>();
+    let manager = state
+        .overlay_manager
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    if let Ok(mut overlay_state) = manager.state.write() {
+        overlay_state.is_visible = false;
+    }
+    for hwnd in manager.gdi_hwnds.values() {
+        crate::service::win32::window::hide_window(&crate::service::win32::window::SafeHWND(
+            hwnd.0,
+        ));
+    }
+    for hwnd in manager.vello_hwnds.values() {
+        crate::service::win32::window::hide_window(&crate::service::win32::window::SafeHWND(
+            hwnd.0,
+        ));
+    }
+}
+
+fn overlay_hide_status(app: &AppHandle, wait_ms: u128) -> OverlayHideStatus {
+    let state = app.state::<crate::app_state::AppState>();
+    let manager = state
+        .overlay_manager
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    let mut status = OverlayHideStatus {
+        wait_ms,
+        ..Default::default()
+    };
+
+    for hwnd in manager.gdi_hwnds.values() {
+        status.window_count += 1;
+        if crate::service::win32::window::is_window_visible(
+            &crate::service::win32::window::SafeHWND(hwnd.0),
+        ) {
+            status.visible_after_hide += 1;
+        }
+    }
+    for hwnd in manager.vello_hwnds.values() {
+        status.window_count += 1;
+        if crate::service::win32::window::is_window_visible(
+            &crate::service::win32::window::SafeHWND(hwnd.0),
+        ) {
+            status.visible_after_hide += 1;
+        }
+    }
+
+    status
+}
+
+fn capture_live_screen_rect(rect: RECT) -> anyhow::Result<image::RgbaImage> {
+    let width = rect.right - rect.left;
+    let height = rect.bottom - rect.top;
+    if width <= 0 || height <= 0 {
+        anyhow::bail!("Invalid OCR selection size");
+    }
+
+    let hdc_screen = crate::service::win32::gdi::get_dc(None)?;
+    let hdc_mem = crate::service::win32::gdi::create_compatible_dc(Some(&hdc_screen))?;
+    let hbm = crate::service::win32::gdi::create_compatible_bitmap(&hdc_screen, width, height)?;
+    let prev = crate::service::win32::gdi::select_object(
+        &hdc_mem,
+        windows::Win32::Graphics::Gdi::HGDIOBJ(hbm.0 .0),
+    )?;
+    let rop = windows::Win32::Graphics::Gdi::ROP_CODE(
+        windows::Win32::Graphics::Gdi::SRCCOPY.0 | 0x40000000,
+    );
+    crate::service::win32::gdi::bit_blt(
+        &hdc_mem,
+        0,
+        0,
+        width,
+        height,
+        &hdc_screen,
+        rect.left,
+        rect.top,
+        rop,
+    )?;
+    crate::service::win32::gdi::select_object(&hdc_mem, prev)?;
+    crate::service::win32::gdi::release_dc(None, hdc_screen);
+
+    crate::service::win32::bitmap::bitmap_to_rgba_image(hbm.0)
 }
 
 #[tauri::command]
 pub async fn get_last_ocr_result(app: AppHandle) -> Result<Option<OcrResultData>, String> {
     let state = app.state::<crate::app_state::AppState>();
-    let manager = state.overlay_manager.lock().unwrap();
-    let state_lock = manager.state.read().unwrap();
+    let manager = state
+        .overlay_manager
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    let state_lock = manager.state.read().unwrap_or_else(|e| e.into_inner());
     Ok(state_lock.current_ocr_data.clone())
+}
+
+#[tauri::command]
+pub async fn save_ocr_text_to(destination: String, text: String) -> Result<(), String> {
+    std::fs::write(destination, text).map_err(|e| e.to_string())
 }

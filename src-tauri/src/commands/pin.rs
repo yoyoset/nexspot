@@ -1,7 +1,7 @@
 use crate::service::pin::{PinData, PinItem, PinState};
-use tauri::{AppHandle, Emitter, State, Manager};
-use tauri_plugin_notification::NotificationExt;
 use base64::prelude::*;
+use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_notification::NotificationExt;
 
 #[tauri::command]
 pub async fn create_text_pin(
@@ -54,13 +54,28 @@ pub async fn is_pin_always_on_top(window: tauri::Window) -> Result<bool, String>
 }
 
 #[tauri::command]
-pub async fn set_pin_window_size(window: tauri::Window, width: f64, height: f64) -> Result<(), String> {
-    window.set_size(tauri::Size::Logical(tauri::LogicalSize { width, height })).map_err(|e| e.to_string())
+pub async fn set_pin_window_size(
+    window: tauri::Window,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    window
+        .set_size(tauri::Size::Logical(tauri::LogicalSize { width, height }))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn set_pin_min_size(window: tauri::Window, width: f64, height: f64) -> Result<(), String> {
-    window.set_min_size(Some(tauri::Size::Logical(tauri::LogicalSize { width, height }))).map_err(|e| e.to_string())
+pub async fn set_pin_min_size(
+    window: tauri::Window,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    window
+        .set_min_size(Some(tauri::Size::Logical(tauri::LogicalSize {
+            width,
+            height,
+        })))
+        .map_err(|e| e.to_string())
 }
 #[tauri::command]
 pub async fn save_pin_as(
@@ -92,14 +107,20 @@ pub async fn save_pin_as(
 
             let quality = {
                 let app_state = app.state::<crate::AppState>();
-                let config = app_state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+                let config = app_state
+                    .config_state
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 config.config.jpg_quality
             };
 
             if extension == "jpg" || extension == "jpeg" {
                 let mut file = std::fs::File::create(&path_buf).map_err(|e| e.to_string())?;
-                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut file, quality);
-                encoder.encode_image(&img.to_rgb8()).map_err(|e| e.to_string())?;
+                let mut encoder =
+                    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut file, quality);
+                encoder
+                    .encode_image(&img.to_rgb8())
+                    .map_err(|e| e.to_string())?;
             } else {
                 img.save(&path_buf).map_err(|e| e.to_string())?;
             }

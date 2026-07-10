@@ -54,14 +54,27 @@ impl OverlayManager {
                         || technical_err.contains("Device")
                         || technical_err.contains("Queue")
                     {
-                        l10n::t(&app_handle, "engine.hardware_init_failed", "Hardware acceleration init failed: {reason}").replace("{reason}", &technical_err)
+                        l10n::t(
+                            &app_handle,
+                            "engine.hardware_init_failed",
+                            "Hardware acceleration init failed: {reason}",
+                        )
+                        .replace("{reason}", &technical_err)
                     } else {
-                        l10n::t(&app_handle, "engine.start_failed", "Vello engine failed to start: {reason}").replace("{reason}", &technical_err)
+                        l10n::t(
+                            &app_handle,
+                            "engine.start_failed",
+                            "Vello engine failed to start: {reason}",
+                        )
+                        .replace("{reason}", &technical_err)
                     };
 
                     log::error!("[Advanced Mode] Vello Error: {}", technical_err);
-                    if let Ok(mut mgr_lock) =
-                        app_handle.state::<crate::AppState>().overlay_manager.lock().map_err(|e| e.into_inner())
+                    if let Ok(mut mgr_lock) = app_handle
+                        .state::<crate::AppState>()
+                        .overlay_manager
+                        .lock()
+                        .map_err(|e| e.into_inner())
                     {
                         mgr_lock.vello_status = state::VelloStatus::Failed(friendly_err.clone());
                         use tauri::Emitter;
@@ -70,10 +83,17 @@ impl OverlayManager {
                 }
                 Err(_) => {
                     use crate::service::l10n;
-                    let err_msg = l10n::t(&app_handle, "engine.start_timeout", "Vello engine start timeout (15s).");
+                    let err_msg = l10n::t(
+                        &app_handle,
+                        "engine.start_timeout",
+                        "Vello engine start timeout (15s).",
+                    );
                     log::error!("[Advanced Mode] {}", err_msg);
-                    if let Ok(mut mgr_lock) =
-                        app_handle.state::<crate::AppState>().overlay_manager.lock().map_err(|e| e.into_inner())
+                    if let Ok(mut mgr_lock) = app_handle
+                        .state::<crate::AppState>()
+                        .overlay_manager
+                        .lock()
+                        .map_err(|e| e.into_inner())
                     {
                         mgr_lock.vello_status = state::VelloStatus::Failed(err_msg.clone());
                         use tauri::Emitter;

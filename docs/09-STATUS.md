@@ -42,14 +42,16 @@
 - **坐标链**：识别坐标（选区物理像素）→ ÷upscale（仅 WinRT 小图 2x）→ ÷DPI scale → 结果窗逻辑像素。
 - **文字层**：始终可见（深底白字块），字号按**中位高度归一**（检测框高度天然抖动 ±30%，
   逐词取高会大小字乱跳；>1.5× 中位的真标题保留大字）。
-- 滚动长截图同轮接通：工具栏按钮切换语义（开始/结束），结束弹预览窗。
+- 滚动长截图已从"定时渲染旧背景"改为**自动滚动 + 真实屏幕选区逐帧捕获 + 拼接自动停止**；
+  预览窗支持尺寸显示、缩放、复制、另存。
 
 ### 3. 修复的硬 bug（根因记录，防回归）
 | Bug | 根因 | 防回归要点 |
 |---|---|---|
 | 双击截图崩溃（多屏） | Wgc 保存路径用世界坐标索引画布局部缓冲，负坐标 `as usize` 回绕 → 乘法溢出 abort | 选区坐标必须先减画布原点（render.rs） |
 | OCR/滚动点击 panic | `render_snapshot` 内 `block_on`，tokio worker 上嵌套 runtime | 已改 spawn+通道；**禁止在可能跑在 worker 的代码里 block_on** |
-| 一次点击拖垮全部截图 | `start_scrolling_session` 持 manager 锁调 `render_snapshot`，后者再锁同一 manager → 自死锁 | **绝不持 overlay_manager 锁调用 render_snapshot**（其 Wgc 分支内部要锁它取 vello_ctx） |
+| 滚动截图只拼旧画面/不能自动滚 | 循环调用 `render_snapshot`，读的是截图开始时的 overlay 背景；且没有驱动目标窗口滚动 | 滚动会话启动后隐藏 overlay，GDI 逐帧捕获真实屏幕选区，向选区中心发送滚轮；连续无新增自动收口 |
+| 一次点击拖垮全部截图 | `start_scrolling_session` 持 manager 锁调 `render_snapshot`，后者再锁同一 manager → 自死锁 | **绝不持 overlay_manager 锁执行长耗时捕获/拼接** |
 | Vello 复制粘贴失败 | Wgc 产物是 DIB section，直接当 CF_BITMAP 多数应用解码不了 | clipboard.rs 统一 BitBlt 转 DDB 再上剪贴板 |
 | OCR 识别全黑/全盲 | ①GetDIBits alpha 恒 0，直构 SoftwareBitmap 按预乘解释≈全黑 ②用户档案英文 → 英文引擎中文全盲 | BGRA 转换强制 alpha=255；语言显式选择 |
 | OCR/滚动预览窗关不掉 | `ocr-result`/`scrolling-preview` 不在 capability 窗口白名单 | 新窗口 label 必须进 `capabilities/default.json` |
@@ -64,8 +66,8 @@
 
 ## 已知未尽事项（Phase 4 候选，按价值排序）
 1. **原生工具栏 accent 跟随用户自定义色**（现为常量 periwinkle；需把 config 接入 overlay state）。
-2. PIN 窗：移除死的 `ai-stream://*` 监听；深度交互（拖出粘贴、翻页点）。
-3. 滚动/OCR 结果窗按设计稿补功能件（缩放±、接缝标记、置信度 chip、导出 .txt）。
+2. PIN 窗：深度交互（拖出粘贴、翻页点）。
+3. 滚动/OCR 结果窗按设计稿补功能件（滚动接缝标记、OCR 置信度 chip、导出 .txt）。
 4. 设计稿中 Vello 5 风格（Neon/PaperCut/Sketch/Glass）的视觉成熟度。
 5. Clippy 约 80 条风格 lint（非错误）。
 6. 双引擎 × 4 模式 8 格验证矩阵未做系统性回归（修复后只做了重点路径）。
@@ -75,4 +77,4 @@
 - ✅ GDI/Vello 工具栏与选区样式、图标
 - ✅ Vello 复制→粘贴、双击保存（多屏）
 - ✅ GDI OCR（PaddleOCR 引擎识别质量良好）、组件一键下载
-- ⏳ 待复测：Vello OCR（覆盖层关闭方案）、即时反馈、字号归一、滚动长截图全流程
+- ⏳ 待复测：Vello OCR（覆盖层关闭方案）、即时反馈、字号归一、滚动长截图实机全流程（不同浏览器/列表控件滚轮响应差异）

@@ -14,7 +14,7 @@ NexSpot 是一款 **Windows 桌面截图与标注工具**，对标"微信截图�
 | 层 | 选型 | 说明 |
 |----|------|------|
 | 应用框架 | **Tauri v2** | Rust 主进程 + Webview 前端，IPC 通过 `invoke`/`emit` |
-| 前端 | **React 18 + TypeScript + Vite** | 设置面板、仪表盘、活动中心、PIN/OCR/滚动等独立窗口 |
+| 前端 | **React 19 + TypeScript + Vite** | 设置面板、仪表盘、活动中心、PIN/OCR/滚动等独立窗口 |
 | 前端样式 | **Tailwind CSS v4** + CSS 变量令牌 | 工业风暗色主题，详见 [05-FRONTEND](05-FRONTEND.md) |
 | 状态管理 | **Zustand** | `src/store/useAppStore.ts` |
 | 后端核心 | **Rust + windows-rs (Win32)** | 直接操作 HWND/HDC/DXGI，规避 Webview 渲染延迟 |

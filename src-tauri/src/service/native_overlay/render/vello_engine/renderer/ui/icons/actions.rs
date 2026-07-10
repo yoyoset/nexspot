@@ -1,12 +1,25 @@
+use crate::service::native_overlay::render::toolbar::style;
 use crate::service::native_overlay::render::toolbar::types::{ToolType, ToolbarButton};
 use vello::kurbo::{Affine, BezPath, Cap, Circle, Join, Line, Rect, RoundedRect, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 
 fn lucide_stroke() -> Stroke {
-    Stroke::new(1.5).with_caps(Cap::Round).with_join(Join::Round)
+    Stroke::new(style::ICON_STROKE_VELLO)
+        .with_caps(Cap::Round)
+        .with_join(Join::Round)
 }
 
-pub fn draw_action_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active: bool) {
+fn icon_brush(tool: &ToolType, is_active: bool) -> Brush {
+    if is_active {
+        Brush::Solid(Color::WHITE)
+    } else if *tool == ToolType::Cancel {
+        Brush::Solid(style::rgba_to_vello(style::COLOR_BAD))
+    } else {
+        Brush::Solid(style::rgba_to_vello(style::COLOR_ICON_MUTED))
+    }
+}
+
+pub fn draw_action_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active: bool) {
     let rect = Rect::new(
         btn.rect.left as f64,
         btn.rect.top as f64,
@@ -15,9 +28,9 @@ pub fn draw_action_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_activ
     );
     let cx = rect.center().x;
     let cy = rect.center().y;
-    let sc = 1.3;
+    let sc = style::ICON_SCALE_VELLO;
 
-    let brush = Brush::Solid(Color::WHITE);
+    let brush = icon_brush(&btn.tool, is_active);
     let stroke = lucide_stroke();
     let xf = Affine::translate((cx, cy)) * Affine::scale(sc);
 
@@ -67,11 +80,17 @@ pub fn draw_action_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_activ
             plus.line_to((4.8, 6.0));
             plus.move_to((2.4, 3.6));
             plus.line_to((7.2, 3.6));
-            scene.stroke(&Stroke::new(1.3).with_caps(Cap::Round), xf, &brush, None, &plus);
+            scene.stroke(
+                &Stroke::new(style::ICON_DETAIL_STROKE_VELLO).with_caps(Cap::Round),
+                xf,
+                &brush,
+                None,
+                &plus,
+            );
         }
         // x（关闭 — bad 红，设计 §C）
         ToolType::Cancel => {
-            let bad = Brush::Solid(Color::from_rgba8(247, 109, 109, 255)); // --bad
+            let bad = Brush::Solid(style::rgba_to_vello(style::COLOR_BAD)); // --bad
             let mut path = BezPath::new();
             path.move_to((-5.0, -5.0));
             path.line_to((5.0, 5.0));
@@ -109,7 +128,13 @@ pub fn draw_action_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_activ
         }
         ToolType::More => {
             for i in -1..=1 {
-                scene.fill(Fill::NonZero, xf, &brush, None, &Circle::new((i as f64 * 4.5, 0.0), 1.5));
+                scene.fill(
+                    Fill::NonZero,
+                    xf,
+                    &brush,
+                    None,
+                    &Circle::new((i as f64 * 4.5, 0.0), 1.5),
+                );
             }
         }
         _ => {}

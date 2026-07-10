@@ -59,7 +59,7 @@ unsafe extern "system" fn monitor_enum_proc(
                 .trim_matches('\0')
                 .trim()
                 .to_string();
-            
+
             let display_index = context.monitors.len() + 1;
             friendly_name = if !device_string.is_empty() {
                 format!("Display {} ({})", display_index, device_string)

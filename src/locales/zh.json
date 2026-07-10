@@ -285,6 +285,8 @@
         "copied": "已复制到剪贴板",
         "saved": "截图已保存",
         "pinned": "已固定窗口",
+        "capture_failed": "捕获失败",
+        "capture_failed_detail": "{{title}} · {{area}}：{{message}}",
         "engine_switched": "已切回 GDI 引擎 (稳健模式)"
     },
     "engine_error": {
@@ -324,19 +326,57 @@
     },
     "scrolling_preview": {
         "title": "滚动截图预览",
-        "subtitle": "工业级拼接索引: 98% 置信度",
-        "compiling": "正在编译素材...",
+        "subtitle": "隐藏覆盖层，滚动选区中心下方的窗口，持续捕获并拼接，直到检测不到新增内容。",
+        "started_hint": "正在拼接滚动帧，按 Esc 可停止。",
+        "started_detail": "正在滚动 {{target}}。按 {{shortcut}} 停止；连续 {{stagnant}} 次无新增或达到 {{frames}} 帧会自动收口。",
+        "compiling": "正在拼接滚动帧...",
+        "how_it_works": "自动滚动流程：隐藏覆盖层 -> 聚焦选区中心下方内容 -> 向下滚动 -> 捕获 -> 拼接 -> 连续无新增后自动停止。",
+        "progress": "滚动截图 · {{height}}px · +{{added}}px · {{captured}} 帧",
+        "progress_checking": "正在确认是否到底 · {{height}}px · 无新增 {{stagnant}} 次 · {{reason}}",
+        "finished_detail": "{{reason}} · {{width}} x {{height}}px · {{frames}} 帧",
+        "result_stats": "{{reason}} · 捕获 {{captured}} 帧 · 追加 {{appended}} 帧 · +{{added}}px · {{duration}}秒",
+        "logic_stats": "停止检测 {{stagnant}}/{{limit}} · 最多 {{max}} 帧 · 滚轮 {{wheel}}",
+        "error_message": "部分结果：{{message}}",
+        "stitch_quality": "拼接质检 {{reports}} 条 · 追加 {{appended}} 帧 · 最佳均值 {{best}} · 最后 {{last}}",
+        "stitch_perf": "匹配性能均值 {{avgMs}}ms · 候选 {{candidates}} · 预测 {{seeded}} · 预测 y {{seedY}}",
+        "stitch_ok": "已接受",
+        "target_window": "目标窗口：{{title}} · {{className}} · PID {{pid}}",
+        "untitled_window": "无标题窗口",
+        "unknown_window_class": "未知窗口类",
         "save_as": "另存为",
         "saving": "保存中...",
         "copy": "复制",
-        "finish": "完成"
+        "finish": "完成",
+        "finish_reason": {
+            "manual": "已手动停止",
+            "no_growth": "未检测到新增内容",
+            "frame_limit": "已达到帧数上限",
+            "error": "出错后已收口"
+        }
     },
     "ocr_result": {
         "title": "文字层已激活",
         "analyzing": "正在分析选区...",
         "copy_all": "全选复制",
+        "copy_failed": "复制失败",
+        "export_txt": "导出 .txt",
+        "exporting": "导出中...",
+        "exported": "文本已导出",
+        "export_failed": "导出失败",
         "pin": "钉选至库",
         "no_text_found": "未发现可识别文字",
+        "no_text_hint": "请尝试选择更清晰的文字区域、放大页面，或在设置中切换 OCR 语言/引擎。",
+        "error_found": "OCR 未能运行",
+        "error_hint": "已保留本次捕获信息供排查。请检查 OCR 语言包、所选引擎和下方捕获元数据。",
+        "stats": "{{chars}} 字 · {{lines}} 行 · {{words}} 词",
+        "confidence_unavailable": "置信度不可用",
+        "capture_meta": "{{source}} · {{engine}} · {{width}}x{{height}}px · {{scale}}x DPI · {{duration}}ms",
+        "capture_overlay_meta": "覆盖层已隐藏 {{hidden}}/{{count}} · 等待 {{wait}}ms",
+        "overlay_warning": "覆盖层仍可见：{{visible}} 个窗口",
+        "capture_source": {
+            "live_screen_after_overlay_hide": "真实屏幕，已隐藏覆盖层"
+        },
+        "engine_unknown": "OCR 引擎",
         "engine_info": "识别引擎: WinRT_Media_V1",
         "protocol_info": "工业标准通信协议"
     },
@@ -364,7 +404,7 @@
             "copy": "复制",
             "cancel": "退出捕捉",
             "ocr": "OCR 文字识别",
-            "scrolling": "滚动长截图"
+            "scrolling": "自动滚动截图：隐藏覆盖层，滚动选区下方内容，拼接后自动停止"
         },
         "engine": {
             "switching_to_advanced": "正在切换至高级引擎...",
@@ -385,7 +425,8 @@
             "capture_empty_body": "截图内容为空",
             "macro_error_title": "快捷指令错误",
             "macro_error_body": "快捷指令 '{id}' 在当前视图中不可用。",
-            "ocr_failed_title": "OCR 识别失败"
+            "ocr_failed_title": "OCR 识别失败",
+            "scrolling_failed_title": "滚动截图失败"
         },
         "property": {
             "size_small": "小",

@@ -41,4 +41,3 @@ impl DrawingToolRenderer for BrushRenderer {
         Ok(())
     }
 }
-

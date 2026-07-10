@@ -21,11 +21,22 @@ impl OverlayManager {
             if let Some(ctx) = &self.vello_ctx {
                 if let Ok(mut scene) = ctx.scene.lock() {
                     let state = self.state.read().unwrap_or_else(|e| e.into_inner());
-                    render::vello_engine::renderer::render_state_to_scene(&state, Some(&self.toolbar), ctx, &mut scene);
+                    render::vello_engine::renderer::render_state_to_scene(
+                        &state,
+                        Some(&self.toolbar),
+                        ctx,
+                        &mut scene,
+                    );
                     Some(scene)
-                } else { None }
-            } else { None }
-        } else { None };
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         // SOVEREIGN DISPATCH: Mixed-Monitor Logic
         // OPTIMIZATION: Use cached monitors from state to avoid high-frequency enumerate_monitors()
@@ -55,8 +66,11 @@ impl OverlayManager {
         // Since we need to mutate MonitorRenderContext, we iterate over them.
         for monitor in &monitors {
             let m_id = monitor.hmonitor.to_string();
-            let ctx = self.monitor_contexts.entry(m_id.clone()).or_insert_with(super::MonitorRenderContext::default);
-            
+            let ctx = self
+                .monitor_contexts
+                .entry(m_id.clone())
+                .or_insert_with(super::MonitorRenderContext::default);
+
             // INDUSTRIAL ISOLATION:
             // 1. WGC natively uses single-monitor isolation.
             // 2. GDI uses it if `restrict_to_monitor` is active (Mixed DPI fallback).
@@ -74,7 +88,7 @@ impl OverlayManager {
             if let Some(hwnd) = hwnd_opt {
                 // SEQUENTIAL SAFETY: Pass mutable state directly
                 let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
-                
+
                 // Pre-sync toolbar layout for the global frame (only needed once, but safe here)
                 if engine == state::CaptureEngine::Gdi {
                     let sel = state.selection.unwrap_or(state.monitor_rect);
@@ -115,17 +129,25 @@ impl OverlayManager {
     ) -> anyhow::Result<()> {
         // 0. Find the monitor this area belongs to (B-Scheme Routing)
         let monitors = crate::service::win32::monitor::enumerate_monitors()?;
-        let target_monitor = monitors.iter().find(|m| {
-            // Precise hit: the top-left (x, y) should be within the monitor bounds
-            x >= m.rect.left && x < m.rect.right && y >= m.rect.top && y < m.rect.bottom
-        }).or_else(|| monitors.first()) // Fallback to primary if out of bounds
-          .ok_or_else(|| anyhow::anyhow!("No monitors detected"))?;
-        
+        let target_monitor = monitors
+            .iter()
+            .find(|m| {
+                // Precise hit: the top-left (x, y) should be within the monitor bounds
+                x >= m.rect.left && x < m.rect.right && y >= m.rect.top && y < m.rect.bottom
+            })
+            .or_else(|| monitors.first()) // Fallback to primary if out of bounds
+            .ok_or_else(|| anyhow::anyhow!("No monitors detected"))?;
+
         let monitor_id = target_monitor.hmonitor.to_string();
 
-        let advanced_effects = self.app.state::<crate::AppState>()
-            .config_state.lock().unwrap_or_else(|e| e.into_inner())
-            .config.vello_advanced_effects;
+        let advanced_effects = self
+            .app
+            .state::<crate::AppState>()
+            .config_state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .config
+            .vello_advanced_effects;
 
         // Sync config and monitor context to state
         {
@@ -149,7 +171,11 @@ impl OverlayManager {
             {
                 let err_msg = match &self.vello_status {
                     state::VelloStatus::Failed(e) => format!("Vello Error: {}", e),
-                    _ => crate::service::l10n::t(&self.app, "backend.engine.switching_to_advanced", "Vello engine is initializing..."),
+                    _ => crate::service::l10n::t(
+                        &self.app,
+                        "backend.engine.switching_to_advanced",
+                        "Vello engine is initializing...",
+                    ),
                 };
                 log::warn!("Blocking Vello overlay attempt: {}", err_msg);
                 use tauri::Emitter;
@@ -205,15 +231,24 @@ impl OverlayManager {
         // Global GDI covers all monitors, but isolated instances are strictly constrained to the target.
         if !is_isolated {
             self.render_frame()?;
-            
+
             for hwnd_send in self.gdi_hwnds.values() {
                 let h = SafeHWND(hwnd_send.0);
                 unsafe {
-                    let _ = windows::Win32::UI::WindowsAndMessaging::ShowWindow(h.0, windows::Win32::UI::WindowsAndMessaging::SW_SHOWNOACTIVATE);
+                    let _ = windows::Win32::UI::WindowsAndMessaging::ShowWindow(
+                        h.0,
+                        windows::Win32::UI::WindowsAndMessaging::SW_SHOWNOACTIVATE,
+                    );
                     let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
-                        h.0, Some(windows::Win32::UI::WindowsAndMessaging::HWND_TOPMOST),
-                        0, 0, 0, 0,
-                        windows::Win32::UI::WindowsAndMessaging::SWP_NOMOVE | windows::Win32::UI::WindowsAndMessaging::SWP_NOSIZE | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
+                        h.0,
+                        Some(windows::Win32::UI::WindowsAndMessaging::HWND_TOPMOST),
+                        0,
+                        0,
+                        0,
+                        0,
+                        windows::Win32::UI::WindowsAndMessaging::SWP_NOMOVE
+                            | windows::Win32::UI::WindowsAndMessaging::SWP_NOSIZE
+                            | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
                     );
                 }
             }
@@ -221,10 +256,15 @@ impl OverlayManager {
             // ISOLATED MODE (WGC or Restricted GDI)
             let h = self.active_hwnd(engine, &monitor_id)?;
             unsafe {
-                let _ = windows::Win32::UI::WindowsAndMessaging::ShowWindow(h.0, windows::Win32::UI::WindowsAndMessaging::SW_SHOWNOACTIVATE);
+                let _ = windows::Win32::UI::WindowsAndMessaging::ShowWindow(
+                    h.0,
+                    windows::Win32::UI::WindowsAndMessaging::SW_SHOWNOACTIVATE,
+                );
                 let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
-                    h.0, Some(windows::Win32::UI::WindowsAndMessaging::HWND_TOPMOST),
-                    target_monitor.rect.left, target_monitor.rect.top, 
+                    h.0,
+                    Some(windows::Win32::UI::WindowsAndMessaging::HWND_TOPMOST),
+                    target_monitor.rect.left,
+                    target_monitor.rect.top,
                     target_monitor.rect.right - target_monitor.rect.left,
                     target_monitor.rect.bottom - target_monitor.rect.top,
                     windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
@@ -241,7 +281,12 @@ impl OverlayManager {
                 active_hwnd.0,
                 windows::Win32::UI::WindowsAndMessaging::SW_SHOW,
             );
-            let _ = windows::Win32::UI::WindowsAndMessaging::SetTimer(Some(active_hwnd.0), 1, 500, None);
+            let _ = windows::Win32::UI::WindowsAndMessaging::SetTimer(
+                Some(active_hwnd.0),
+                1,
+                500,
+                None,
+            );
             let _ = windows::Win32::UI::WindowsAndMessaging::SetForegroundWindow(active_hwnd.0);
             let _ = windows::Win32::UI::Input::KeyboardAndMouse::SetFocus(Some(active_hwnd.0));
         }
@@ -264,7 +309,8 @@ impl OverlayManager {
         let app = self.app.clone();
         let state_arc = self.state.clone();
 
-        let default_format = app.state::<crate::AppState>()
+        let default_format = app
+            .state::<crate::AppState>()
             .config_state
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -282,9 +328,7 @@ impl OverlayManager {
             .save_file(move |path| {
                 if let Some(p) = path {
                     let path_str = p.to_string();
-                    let _ = save_selection_to_path(
-                        state_arc.clone(), &app, path_str,
-                    );
+                    let _ = save_selection_to_path(state_arc.clone(), &app, path_str);
                 }
             });
 

@@ -70,7 +70,7 @@ impl DrawingToolRenderer for TextRenderer {
                         0xff00bfff,
                         1.0,
                         Some(windows::Win32::Graphics::GdiPlus::DashStyleDash),
-                    )?; 
+                    )?;
 
                     let box_x = obj.points[0].0 as f32 + bounds.X;
                     let box_y = obj.points[0].1 as f32 + bounds.Y;

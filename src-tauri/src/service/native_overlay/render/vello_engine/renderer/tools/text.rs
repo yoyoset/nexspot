@@ -17,13 +17,15 @@ impl VelloToolRenderer for TextRenderer {
         let scene = &mut _ctx.scene;
         let pos = obj.points[0];
         let font_size = obj.font_size;
-        
+
         // Use a space for measurement if text is empty but we're editing
         let layout_text = if text.is_empty() { " " } else { text };
-        
-        let mut builder = _ctx.layout_context.ranged_builder(_ctx.font_context, layout_text, 1.0, false);
+
+        let mut builder =
+            _ctx.layout_context
+                .ranged_builder(_ctx.font_context, layout_text, 1.0, false);
         builder.push_default(parley::style::StyleProperty::FontSize(font_size));
-        
+
         // Convert u32 ARGB to parley brush [r, g, b, a]
         let a = ((obj.color >> 24) & 0xff) as u8;
         let r = ((obj.color >> 16) & 0xff) as u8;
@@ -64,7 +66,7 @@ impl VelloToolRenderer for TextRenderer {
                     }
 
                     let cursor_y = last_line.metrics().baseline as f64;
-                    
+
                     let p0 = vello::kurbo::Point::new(
                         pos.0 as f64 + cursor_x,
                         pos.1 as f64 + cursor_y - last_line.metrics().ascent as f64,
@@ -85,19 +87,23 @@ impl VelloToolRenderer for TextRenderer {
 
             // Draw dashed box
             let padding = 4.0;
-            let box_w = if text.is_empty() { 12.0 } else { layout.width() as f64 };
+            let box_w = if text.is_empty() {
+                12.0
+            } else {
+                layout.width() as f64
+            };
             let box_h = layout.height() as f64;
-            
+
             let rect = vello::kurbo::Rect::new(
                 pos.0 as f64 - padding,
                 pos.1 as f64 - padding,
                 pos.0 as f64 + box_w + padding,
                 pos.1 as f64 + box_h + padding,
             );
-            
+
             let dash_pattern = [4.0, 4.0];
             let stroke = vello::kurbo::Stroke::new(1.0).with_dashes(0.0, dash_pattern);
-            
+
             scene.stroke(
                 &stroke,
                 vello::kurbo::Affine::IDENTITY,

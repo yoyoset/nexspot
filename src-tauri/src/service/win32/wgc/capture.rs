@@ -133,7 +133,7 @@ impl GraphicsCaptureApiHandler for WgcStreamHandler {
     ) -> Result<(), Self::Error> {
         let (width, height) = (frame.width(), frame.height());
         let mut frame_buffer = frame.buffer()?;
-        
+
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         if state.stop {
             _capture_control.stop();
@@ -142,7 +142,12 @@ impl GraphicsCaptureApiHandler for WgcStreamHandler {
 
         // --- INDUSTRIAL ZERO-COPY: Direct GPU Upload ---
         if let Some(ctx) = &state.vello_ctx {
-            ctx.update_background(&state.monitor_id, frame_buffer.as_raw_buffer(), width, height);
+            ctx.update_background(
+                &state.monitor_id,
+                frame_buffer.as_raw_buffer(),
+                width,
+                height,
+            );
         }
 
         // REDUCED PRESSURE: We no longer create a CPU-side ImageData on every frame.
@@ -205,9 +210,9 @@ impl WgcStreamManager {
                 }
             };
 
-            let matched_gdi = gdi_monitors.iter().find(|gm| {
-                gm.hmonitor == raw_hmon as isize
-            });
+            let matched_gdi = gdi_monitors
+                .iter()
+                .find(|gm| gm.hmonitor == raw_hmon as isize);
 
             if matched_gdi.is_none() {
                 log::warn!(
@@ -271,7 +276,10 @@ impl WgcStreamManager {
                 }
             });
 
-            self._handles.lock().unwrap_or_else(|e| e.into_inner()).push(handle);
+            self._handles
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .push(handle);
         }
 
         Ok(())

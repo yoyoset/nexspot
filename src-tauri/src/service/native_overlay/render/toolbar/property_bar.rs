@@ -1,10 +1,10 @@
+use super::constants::gdi::*;
 use crate::service::native_overlay::render::toolbar::widgets;
 use crate::service::native_overlay::state::DrawingTool;
 use crate::service::win32::gdiplus::{
     draw_rounded_rectangle, fill_rounded_rectangle, BrushWrapper, GraphicsWrapper, PenWrapper,
 };
 use windows::Win32::Foundation::RECT;
-use super::constants::gdi::*;
 
 pub fn draw_property_bar(
     app: &tauri::AppHandle,
@@ -83,15 +83,27 @@ pub fn draw_property_bar(
             // Draw selector background if selected
             let label_str: Option<String> = if tool == DrawingTool::Mosaic {
                 match i {
-                    0 => Some(crate::service::l10n::t(app, "backend.property.size_small", "S")),
-                    1 => Some(crate::service::l10n::t(app, "backend.property.size_medium", "M")),
-                    _ => Some(crate::service::l10n::t(app, "backend.property.size_large", "L")),
+                    0 => Some(crate::service::l10n::t(
+                        app,
+                        "backend.property.size_small",
+                        "S",
+                    )),
+                    1 => Some(crate::service::l10n::t(
+                        app,
+                        "backend.property.size_medium",
+                        "M",
+                    )),
+                    _ => Some(crate::service::l10n::t(
+                        app,
+                        "backend.property.size_large",
+                        "L",
+                    )),
                 }
             } else {
                 None
             };
             let label = label_str.as_deref();
-            
+
             widgets::draw_property_selector(
                 &graphics,
                 &btn_rect,
@@ -226,7 +238,7 @@ pub fn draw_property_bar(
 
 pub fn get_palette_colors() -> Vec<u32> {
     vec![
-        0xFFD14D4D, // Muted Red+ 
+        0xFFD14D4D, // Muted Red+
         0xFFD18A4D, // Muted Orange+
         0xFFC7B34D, // Muted Yellow+
         0xFF79A67B, // Muted Green+

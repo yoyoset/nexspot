@@ -1,6 +1,6 @@
 use super::DrawingObject;
-use windows::Win32::Foundation::RECT;
 use crate::service::native_overlay::state::types::DrawingTool;
+use windows::Win32::Foundation::RECT;
 
 impl DrawingObject {
     pub fn get_bounds(&self) -> RECT {

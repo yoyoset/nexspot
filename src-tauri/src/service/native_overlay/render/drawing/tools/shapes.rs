@@ -37,11 +37,11 @@ impl DrawingToolRenderer for RectRenderer {
 
             if width > 0.1 && height > 0.1 {
                 let argb = obj.color | 0xFF000000;
-                
+
                 // Draw filled if alpha/opacity logic allows, but here we usually draw stroke + optional fill
                 // For now, follow the industrial standard: always stroke.
                 let pen = cache.get_gdiplus_pen(argb, obj.stroke_width, None)?;
-                
+
                 // If we want to support filled shapes later, we'd use brush here.
                 // For now, let's just ensure we use standard pen.
                 gdiplus::draw_rectangle(graphics, &pen, left, top, width, height)?;
@@ -132,4 +132,3 @@ impl DrawingToolRenderer for LineRenderer {
         Ok(())
     }
 }
-

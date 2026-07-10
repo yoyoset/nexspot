@@ -97,7 +97,6 @@ impl ConfigState {
         Ok(())
     }
 
-
     pub fn add_workflow(&mut self, workflow: types::CaptureWorkflow) -> Result<(), ConfigError> {
         log::info!(
             "[Config] Adding new workflow: ID={}, Label={}",
@@ -152,7 +151,7 @@ impl ConfigState {
         self.config.workflows[idx].label = workflow.label;
         self.config.workflows[idx].action = workflow.action;
         self.config.workflows[idx].output = workflow.output;
-        
+
         // Lock system workflows to 'enabled: true', allow custom workflows to be disabled
         if self.config.workflows[idx].is_system {
             self.config.workflows[idx].enabled = true;
@@ -178,7 +177,6 @@ impl ConfigState {
         self.config.accent_color = color;
         self.save();
     }
-
 
     // Pass-through setters
     pub fn set_save_path(&mut self, path: String) {
@@ -215,12 +213,11 @@ impl ConfigState {
         self.config.default_export_format = format;
         self.save();
     }
-    
+
     pub fn set_quick_save(&mut self, enabled: bool) {
         self.config.quick_save = enabled;
         self.save();
     }
-
 
     pub fn set_snapshot_enabled(&mut self, enabled: bool) {
         self.config.snapshot_enabled = enabled;

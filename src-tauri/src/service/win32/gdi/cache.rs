@@ -1,7 +1,7 @@
 use super::resources::{create_pen, create_solid_brush, SafeBrush, SafePen};
+use crate::service::win32::gdiplus::{BrushWrapper, PenWrapper, SafeBrushWrapper, SafePenWrapper};
 use std::collections::HashMap;
 use windows::Win32::Graphics::Gdi::PEN_STYLE;
-use crate::service::win32::gdiplus::{SafePenWrapper, SafeBrushWrapper, PenWrapper, BrushWrapper};
 
 /// Cache for GDI objects to avoid frequent system calls.
 #[derive(Debug, Default)]
@@ -11,7 +11,7 @@ pub struct GdiCache {
 
     // GDI+ Resources (Owned RAII wrappers)
     gdiplus_pens: HashMap<(u32, u32, i32), SafePenWrapper>, // (argb, width_bits, dash_style)
-    gdiplus_brushes: HashMap<u32, SafeBrushWrapper>,   // argb
+    gdiplus_brushes: HashMap<u32, SafeBrushWrapper>,        // argb
 }
 
 impl GdiCache {
@@ -63,7 +63,9 @@ impl GdiCache {
         width: f32,
         dash_style: Option<windows::Win32::Graphics::GdiPlus::DashStyle>,
     ) -> anyhow::Result<PenWrapper> {
-        let dash_val = dash_style.unwrap_or(windows::Win32::Graphics::GdiPlus::DashStyleSolid).0;
+        let dash_val = dash_style
+            .unwrap_or(windows::Win32::Graphics::GdiPlus::DashStyleSolid)
+            .0;
         let key = (argb, width.to_bits(), dash_val);
         if !self.gdiplus_pens.contains_key(&key) {
             let pen = PenWrapper::new(argb, width)?;
@@ -77,10 +79,7 @@ impl GdiCache {
         Ok(self.gdiplus_pens.get(&key).unwrap().0)
     }
 
-    pub fn get_gdiplus_brush(
-        &mut self,
-        argb: u32,
-    ) -> anyhow::Result<BrushWrapper> {
+    pub fn get_gdiplus_brush(&mut self, argb: u32) -> anyhow::Result<BrushWrapper> {
         if !self.gdiplus_brushes.contains_key(&argb) {
             let brush = BrushWrapper::new_solid(argb)?;
             self.gdiplus_brushes.insert(argb, brush);

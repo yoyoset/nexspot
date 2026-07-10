@@ -1,5 +1,8 @@
+use super::render::{render_snapshot, update_snapshot_size_config};
+use super::utils::notify_copied;
 use crate::service::native_overlay::state::OverlayState;
 use crate::service::win32;
+use anyhow::Context;
 use std::sync::{Arc, RwLock};
 use tauri::AppHandle;
 use windows::Win32::Foundation::HANDLE;
@@ -7,8 +10,16 @@ use windows::Win32::Graphics::Gdi::{HGDIOBJ, SRCCOPY};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
 };
-use super::render::{render_snapshot, update_snapshot_size_config};
-use super::utils::notify_copied;
+
+struct ClipboardGuard;
+
+impl Drop for ClipboardGuard {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = CloseClipboard();
+        }
+    }
+}
 
 pub fn copy_to_clipboard(
     state_arc: &Arc<RwLock<OverlayState>>,
@@ -30,7 +41,8 @@ pub fn copy_to_clipboard(
         let prev_src = win32::gdi::select_object(&hdc_src, HGDIOBJ(rendered.hbitmap.0 .0))?;
 
         let hdc_dst = win32::gdi::create_compatible_dc(Some(&hdc_screen))?;
-        let ddb = win32::gdi::create_compatible_bitmap(&hdc_screen, rendered.width, rendered.height)?;
+        let ddb =
+            win32::gdi::create_compatible_bitmap(&hdc_screen, rendered.width, rendered.height)?;
         let prev_dst = win32::gdi::select_object(&hdc_dst, HGDIOBJ(ddb.0 .0))?;
 
         win32::gdi::bit_blt(
@@ -51,14 +63,13 @@ pub fn copy_to_clipboard(
         ddb
     };
 
-    // 4. Set to Clipboard（所有权移交剪贴板，leak 防止 Drop 释放）
+    // 4. Set to Clipboard. Only report success after the system takes ownership.
     unsafe {
-        if OpenClipboard(None).is_ok() {
-            let _ = EmptyClipboard();
-            let h = ddb.leak();
-            let _ = SetClipboardData(2, Some(HANDLE(h.0 as *mut std::ffi::c_void)));
-            let _ = CloseClipboard();
-        }
+        OpenClipboard(None).context("Failed to open clipboard")?;
+        let _guard = ClipboardGuard;
+        EmptyClipboard().context("Failed to empty clipboard")?;
+        SetClipboardData(2, Some(HANDLE(ddb.0 .0))).context("Failed to set clipboard bitmap")?;
+        std::mem::forget(ddb);
     }
 
     notify_copied(app);

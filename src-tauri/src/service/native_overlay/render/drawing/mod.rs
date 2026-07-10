@@ -2,7 +2,7 @@ pub mod tools;
 pub mod traits;
 
 use crate::service::native_overlay::state::{DrawingObject, DrawingTool, OverlayState};
-use crate::service::win32::gdi::{self, SafeHDC, GdiCache};
+use crate::service::win32::gdi::{self, GdiCache, SafeHDC};
 use traits::DrawingToolRenderer;
 use windows::Win32::Foundation::RECT;
 
@@ -50,12 +50,7 @@ pub fn draw_all_objects(
 ) -> anyhow::Result<()> {
     // 1. Setup Clipping to Selection (RAII)
     // Normalize selection relative to the drawing DC origin
-    let _guard = ClippingGuard::new(
-        hdc,
-        state.selection,
-        ox,
-        oy,
-    );
+    let _guard = ClippingGuard::new(hdc, state.selection, ox, oy);
 
     // 2. Prepare Source DC for sampling (used by Mosaic)
     let mut src_hdc_opt = None;
