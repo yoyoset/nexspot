@@ -21,6 +21,13 @@ NexSpot 是一款面向 Windows 的高性能截图工具（Tauri v2 + Rust/Win32
 | 07 | [配置 CONFIG](07-CONFIG.md) | AppConfig / Workflow 数据模型与持久化、迁移 |
 | 08 | [核查发现 AUDIT](08-AUDIT.md) | 2026-06-04 核查记录（行动项已闭环，保留为审计存档） |
 | 09 | [状态固化 STATUS](09-STATUS.md) | **当前状态快照**：v0.3.0 已完成项、硬 bug 根因表、Phase 4 待办 |
+| 10 | [商业化交付审查 COMMERCIAL-RELEASE-REVIEW](10-COMMERCIAL-RELEASE-REVIEW.md) | 商业试用结论、发版产物、自动/人工验收门禁、剩余阻断项 |
+| 11 | [发布证据 RELEASE-EVIDENCE](11-RELEASE-EVIDENCE.json) | 机器可读发版证据：产物路径、SHA256、签名状态、chunk 与剩余人工门禁 |
+| 12 | [人工 QA 矩阵 MANUAL-QA-MATRIX](12-MANUAL-QA-MATRIX.md) | 商业人工验收矩阵：Vello OCR、滚动截图、多屏/DPI、安装器 smoke 与未签名 pilot 说明 |
+| 13 | [启动 Smoke 证据 SMOKE-EVIDENCE](13-SMOKE-EVIDENCE.json) | 机器可读 EXE 启动 smoke 证据：启动时长、当前 EXE SHA256、进程结果 |
+| 14 | [安装器 Smoke 证据 INSTALLER-SMOKE-EVIDENCE](14-INSTALLER-SMOKE-EVIDENCE.json) | NSIS 安装、覆盖安装、已安装应用启动、卸载和清理证据 |
+| 15 | [未签名试点分发说明 UNSIGNED-PILOT-DISTRIBUTION-NOTICE](15-UNSIGNED-PILOT-DISTRIBUTION-NOTICE.md) | 未签名 EXE/安装包的试点分发口径、SHA256 与 public stable No-Go 条件 |
+| 16 | [商业 QA 缺陷日志 COMMERCIAL-QA-ISSUE-LOG](16-COMMERCIAL-QA-ISSUE-LOG.md) | Public stable 阻断项、试点观察项、关闭条件与已闭环证据 |
 | ★ | [设计交付 design/](design/2026-06-04-studio-redesign/) | Studio 方向 UI 重设计交付包（已落地实现的基准） |
 
 ---
