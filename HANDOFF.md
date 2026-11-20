@@ -19,18 +19,22 @@ NexSpot 是 Windows 截图工具，技术栈是 Tauri v2 + Rust/Win32 + React 19
 功能有：截图（GDI 和 Vello/WGC 两套引擎）、标注、OCR（WinRT 和 PaddleOCR-json 双引擎）、贴图（PIN）、滚动长截图。
 最初由另一个 AI 工具 antigravity 写成，2026-06 做过全面核查（`docs/08-AUDIT.md`），之后完成了 Studio UI 重设计和 OCR 子系统重建，当前版本 **v0.3.0**。
 
-**分支状态，必须先搞清楚：**
-- `main` = `origin/main` = `cca630f`（06-12，"v0.3.0 状态固化"）。
-- 本地分支 **`codex/v0.3.0-rc1-recovery`** 比 main 多 3 个提交（07-10，145 个文件、+9625 行），**只在本地，没推到 GitHub**：
+**分支状态（2026-11-20 更新）：**
+- `main` = `origin/main`，已合入原来的 `codex/v0.3.0-rc1-recovery`（`d750696` 合并提交），也就带上了 07-10 那 3 个提交：
   - `18bb20b`：稳定 OCR 和滚动截图
   - `4e20ceb`：发布和 QA 门禁脚本（`scripts/*.mjs`、`npm run release:*`、`qa:*`）
   - `b7d07c0`：冻结 RC1 发布证据（`docs/10`–`21`）
-- 这个分支名说明它是 Codex 做的。要不要合进 main、要不要推送，**先问用户**。
-- 这封交接信放在 main 上。如果你在那个分支上干活，用 `git show main:HANDOFF.md` 查看。
+- 那 3 个提交**已推到 GitHub**，仓库现在有 `v0.3.0` tag 和 Release。
 
-**仓库与发布：**
-- 仓库 `yoyoset/nexspot` 是 public，**还没有 GitHub Release**。
-- 本地有安装包 `src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe`（07-10，8.9M），**没有签名**。
+**仓库与发布（11-20 实测）：**
+- 仓库 `yoyoset/nexspot` 是 public，**已有 GitHub Release `v0.3.0`**（首个公开发布，MIT）：
+  https://github.com/yoyoset/nexspot/releases/tag/v0.3.0
+  - `NexSpot_0.3.0_x64-setup.exe` 9,262,577 字节，SHA256 `9D4C491ACB8898B1CB3EEBF9FBDB4C435CF5A5FCA1F6540DB0C377FAED7D47A1`
+  - `NexSpot-0.3.0-portable.zip` 12,731,163 字节，SHA256 `D788DA2C14FA0702551A41C03B815EA1677E170D850E81E44F701BED59DA980A`
+  - 两个包都从 `releases/latest` 下回来核过哈希；免安装包解压后的 `nexspot.exe` 单独启动过，8 秒内没退出、无 `%TEMP%\nexspot_panic.log`
+  - 安装包**仍然没有签名**（用户 11-10 明确不弄证书）
+- **滚动长截图入口已从工具栏移除**（`render/toolbar/builder.rs`，GDI/Vello 共用同一份按钮列表）：实机全流程没验完，公开版不开入口。代码（`scrolling.rs`/`stitch.rs`/IPC/图标）全部保留，验完把那一项加回列表即可。首页工作流和设置页在当前代码里本来就没有滚动截图入口。
+- 用户 11-20 的决定：**按通用开源发布，用 MIT 许可证**（`LICENSE` 已加，与 PhotoSee 一致）。
 
 **发布评审结论（`docs/21-COMMERCIAL-CLOSURE-PLAN.md`，07-10）：**
 
@@ -52,14 +56,18 @@ NexSpot 是 Windows 截图工具，技术栈是 Tauri v2 + Rust/Win32 + React 19
 - 多屏/DPI：用户实机确认过多屏双击保存；其他 DPI 组合没测，如实写明。
 - 签名：下载页写明"Windows 会提示未知发布者"，并附 SHA256。
 
-**要做的改动：**
-1. 藏掉滚动长截图的所有入口：GDI 和 Vello 两套工具栏、首页工作流、设置页。
-2. 重新打包。
-3. 跑一遍冒烟测试。
-4. 请用户实机点一遍截图和 OCR。
-5. 上架 squareuncle.com 下载页（这一步在 SUBLOG 仓库做）。
+**这次的改动（11-20 已全部做完）：**
+1. ~~藏掉滚动长截图的所有入口~~ → 实际只改了一处：GDI/Vello 共用 `builder.rs` 的按钮列表，首页工作流和设置页本来就没有入口。
+2. ~~重新打包~~ → `npm run tauri build` 通过，产出 setup + 免安装 zip（zip 是把独立 exe 打包）。
+3. ~~冒烟~~ → 只做了启动冒烟（两个包都能起、不崩、无 panic 日志）；**没有人点过界面**，见下面"还没验"。
+4. 实机点截图和 OCR：**还没做**，等用户。
+5. 上架 squareuncle.com：已做（SUBLOG 提交 `13586f1`，下载页 zh/en、隐私页 zh/en、图标线上 200）。
 
-排期在 `F:\my_ai\SUBLOG\video\weekly\2026-11-博客与产品排期.md`。用户是否最终同意上架还没表态，以排期表为准。
+**还没验（如实记着）：**
+- 用户还没在真实窗口里点过这个安装包/免安装包的界面：截图、标注、OCR、贴图都没人工过一遍。
+- PaddleOCR「组件」页的下载安装流程只在 07-10 那版上验过，这次只是改了按钮列表和文档，理论上没影响，但没复测。
+
+排期在 `F:\my_ai\SUBLOG\video\weekly\2026-11-博客与产品排期.md`（11-20 那格子：已发）。
 
 ## 2. 命令
 
@@ -115,7 +123,7 @@ npm run release:smoke; npm run release:installer:smoke; npm run release:verify; 
 ## 6. 不要做的事
 
 - 不要 `git add -A` / `git add .`。
-- 没有用户同意，不要把 `codex/v0.3.0-rc1-recovery` 推送或合并到 main。
+- `codex/v0.3.0-rc1-recovery` 已经合进 `main`（用户 11-20 同意发布）。以后要改动，直接从 `main` 开分支。
 - 不要留摆设控件：坏掉或无效的控件要么修通，要么删掉（用户的标准是"成熟的商业级软件"）。
 - 不要宣称修好了用户能看见的问题，除非用户在当前构建上实机确认过。你没法看到画面时，要明确告诉他"请看哪几点"，并给出 10 秒内能判断的标准。
 - 不要凭"设计稿条文"否掉用户的实际观感：设计稿是基准，但用户的观感优先。
