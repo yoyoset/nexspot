@@ -48,12 +48,9 @@ pub fn rebuild_for_mode(
                     "Mosaic",
                 ), // grid-line ≈ grid-3x3
                 (ToolType::Ocr, "\u{F0BD}", "backend.tool.ocr", "OCR"),       // scan-line
-                (
-                    ToolType::Scrolling,
-                    "\u{F4AF}",
-                    "backend.tool.scrolling",
-                    "Scrolling",
-                ), // scroll-to-bottom-line
+                // 滚动长截图（ToolType::Scrolling, \u{F4AF}）在 v0.3.0 公开版里不开入口：
+                // 实机全流程还没验完（不同浏览器/列表控件的滚轮响应差异），
+                // 代码保留在 scrolling.rs / stitch.rs，验完把这一项加回列表即可。
             ];
 
             let group = match engine {
