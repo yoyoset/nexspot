@@ -2,9 +2,9 @@ use crate::service::native_overlay::render::toolbar;
 use crate::service::native_overlay::state;
 use std::sync::{Arc, RwLock};
 
-pub mod mouse;
-pub mod keyboard;
 pub mod cursor;
+pub mod keyboard;
+pub mod mouse;
 
 pub struct InputHandler;
 
@@ -40,11 +40,7 @@ impl InputHandler {
         mouse::handle_mouse_up(state, toolbar, x, y)
     }
 
-    pub fn handle_double_click(
-        state: &Arc<RwLock<state::OverlayState>>,
-        x: i32,
-        y: i32,
-    ) -> bool {
+    pub fn handle_double_click(state: &Arc<RwLock<state::OverlayState>>, x: i32, y: i32) -> bool {
         mouse::handle_double_click(state, x, y)
     }
 

@@ -61,11 +61,7 @@ pub fn draw_toolbar(
             &btn.tool,
             &btn.icon,
             icon_color,
-            if let ToolType::Number = btn.tool {
-                28.0
-            } else {
-                30.0
-            },
+            super::style::ICON_FONT_SIZE_GDI,
             current_color,
         )?;
 
@@ -142,7 +138,11 @@ fn draw_loading_message(
     widgets::draw_rounded_container(graphics, rect, BG_MAIN, ACCENT_COLOR, RADIUS_CONTAINER)?;
 
     // 2. Draw text
-    let text = l10n::t(app, "engine.switching_to_advanced", "Switching to Advanced Engine...");
+    let text = l10n::t(
+        app,
+        "engine.switching_to_advanced",
+        "Switching to Advanced Engine...",
+    );
     let brush = BrushWrapper::new_solid(TEXT_PRIMARY)?;
     crate::service::win32::gdiplus::draw_text_centered(
         graphics,

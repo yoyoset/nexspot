@@ -1,0 +1,175 @@
+{
+  "schema": "nexspot.manual-qa-gate.v1",
+  "generatedAt": "2026-07-10T05:20:33.322Z",
+  "inputs": {
+    "matrix": "docs/12-MANUAL-QA-MATRIX.md",
+    "issueLog": "docs/16-COMMERCIAL-QA-ISSUE-LOG.md",
+    "releaseEvidence": "docs/11-RELEASE-EVIDENCE.json",
+    "qaEvidencePack": "docs/qa-runs/latest/qa-evidence-pack.json",
+    "signingReadiness": "docs/18-SIGNING-READINESS.json"
+  },
+  "decisions": {
+    "internalTrial": "Go",
+    "smallCommercialPilot": "Go with unsigned notice",
+    "publicStableRelease": "No-Go"
+  },
+  "matrix": {
+    "totalRows": 34,
+    "requiredRows": 29,
+    "passedRequired": [
+      "REL-01",
+      "REL-02",
+      "REL-03",
+      "REL-04",
+      "REL-05",
+      "REL-06"
+    ],
+    "pendingRequired": [
+      "ENV-01",
+      "ENV-02",
+      "ENV-03",
+      "ENV-05",
+      "ENV-06",
+      "ENV-08",
+      "CAP-01",
+      "CAP-02",
+      "CAP-03",
+      "CAP-04",
+      "CAP-05",
+      "CAP-06",
+      "OCR-01",
+      "OCR-02",
+      "OCR-03",
+      "OCR-04",
+      "OCR-05",
+      "SCR-01",
+      "SCR-02",
+      "SCR-03",
+      "SCR-04",
+      "SCR-05",
+      "SCR-06"
+    ],
+    "failedRequired": [],
+    "requiredWithoutEvidence": [],
+    "requiredWithMissingEvidenceFiles": [],
+    "byStatus": {
+      "Pending": 28,
+      "Passed automated smoke": 1,
+      "Passed automated installer smoke": 4,
+      "Passed unsigned pilot notice": 1
+    }
+  },
+  "issueLog": {
+    "totalItems": 8,
+    "openP0": [
+      "QA-001",
+      "QA-002",
+      "QA-003",
+      "QA-004"
+    ],
+    "openP1": [
+      "QA-005"
+    ]
+  },
+  "release": {
+    "present": true,
+    "currentArtifactsPresent": true,
+    "generatedAt": "2026-07-10T05:20:16.789Z",
+    "version": "0.3.0",
+    "releaseVerifyPassed": true,
+    "evidenceMatchesCurrent": true,
+    "releaseArtifactsNewerThanSource": true,
+    "unsignedArtifacts": [
+      {
+        "name": "exe",
+        "status": "NotSigned",
+        "path": "src-tauri/target/release/nexspot.exe",
+        "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+      },
+      {
+        "name": "nsisInstaller",
+        "status": "NotSigned",
+        "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+        "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+      }
+    ],
+    "hashes": {
+      "exe": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+      "nsisInstaller": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+    },
+    "evidenceHashes": {
+      "exe": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+      "nsisInstaller": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+    },
+    "warnings": [
+      "release EXE Authenticode status: NotSigned.",
+      "NSIS installer Authenticode status: NotSigned.",
+      "Manual QA matrix required rows still pending: 23.",
+      "Smoke evidence main window title is not exposed; using main window handle as launch proof.",
+      "Manual gate still required: GUI matrix for Vello OCR, scrolling capture, multi-display/DPI.",
+      "Manual gate still required: code-signing and Windows warning prompt review."
+    ]
+  },
+  "qaEvidencePack": {
+    "present": true,
+    "path": "docs/qa-runs/latest/qa-evidence-pack.json",
+    "generatedAt": "2026-07-10T05:20:28.452Z",
+    "matchesCurrentArtifacts": true,
+    "pendingRequiredMatches": true,
+    "openP0Matches": true,
+    "openP1Matches": true,
+    "publicStableDecision": "No-Go",
+    "pendingRequiredCount": 23,
+    "openP0Count": 4,
+    "openP1Count": 1,
+    "blockers": []
+  },
+  "signingReadiness": {
+    "present": true,
+    "path": "docs/18-SIGNING-READINESS.json",
+    "generatedAt": "2026-07-10T05:19:59.565Z",
+    "publicStableReady": false,
+    "unsignedPilotReady": true,
+    "matchesCurrentArtifacts": true,
+    "artifactStatuses": {
+      "exe": "NotSigned",
+      "nsisInstaller": "NotSigned"
+    },
+    "blockers": [
+      "signing readiness is not public-stable ready"
+    ]
+  },
+  "publicStableBlockers": [
+    "manual matrix pending: ENV-01",
+    "manual matrix pending: ENV-02",
+    "manual matrix pending: ENV-03",
+    "manual matrix pending: ENV-05",
+    "manual matrix pending: ENV-06",
+    "manual matrix pending: ENV-08",
+    "manual matrix pending: CAP-01",
+    "manual matrix pending: CAP-02",
+    "manual matrix pending: CAP-03",
+    "manual matrix pending: CAP-04",
+    "manual matrix pending: CAP-05",
+    "manual matrix pending: CAP-06",
+    "manual matrix pending: OCR-01",
+    "manual matrix pending: OCR-02",
+    "manual matrix pending: OCR-03",
+    "manual matrix pending: OCR-04",
+    "manual matrix pending: OCR-05",
+    "manual matrix pending: SCR-01",
+    "manual matrix pending: SCR-02",
+    "manual matrix pending: SCR-03",
+    "manual matrix pending: SCR-04",
+    "manual matrix pending: SCR-05",
+    "manual matrix pending: SCR-06",
+    "open P0 blocker: QA-001",
+    "open P0 blocker: QA-002",
+    "open P0 blocker: QA-003",
+    "open P0 blocker: QA-004",
+    "open P1 polish blocker: QA-005",
+    "artifact not signed: exe (NotSigned)",
+    "artifact not signed: nsisInstaller (NotSigned)",
+    "signing readiness: signing readiness is not public-stable ready"
+  ]
+}

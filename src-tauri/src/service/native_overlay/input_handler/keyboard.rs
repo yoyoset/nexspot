@@ -19,8 +19,9 @@ pub fn handle_keyboard(
     if let Some(drawing) = state.objects.iter_mut().rev().find(|o| o.is_editing_text) {
         let char_code = vk as u32;
         let c = char::from_u32(char_code).unwrap_or('\0');
-        
-        if c == '\u{8}' { // Backspace
+
+        if c == '\u{8}' {
+            // Backspace
             if let Some(text) = &mut drawing.text {
                 text.pop();
             }

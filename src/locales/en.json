@@ -285,6 +285,8 @@
         "copied": "Copied to Clipboard",
         "saved": "Screenshot Saved",
         "pinned": "Window Pinned",
+        "capture_failed": "Capture failed",
+        "capture_failed_detail": "{{title}} · {{area}}: {{message}}",
         "engine_switched": "Switched back to GDI engine (Robust mode)"
     },
     "engine_error": {
@@ -324,19 +326,57 @@
     },
     "scrolling_preview": {
         "title": "Scrolling Capture Preview",
-        "subtitle": "Industrial Stitching Index: 98% Confidence",
-        "compiling": "Compiling assets...",
+        "subtitle": "Hides the overlay, scrolls the window under the selection center, then stitches until no new content is found.",
+        "started_hint": "Stitching frames. Press Esc to stop.",
+        "started_detail": "Scrolling {{target}}. Esc stops it. Auto-stop after {{stagnant}} no-growth checks or {{frames}} frames.",
+        "compiling": "Stitching the captured frames...",
+        "how_it_works": "Auto-scroll workflow: hide overlay -> focus content under selection center -> wheel down -> capture -> stitch -> stop after repeated no-growth frames.",
+        "progress": "Scrolling capture · {{height}}px · +{{added}}px · {{captured}} frames",
+        "progress_checking": "Checking stop condition · {{height}}px · no growth {{stagnant}} · {{reason}}",
+        "finished_detail": "{{reason}} · {{width}} x {{height}}px · {{frames}} frames",
+        "result_stats": "{{reason}} · {{captured}} captured · {{appended}} appended · +{{added}}px · {{duration}}s",
+        "logic_stats": "Stop checks {{stagnant}}/{{limit}} · max {{max}} frames · wheel {{wheel}}",
+        "error_message": "Partial result: {{message}}",
+        "stitch_quality": "Stitch QA {{reports}} reports · {{appended}} appended · best avg {{best}} · last {{last}}",
+        "stitch_perf": "Match perf avg {{avgMs}}ms · candidates {{candidates}} · seeded {{seeded}} · seed y {{seedY}}",
+        "stitch_ok": "accepted",
+        "target_window": "Target: {{title}} · {{className}} · PID {{pid}}",
+        "untitled_window": "Untitled window",
+        "unknown_window_class": "Unknown class",
         "save_as": "Save As",
         "saving": "Saving...",
         "copy": "Copy",
-        "finish": "Finish"
+        "finish": "Finish",
+        "finish_reason": {
+            "manual": "Stopped manually",
+            "no_growth": "No new content found",
+            "frame_limit": "Frame limit reached",
+            "error": "Finished after an error"
+        }
     },
     "ocr_result": {
         "title": "Text Layer Active",
         "analyzing": "Analyzing selection...",
         "copy_all": "Copy All",
+        "copy_failed": "Copy failed",
+        "export_txt": "Export .txt",
+        "exporting": "Exporting...",
+        "exported": "Text exported",
+        "export_failed": "Export failed",
         "pin": "Pin to Library",
         "no_text_found": "No text detected",
+        "no_text_hint": "Try selecting a clearer text area, increasing zoom, or switching OCR language/engine in Settings.",
+        "error_found": "OCR could not run",
+        "error_hint": "The captured area was preserved for review. Check the OCR language pack, selected engine, and capture metadata below.",
+        "stats": "{{chars}} chars · {{lines}} lines · {{words}} words",
+        "confidence_unavailable": "confidence unavailable",
+        "capture_meta": "{{source}} · {{engine}} · {{width}}x{{height}}px · {{scale}}x DPI · {{duration}}ms",
+        "capture_overlay_meta": "overlay hidden {{hidden}}/{{count}} - wait {{wait}}ms",
+        "overlay_warning": "overlay still visible: {{visible}} window(s)",
+        "capture_source": {
+            "live_screen_after_overlay_hide": "live screen, overlay hidden"
+        },
+        "engine_unknown": "OCR engine",
         "engine_info": "OCR ENGINE: WinRT_Media_V1",
         "protocol_info": "Industrial Standard Protocol"
     },
@@ -364,7 +404,7 @@
             "copy": "Copy",
             "cancel": "Exit Capture",
             "ocr": "OCR Text Scan",
-            "scrolling": "Scrolling Capture"
+            "scrolling": "Auto scrolling capture: hide overlay, scroll the content under the selected area, stitch, then stop automatically"
         },
         "engine": {
             "switching_to_advanced": "Switching to Advanced Engine...",
@@ -385,7 +425,8 @@
             "capture_empty_body": "Captured image was empty",
             "macro_error_title": "Shortcut Error",
             "macro_error_body": "Shortcut '{id}' not found in current view.",
-            "ocr_failed_title": "OCR Failed"
+            "ocr_failed_title": "OCR Failed",
+            "scrolling_failed_title": "Scrolling Capture Failed"
         },
         "property": {
             "size_small": "Small",

@@ -1,6 +1,8 @@
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
-use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, GWLP_USERDATA, WM_NCDESTROY, GetWindowLongPtrW, SetWindowLongPtrW};
 use super::types::{Dispatcher, SafeHWND, WindowEventHandler};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::UI::WindowsAndMessaging::{
+    DefWindowProcW, GetWindowLongPtrW, SetWindowLongPtrW, GWLP_USERDATA, WM_NCDESTROY,
+};
 
 pub unsafe extern "system" fn wnd_proc(
     hwnd: HWND,
@@ -33,11 +35,7 @@ pub unsafe extern "system" fn wnd_proc(
 pub fn set_window_handler(hwnd: HWND, handler: *mut dyn WindowEventHandler) {
     let dispatcher = Box::new(Dispatcher { handler });
     unsafe {
-        SetWindowLongPtrW(
-            hwnd,
-            GWLP_USERDATA,
-            Box::into_raw(dispatcher) as isize,
-        );
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, Box::into_raw(dispatcher) as isize);
     }
 }
 

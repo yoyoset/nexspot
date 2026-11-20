@@ -27,13 +27,13 @@ pub fn update_snap_lines(state: &mut OverlayState) {
             state.gdi.snap_y_cache.push(r.top - oy);
             state.gdi.snap_y_cache.push(r.bottom - oy);
         }
-        
+
         // Boundaries
         state.gdi.snap_x_cache.push(0);
         state.gdi.snap_x_cache.push(state.width);
         state.gdi.snap_y_cache.push(0);
         state.gdi.snap_y_cache.push(state.height);
     }
-    
+
     state.snapping_dirty = false;
 }

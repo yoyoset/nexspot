@@ -1,0 +1,165 @@
+{
+  "schema": "nexspot.qa-results.v1",
+  "generatedAt": "2026-07-10T05:20:28.452Z",
+  "evidencePack": "docs/qa-runs/latest/qa-evidence-pack.json",
+  "artifacts": {
+    "exe": {
+      "path": "src-tauri/target/release/nexspot.exe",
+      "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+    },
+    "nsisInstaller": {
+      "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+      "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+    }
+  },
+  "rows": [
+    {
+      "id": "ENV-01",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "ENV-02",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "ENV-03",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "ENV-05",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "ENV-06",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "ENV-08",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "CAP-01",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "CAP-02",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "CAP-03",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "CAP-04",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "CAP-05",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "CAP-06",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "OCR-01",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "OCR-02",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "OCR-03",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "OCR-04",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "OCR-05",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "SCR-01",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "SCR-02",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "SCR-03",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "SCR-04",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "SCR-05",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    },
+    {
+      "id": "SCR-06",
+      "status": "Pending",
+      "evidence": "",
+      "notes": ""
+    }
+  ],
+  "failedIssueRowsSchema": {
+    "id": "QA-009",
+    "severity": "P0",
+    "area": "Short issue area",
+    "relatedMatrixIds": "SCR-01",
+    "status": "Open",
+    "owner": "QA + Engineering",
+    "closeCondition": "Describe the exact evidence required to close this issue."
+  },
+  "failedIssueRows": []
+}

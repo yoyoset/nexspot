@@ -1,7 +1,7 @@
 use crate::AppState;
-use tauri::Manager;
 use std::collections::HashMap;
 use std::sync::OnceLock;
+use tauri::Manager;
 
 // 单一事实来源：直接从前端 locale 目录编译时包含
 static ZH_DICT_STR: &str = include_str!("../../../src/locales/zh.json");
@@ -14,7 +14,11 @@ fn get_dicts() -> &'static (HashMap<String, String>, HashMap<String, String>) {
         let mut zh_map = HashMap::new();
         let mut en_map = HashMap::new();
 
-        fn flatten_json(value: &serde_json::Value, prefix: String, map: &mut HashMap<String, String>) {
+        fn flatten_json(
+            value: &serde_json::Value,
+            prefix: String,
+            map: &mut HashMap<String, String>,
+        ) {
             match value {
                 serde_json::Value::Object(obj) => {
                     for (k, v) in obj {
@@ -44,7 +48,11 @@ fn get_dicts() -> &'static (HashMap<String, String>, HashMap<String, String>) {
     })
 }
 
-pub fn t<R: tauri::Runtime>(app: &tauri::AppHandle<R>, key_path: &str, default_fallback: &str) -> String {
+pub fn t<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    key_path: &str,
+    default_fallback: &str,
+) -> String {
     let lang = app
         .try_state::<AppState>()
         .and_then(|s| {
@@ -59,7 +67,7 @@ pub fn t<R: tauri::Runtime>(app: &tauri::AppHandle<R>, key_path: &str, default_f
         .unwrap_or_else(|| "zh".to_string());
 
     let (zh_dict, en_dict) = get_dicts();
-    
+
     let is_zh = lang == "zh" || lang == "zh-CN";
     let target_dict = if is_zh { zh_dict } else { en_dict };
 
@@ -69,7 +77,10 @@ pub fn t<R: tauri::Runtime>(app: &tauri::AppHandle<R>, key_path: &str, default_f
         return val.clone();
     }
 
-    target_dict.get(key_path).cloned().unwrap_or_else(|| default_fallback.to_string())
+    target_dict
+        .get(key_path)
+        .cloned()
+        .unwrap_or_else(|| default_fallback.to_string())
 }
 
 pub fn t_with_args<R: tauri::Runtime>(
@@ -83,4 +94,3 @@ pub fn t_with_args<R: tauri::Runtime>(
     }
     text
 }
-

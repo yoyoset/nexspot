@@ -2,13 +2,7 @@ use crate::service::native_overlay::snapping::snap_coordinate;
 use crate::service::native_overlay::state::OverlayState;
 use windows::Win32::Foundation::RECT;
 
-pub fn handle(
-    state: &mut OverlayState,
-    x: i32,
-    y: i32,
-    is_ctrl: bool,
-    threshold: i32,
-) {
+pub fn handle(state: &mut OverlayState, x: i32, y: i32, is_ctrl: bool, threshold: i32) {
     if let Some(start_sel) = state.drag_start_selection {
         let dx = x - state.start_x;
         let dy = y - state.start_y;
@@ -20,7 +14,7 @@ pub fn handle(
         if !is_ctrl {
             let snap_x = &state.gdi.snap_x_cache;
             let snap_y = &state.gdi.snap_y_cache;
-            
+
             let sl = snap_coordinate(l, snap_x, threshold);
             let sr = snap_coordinate(l + w, snap_x, threshold) - w;
             if (sl - l).abs() < (sr - l).abs() && (sl - l).abs() < threshold {

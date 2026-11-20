@@ -27,8 +27,10 @@ impl VelloToolRenderer for ShapesRenderer {
             }
             DrawingTool::Line => {
                 if obj.points.len() >= 2 {
-                    let p1 = vello::kurbo::Point::new(obj.points[0].0 as f64, obj.points[0].1 as f64);
-                    let p2 = vello::kurbo::Point::new(obj.points[1].0 as f64, obj.points[1].1 as f64);
+                    let p1 =
+                        vello::kurbo::Point::new(obj.points[0].0 as f64, obj.points[0].1 as f64);
+                    let p2 =
+                        vello::kurbo::Point::new(obj.points[1].0 as f64, obj.points[1].1 as f64);
                     let line = Line::new(p1, p2);
                     apply_aesthetic_style(scene, &line, obj);
                 }
@@ -37,4 +39,3 @@ impl VelloToolRenderer for ShapesRenderer {
         }
     }
 }
-

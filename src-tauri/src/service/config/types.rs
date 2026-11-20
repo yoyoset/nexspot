@@ -30,7 +30,6 @@ impl Default for AestheticStyle {
     }
 }
 
-
 // Duplicate AppConfig removed
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -58,7 +57,6 @@ pub struct CaptureOutput {
 fn default_format() -> String {
     "png".to_string()
 }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "config")]
@@ -114,7 +112,6 @@ pub struct AppConfig {
     #[serde(default = "default_paddle_language")]
     pub ocr_paddle_language: String,
 
-
     // Appearance Configuration
     #[serde(default = "default_theme")]
     pub theme: String, // "light", "dark", "system"
@@ -127,7 +124,6 @@ pub struct AppConfig {
     #[serde(default = "default_concurrency")]
     pub concurrency: usize,
 
-
     #[serde(default = "default_format")]
     pub default_export_format: String, // "png" or "jpg"
 
@@ -138,7 +134,6 @@ pub struct AppConfig {
     #[serde(default)]
     pub registration_errors: Vec<String>,
 }
-
 
 fn default_jpg_quality() -> u8 {
     90

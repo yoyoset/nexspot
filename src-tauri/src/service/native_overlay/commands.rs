@@ -18,7 +18,11 @@ impl CommandExecutor {
                     log::error!("Save selection failed: {:?}", e);
                     notify_error(
                         &manager.app,
-                        &crate::service::l10n::t(&manager.app, "backend.notification.save_failed_title", "Save Failed"),
+                        &crate::service::l10n::t(
+                            &manager.app,
+                            "backend.notification.save_failed_title",
+                            "Save Failed",
+                        ),
                         &e.to_string(),
                     );
                 }
@@ -28,7 +32,11 @@ impl CommandExecutor {
                     log::error!("SaveAs selection failed: {:?}", e);
                     notify_error(
                         &manager.app,
-                        &crate::service::l10n::t(&manager.app, "backend.notification.save_failed_title", "Save Failed"),
+                        &crate::service::l10n::t(
+                            &manager.app,
+                            "backend.notification.save_failed_title",
+                            "Save Failed",
+                        ),
                         &e.to_string(),
                     );
                 }
@@ -38,7 +46,11 @@ impl CommandExecutor {
                     log::error!("Copy to clipboard failed: {:?}", e);
                     notify_error(
                         &manager.app,
-                        &crate::service::l10n::t(&manager.app, "backend.notification.copy_failed_title", "Copy Failed"),
+                        &crate::service::l10n::t(
+                            &manager.app,
+                            "backend.notification.copy_failed_title",
+                            "Copy Failed",
+                        ),
                         &e.to_string(),
                     );
                 }
@@ -51,7 +63,8 @@ impl CommandExecutor {
                         if !b64.is_empty() {
                             let pin_id = Uuid::new_v4().to_string();
                             let pin_state = app.state::<crate::service::pin::PinState>();
-                            pin_state.add_pin(pin_id, crate::service::pin::PinData::ImageBase64(b64));
+                            pin_state
+                                .add_pin(pin_id, crate::service::pin::PinData::ImageBase64(b64));
 
                             manager.close_and_reset();
 
@@ -63,7 +76,11 @@ impl CommandExecutor {
                                 log::error!("Failed to open pin collection: {}", e);
                                 notify_error(
                                     &app,
-                                    &crate::service::l10n::t(&app, "backend.notification.pin_failed_title", "Pin Failed"),
+                                    &crate::service::l10n::t(
+                                        &app,
+                                        "backend.notification.pin_failed_title",
+                                        "Pin Failed",
+                                    ),
                                     &e.to_string(),
                                 );
                             }
@@ -71,15 +88,27 @@ impl CommandExecutor {
                             log::warn!("[Pin] Captured image base64 is empty");
                             notify_error(
                                 &app,
-                                &crate::service::l10n::t(&app, "backend.notification.pin_failed_title", "Pin Failed"),
-                                &crate::service::l10n::t(&app, "backend.notification.capture_empty_body", "Captured image was empty"),
+                                &crate::service::l10n::t(
+                                    &app,
+                                    "backend.notification.pin_failed_title",
+                                    "Pin Failed",
+                                ),
+                                &crate::service::l10n::t(
+                                    &app,
+                                    "backend.notification.capture_empty_body",
+                                    "Captured image was empty",
+                                ),
                             );
                         }
                     }
                     Err(e) => {
                         notify_error(
                             &app,
-                            &crate::service::l10n::t(&app, "backend.notification.pin_failed_title", "Pin Failed"),
+                            &crate::service::l10n::t(
+                                &app,
+                                "backend.notification.pin_failed_title",
+                                "Pin Failed",
+                            ),
                             &e.to_string(),
                         );
                     }
@@ -106,6 +135,17 @@ impl CommandExecutor {
                 tauri::async_runtime::spawn(async move {
                     if let Err(e) = crate::service::ocr::execute_ocr(app.clone()).await {
                         log::error!("[Toolbar] OCR failed: {}", e);
+                        crate::service::notification::emit_capture_error(
+                            &app,
+                            "ocr",
+                            "toolbar_execute_failed",
+                            &crate::service::l10n::t(
+                                &app,
+                                "backend.notification.ocr_failed_title",
+                                "OCR Failed",
+                            ),
+                            &e,
+                        );
                         // 失败必须有用户可见反馈（此前静默失败，被误判为"呼不出来"）
                         use tauri_plugin_notification::NotificationExt;
                         let _ = app
@@ -131,14 +171,35 @@ impl CommandExecutor {
                 let app = manager.app.clone();
                 tauri::async_runtime::spawn(async move {
                     let result = if is_scrolling {
-                        crate::service::native_overlay::scrolling::stop_scrolling(app)
+                        crate::service::native_overlay::scrolling::stop_scrolling(app.clone())
                             .await
                             .map(|_| ())
                     } else {
-                        crate::service::native_overlay::scrolling::start_scrolling(app).await
+                        crate::service::native_overlay::scrolling::start_scrolling(app.clone())
+                            .await
                     };
                     if let Err(e) = result {
                         log::error!("[Toolbar] Scrolling toggle failed: {}", e);
+                        crate::service::notification::emit_capture_error(
+                            &app,
+                            "scrolling",
+                            "toggle_failed",
+                            &crate::service::l10n::t(
+                                &app,
+                                "backend.notification.scrolling_failed_title",
+                                "Scrolling Capture Failed",
+                            ),
+                            &e,
+                        );
+                        notify_error(
+                            &app,
+                            &crate::service::l10n::t(
+                                &app,
+                                "backend.notification.scrolling_failed_title",
+                                "Scrolling Capture Failed",
+                            ),
+                            &e,
+                        );
                     }
                 });
             }

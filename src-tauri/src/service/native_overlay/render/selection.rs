@@ -1,5 +1,5 @@
 use crate::service::native_overlay::state::{self, OverlayState};
-use crate::service::win32::gdi::{self, SafeHDC, GdiCache};
+use crate::service::win32::gdi::{self, GdiCache, SafeHDC};
 use windows::Win32::Foundation::RECT;
 
 pub fn draw_selection_overlay(
@@ -14,7 +14,7 @@ pub fn draw_selection_overlay(
     let m_rect = &state.monitor_rect;
     let intersect_w = (sel.right.min(m_rect.right) - sel.left.max(m_rect.left)).max(0);
     let intersect_h = (sel.bottom.min(m_rect.bottom) - sel.top.max(m_rect.top)).max(0);
-    
+
     if intersect_w <= 0 || intersect_h <= 0 {
         return Ok(());
     }
@@ -44,7 +44,7 @@ pub fn draw_handles(
     // Draw Handles (8 circular points)
     let handle_size = 10;
     let half = handle_size / 2;
-    
+
     // Get handles and copy them to avoid holding mutable borrow on state.gdi.cache
     let tiffany_brush_handle = cache.get_brush(0x7A6FF2)?.0;
     let white_brush_handle = cache.get_brush(0xFFFFFF)?.0;

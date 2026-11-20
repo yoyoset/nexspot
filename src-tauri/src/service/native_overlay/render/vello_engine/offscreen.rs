@@ -102,8 +102,7 @@ impl VelloContext {
         buffer_slice.map_async(wgpu::MapMode::Read, move |v| {
             let _ = tx.send(v);
         });
-        let _ = self.device
-            .poll(wgpu::PollType::wait_indefinitely());
+        let _ = self.device.poll(wgpu::PollType::wait_indefinitely());
         if let Ok(Ok(())) = rx.recv() {
             let data = buffer_slice.get_mapped_range();
             let mut result_pixels = Vec::with_capacity((width * height * 4) as usize);

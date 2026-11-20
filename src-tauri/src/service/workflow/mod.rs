@@ -12,7 +12,10 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
     // 0. Global Check: Prevent overlapping triggers
     {
         let app_state = app.state::<AppState>();
-        let manager = app_state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+        let manager = app_state
+            .overlay_manager
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
 
         let mut os = manager.state.write().unwrap_or_else(|e| e.into_inner());
         if os.is_visible || os.is_capturing {
@@ -58,7 +61,12 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
 
     let use_snapshot_mode = snapshot_dim.is_some();
     let engine_enum = if target_engine == "vello" {
-        let (v_ready, v_err) = if let Ok(mgr) = app.state::<AppState>().overlay_manager.lock().map_err(|e| e.into_inner()) {
+        let (v_ready, v_err) = if let Ok(mgr) = app
+            .state::<AppState>()
+            .overlay_manager
+            .lock()
+            .map_err(|e| e.into_inner())
+        {
             match &mgr.vello_status {
                 crate::service::native_overlay::state::VelloStatus::Ready => (true, None),
                 crate::service::native_overlay::state::VelloStatus::Failed(e) => {
@@ -97,7 +105,10 @@ pub async fn execute_capture_workflow<R: tauri::Runtime>(
     // 3. Prepare Overlay State
     let (state_arc_for_capture, wgc_state) = {
         let state = app.state::<AppState>();
-        let overlay = state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+        let overlay = state
+            .overlay_manager
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let mut os = overlay.state.write().unwrap_or_else(|e| e.into_inner());
 
         os.active_workflow = Some(workflow.clone());

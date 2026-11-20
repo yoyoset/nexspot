@@ -1,4 +1,4 @@
-use crate::service::native_overlay::state::{OverlayState, CaptureEngine};
+use crate::service::native_overlay::state::{CaptureEngine, OverlayState};
 use crate::service::win32;
 use crate::service::win32::gdi::SafeHBITMAP;
 use std::sync::{Arc, RwLock};
@@ -16,7 +16,9 @@ pub fn render_snapshot(
     app: &AppHandle,
 ) -> anyhow::Result<RenderedSnapshot> {
     let (sel, capture_engine, canvas_w, canvas_h, cap_x, cap_y) = {
-        let state = state_arc.read().map_err(|_| anyhow::anyhow!("State lock poisoned"))?;
+        let state = state_arc
+            .read()
+            .map_err(|_| anyhow::anyhow!("State lock poisoned"))?;
         (
             state.selection.unwrap_or(RECT {
                 left: 0,
@@ -40,7 +42,12 @@ pub fn render_snapshot(
 
     // 1. Vello / WGC Path
     if capture_engine == CaptureEngine::Wgc {
-        let vello_ctx_opt = app.state::<crate::AppState>().overlay_manager.lock().ok().and_then(|mgr| mgr.vello_ctx.clone());
+        let vello_ctx_opt = app
+            .state::<crate::AppState>()
+            .overlay_manager
+            .lock()
+            .ok()
+            .and_then(|mgr| mgr.vello_ctx.clone());
         if let Some(ctx) = vello_ctx_opt {
             let mut scene = vello::Scene::new();
             {
@@ -50,7 +57,7 @@ pub fn render_snapshot(
                     render_state_to_scene(&state_lock, None, &ctx, &mut scene);
                 }
             }
-            
+
             // 不能直接 block_on：本函数可能在 tokio worker 上被调（OCR/滚动），
             // runtime 内嵌套 block_on 会 panic。改为 spawn 到 runtime + 通道同步等待，
             // 在任意线程上下文都安全（普通线程/UI 线程/worker 均可）。
@@ -94,12 +101,16 @@ pub fn render_snapshot(
                 chunk.swap(0, 2);
                 chunk[3] = 255;
             }
-            
+
             let hdc_screen = win32::gdi::get_dc(None)?;
             let hbm = win32::gdi::create_bitmap_from_pixels(&hdc_screen, width, height, &cp)?;
             win32::gdi::release_dc(None, hdc_screen);
-            
-            return Ok(RenderedSnapshot { hbitmap: hbm, width, height });
+
+            return Ok(RenderedSnapshot {
+                hbitmap: hbm,
+                width,
+                height,
+            });
         }
     }
 
@@ -136,52 +147,84 @@ pub fn render_snapshot(
             let hdc_screen = win32::gdi::get_dc(None)?;
             let hdc_mem_comp = win32::gdi::create_compatible_dc(Some(&hdc_screen))?;
             let hbm_comp = win32::gdi::create_compatible_bitmap(&hdc_screen, canvas_w, canvas_h)?;
-            let prev_comp = win32::gdi::select_object(&hdc_mem_comp, windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_comp.0.0))?;
+            let prev_comp = win32::gdi::select_object(
+                &hdc_mem_comp,
+                windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_comp.0 .0),
+            )?;
 
             let hdc_mem_src = win32::gdi::create_compatible_dc(Some(&hdc_screen))?;
-            let prev_src = win32::gdi::select_object(&hdc_mem_src, windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_bright.0 .0))?;
-            win32::gdi::bit_blt(&hdc_mem_comp, 0, 0, canvas_w, canvas_h, &hdc_mem_src, 0, 0, windows::Win32::Graphics::Gdi::SRCCOPY)?;
+            let prev_src = win32::gdi::select_object(
+                &hdc_mem_src,
+                windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_bright.0 .0),
+            )?;
+            win32::gdi::bit_blt(
+                &hdc_mem_comp,
+                0,
+                0,
+                canvas_w,
+                canvas_h,
+                &hdc_mem_src,
+                0,
+                0,
+                windows::Win32::Graphics::Gdi::SRCCOPY,
+            )?;
             win32::gdi::select_object(&hdc_mem_src, prev_src)?;
-
 
             {
                 let mut cache = crate::service::win32::gdi::GdiCache::default();
-                let graphics = crate::service::win32::gdiplus::GraphicsWrapper::new(hdc_mem_comp.0)?;
-                
+                let graphics =
+                    crate::service::win32::gdiplus::GraphicsWrapper::new(hdc_mem_comp.0)?;
+
                 let (cx, cy) = (state.capture_x, state.capture_y);
 
                 // Align GDI+ with Global coordinates by offsetting by the capture origin.
                 let _ = graphics.translate(-(cx as f32), -(cy as f32));
-                
+
                 crate::service::native_overlay::render::drawing::draw_all_objects(
-                    &hdc_mem_comp, 
-                    Some(&graphics), 
-                    &mut state, 
+                    &hdc_mem_comp,
+                    Some(&graphics),
+                    &mut state,
                     &mut cache,
                     cx,
                     cy,
                 )?;
             }
 
-
             let hdc_mem_dst = win32::gdi::create_compatible_dc(Some(&hdc_screen))?;
             let hbm_crop = win32::gdi::create_compatible_bitmap(&hdc_screen, width, height)?;
-            let prev_dst = win32::gdi::select_object(&hdc_mem_dst, windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_crop.0.0))?;
+            let prev_dst = win32::gdi::select_object(
+                &hdc_mem_dst,
+                windows::Win32::Graphics::Gdi::HGDIOBJ(hbm_crop.0 .0),
+            )?;
 
             let src_x = sel.left - state.capture_x;
             let src_y = sel.top - state.capture_y;
-            win32::gdi::bit_blt(&hdc_mem_dst, 0, 0, width, height, &hdc_mem_comp, src_x, src_y, windows::Win32::Graphics::Gdi::SRCCOPY)?;
-            
+            win32::gdi::bit_blt(
+                &hdc_mem_dst,
+                0,
+                0,
+                width,
+                height,
+                &hdc_mem_comp,
+                src_x,
+                src_y,
+                windows::Win32::Graphics::Gdi::SRCCOPY,
+            )?;
+
             win32::gdi::select_object(&hdc_mem_comp, prev_comp)?;
             win32::gdi::select_object(&hdc_mem_dst, prev_dst)?;
-            
+
             hbm_crop
         } else {
             anyhow::bail!("No source bitmap available");
         }
     };
 
-    Ok(RenderedSnapshot { hbitmap: hbm_crop, width, height })
+    Ok(RenderedSnapshot {
+        hbitmap: hbm_crop,
+        width,
+        height,
+    })
 }
 
 pub fn update_snapshot_size_config(state_arc: &Arc<RwLock<OverlayState>>, app: &AppHandle) {
@@ -204,7 +247,9 @@ pub fn update_snapshot_size_config(state_arc: &Arc<RwLock<OverlayState>>, app: &
 
     if is_snapshot {
         if let Some(workflow) = &active_wf {
-            if let crate::service::config::types::CaptureAction::Snapshot { allow_resize, .. } = workflow.action {
+            if let crate::service::config::types::CaptureAction::Snapshot { allow_resize, .. } =
+                workflow.action
+            {
                 if allow_resize {
                     let sw = sel.right - sel.left;
                     let sh = sel.bottom - sel.top;
@@ -236,7 +281,7 @@ pub fn update_snapshot_size_config(state_arc: &Arc<RwLock<OverlayState>>, app: &
 
                             if changed {
                                 c_state.save();
-                                
+
                                 // 3. CRITICAL: Refresh hotkey map in AppState
                                 // The hotkey listener uses a cached map in AppState. If we don't refresh it,
                                 // the next Alt+S will still use the old workflow/config data.

@@ -1,7 +1,7 @@
+use super::constants::*;
 use vello::kurbo::{Affine, Rect, RoundedRect, Stroke};
 use vello::peniko::Color;
 use vello::Scene;
-use super::constants::*;
 
 pub fn draw_color_palette(
     scene: &mut Scene,

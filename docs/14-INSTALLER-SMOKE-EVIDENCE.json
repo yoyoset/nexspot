@@ -1,0 +1,53 @@
+{
+  "schema": "nexspot.installer-smoke-evidence.v1",
+  "generatedAt": "2026-07-10T05:17:57.810Z",
+  "installer": {
+    "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+    "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+  },
+  "installDir": "C:\\tmp\\nexspot-installer-smoke",
+  "executed": true,
+  "passed": true,
+  "result": {
+    "ok": true,
+    "installDir": "C:\\tmp\\nexspot-installer-smoke",
+    "cleanupBefore": false,
+    "freshInstall": {
+      "stage": "fresh-install",
+      "pid": 26752,
+      "exitCode": 0
+    },
+    "overwriteInstall": {
+      "stage": "overwrite-install",
+      "pid": 18876,
+      "exitCode": 0
+    },
+    "installedExe": "C:\\tmp\\nexspot-installer-smoke\\NexSpot.exe",
+    "freshInstalledExeSha256": "b4a3fa14723f84c9e81ebc9f99ec0454c86940125d1a11ec3ca66faf726f68e9",
+    "installedExeSha256": "b4a3fa14723f84c9e81ebc9f99ec0454c86940125d1a11ec3ca66faf726f68e9",
+    "installedExeBytes": 35648000,
+    "installedExeVersionInfo": {
+      "fileVersion": "0.3.0",
+      "productVersion": "0.3.0",
+      "productName": "NexSpot",
+      "fileDescription": "NexSpot",
+      "originalFilename": ""
+    },
+    "launch": {
+      "ok": true,
+      "pid": 43148,
+      "aliveAfterDuration": true,
+      "mainWindowSeen": true,
+      "mainWindowHandle": 722076,
+      "mainWindowTitle": "NexSpot",
+      "exitCode": null
+    },
+    "uninstall": {
+      "stage": "uninstall",
+      "pid": 38552,
+      "exitCode": 0
+    },
+    "finalAppExeRemoved": true,
+    "installDirRemoved": true
+  }
+}

@@ -34,7 +34,7 @@ impl LoggerState {
 
     pub fn init(&self) -> anyhow::Result<()> {
         let file = File::create(&self.log_path)?;
-        
+
         // Use system local time for logs instead of UTC
         let mut config_builder = simplelog::ConfigBuilder::new();
         let _ = config_builder.set_time_offset_to_local();

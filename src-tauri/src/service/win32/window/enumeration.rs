@@ -1,7 +1,9 @@
 use windows::core::BOOL;
 use windows::Win32::Foundation::{HWND, LPARAM, RECT};
-use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, IsIconic, IsWindowVisible, GetWindowRect};
 use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
+use windows::Win32::UI::WindowsAndMessaging::{
+    EnumWindows, GetWindowRect, IsIconic, IsWindowVisible,
+};
 
 unsafe extern "system" fn enum_windows_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
     if IsWindowVisible(hwnd).as_bool() && !IsIconic(hwnd).as_bool() {

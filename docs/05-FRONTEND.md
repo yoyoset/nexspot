@@ -1,6 +1,6 @@
 # 05 · 前端
 
-> React 18 + TypeScript + Vite + Tailwind v4 + Zustand + framer-motion + i18next。
+> React 19 + TypeScript + Vite + Tailwind v4 + Zustand + framer-motion + i18next。
 > 重设计页面时这是主要改造对象，配合 [08-AUDIT](08-AUDIT.md) 的字段漂移清单一起看。
 
 ## 窗口与路由

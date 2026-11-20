@@ -31,9 +31,15 @@ impl VelloContext {
 
     pub fn cleanup_surface(&self, hwnd: windows::Win32::Foundation::HWND) {
         let mut surfaces = self.surfaces.lock().unwrap_or_else(|e| e.into_inner());
-        let mut configs = self.surface_configs.lock().unwrap_or_else(|e| e.into_inner());
+        let mut configs = self
+            .surface_configs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let mut caps = self.surface_caps.lock().unwrap_or_else(|e| e.into_inner());
-        let mut proxies = self.proxy_textures.lock().unwrap_or_else(|e| e.into_inner());
+        let mut proxies = self
+            .proxy_textures
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
 
         let key = hwnd.0 as isize;
         surfaces.remove(&key);
@@ -49,7 +55,10 @@ impl VelloContext {
 
     pub fn present_clear_frame(&self) {
         let surfaces = self.surfaces.lock().unwrap_or_else(|e| e.into_inner());
-        let configs = self.surface_configs.lock().unwrap_or_else(|e| e.into_inner());
+        let configs = self
+            .surface_configs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
 
         for (key, surface) in surfaces.iter() {
             if configs.get(key).is_none() {

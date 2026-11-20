@@ -4,6 +4,7 @@ pub mod events;
 pub mod layout;
 pub mod property_bar;
 pub mod render;
+pub mod style;
 pub mod tooltip;
 pub mod types;
 pub mod widgets;
@@ -15,7 +16,7 @@ use windows::Win32::Foundation::RECT;
 
 pub struct Toolbar {
     pub main_buttons: Vec<ToolbarButton>,
-    pub rect: RECT,    // Main toolbar rect
+    pub rect: RECT, // Main toolbar rect
     pub current_tool: Option<ToolType>,
     pub visible: bool,
     pub margin: i32,
@@ -77,7 +78,6 @@ impl Toolbar {
             current_glow,
             builder::Orientation::Horizontal,
         )?;
-
 
         Ok(())
     }
@@ -168,22 +168,33 @@ impl Toolbar {
         if !self.visible {
             return false;
         }
-        
+
         // Check Main Toolbar
-        if x >= self.rect.left && x < self.rect.right && y >= self.rect.top && y < self.rect.bottom {
+        if x >= self.rect.left && x < self.rect.right && y >= self.rect.top && y < self.rect.bottom
+        {
             return true;
         }
 
-
         // Check Property Bar
-        if self.property_bar_visible && x >= self.property_bar_rect.left && x < self.property_bar_rect.right && y >= self.property_bar_rect.top && y < self.property_bar_rect.bottom {
+        if self.property_bar_visible
+            && x >= self.property_bar_rect.left
+            && x < self.property_bar_rect.right
+            && y >= self.property_bar_rect.top
+            && y < self.property_bar_rect.bottom
+        {
             return true;
         }
 
         false
     }
 
-    pub fn handle_property_down(&mut self, x: i32, y: i32, enable_advanced_effects: bool, engine: crate::service::native_overlay::state::CaptureEngine) -> bool {
+    pub fn handle_property_down(
+        &mut self,
+        x: i32,
+        y: i32,
+        enable_advanced_effects: bool,
+        engine: crate::service::native_overlay::state::CaptureEngine,
+    ) -> bool {
         let hit = events::hit_test_property_bar(
             self.property_bar_visible,
             &self.property_bar_rect,
@@ -237,9 +248,9 @@ impl Toolbar {
             rect: RECT::default(),
             current_tool: None,
             visible: false,
-            margin: 4,
-            button_size: 44,
-            spacing: 2,
+            margin: style::TOOLBAR_MARGIN,
+            button_size: style::BUTTON_SIZE,
+            spacing: style::BUTTON_SPACING,
             property_bar_visible: false,
             property_bar_rect: RECT::default(),
             is_loading: false,
@@ -263,9 +274,9 @@ impl Toolbar {
             rect,
             current_tool: None,
             visible: true,
-            margin: 4,
-            button_size: 44,
-            spacing: 2,
+            margin: style::TOOLBAR_MARGIN,
+            button_size: style::BUTTON_SIZE,
+            spacing: style::BUTTON_SPACING,
             property_bar_visible: false,
             property_bar_rect: RECT::default(),
             is_loading: false,

@@ -1,5 +1,5 @@
-pub mod text;
 pub mod styles;
+pub mod text;
 
 use crate::service::native_overlay::state::DrawingObject;
 use vello::peniko::Color;

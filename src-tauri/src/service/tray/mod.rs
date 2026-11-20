@@ -86,10 +86,8 @@ pub fn setup_tray<R: Runtime>(app: &App<R>) -> Result<(), tauri::Error> {
                                 format: "png".to_string(),
                             },
                         };
-                        crate::service::workflow::execute_capture_workflow(
-                            app_handle, workflow,
-                        )
-                        .await;
+                        crate::service::workflow::execute_capture_workflow(app_handle, workflow)
+                            .await;
                     });
                 }
                 _ => {}

@@ -11,7 +11,10 @@ pub fn capture_gdi(
     union_rect: &RECT,
     cursor: &POINT,
 ) -> anyhow::Result<(i32, i32, i32, i32)> {
-    log::info!("Starting GDI Mode (Virtual Screen Capture - Mixed DPI: {})", has_mixed_dpi);
+    log::info!(
+        "Starting GDI Mode (Virtual Screen Capture - Mixed DPI: {})",
+        has_mixed_dpi
+    );
 
     // [PROTOCOL RESTORED] §3.1: Full Virtual Desktop Scope
     let (x, y, width, height) = (
@@ -34,7 +37,10 @@ pub fn capture_gdi(
 
     // 2. Perform Capture (Direct or Stitched)
     // Always use SRCCOPY | CAPTUREBLT to include layered windows
-    const SRCCOPY_CAPTURE: windows::Win32::Graphics::Gdi::ROP_CODE = windows::Win32::Graphics::Gdi::ROP_CODE(windows::Win32::Graphics::Gdi::SRCCOPY.0 | 0x40000000);
+    const SRCCOPY_CAPTURE: windows::Win32::Graphics::Gdi::ROP_CODE =
+        windows::Win32::Graphics::Gdi::ROP_CODE(
+            windows::Win32::Graphics::Gdi::SRCCOPY.0 | 0x40000000,
+        );
 
     if let Err(e) = win32::gdi::bit_blt(
         &hdc_mem,
@@ -171,7 +177,11 @@ pub fn capture_gdi(
         s.selection = None;
         s.is_capturing = false;
         s.vello.background = None;
-        s.restrict_to_monitor = if has_mixed_dpi { Some(*target_monitor_rect) } else { None };
+        s.restrict_to_monitor = if has_mixed_dpi {
+            Some(*target_monitor_rect)
+        } else {
+            None
+        };
     }
 
     Ok((x, y, width, height))

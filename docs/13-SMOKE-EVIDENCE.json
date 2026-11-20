@@ -1,0 +1,20 @@
+{
+  "schema": "nexspot.release-smoke-evidence.v1",
+  "generatedAt": "2026-07-10T05:17:24.536Z",
+  "exe": {
+    "path": "src-tauri/target/release/nexspot.exe",
+    "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+  },
+  "durationMs": 6000,
+  "passed": true,
+  "launch": {
+    "ok": true,
+    "reason": "alive-after-duration",
+    "pid": 44264,
+    "durationMs": 6000,
+    "mainWindowSeen": true,
+    "mainWindowHandle": 398932,
+    "mainWindowTitle": "",
+    "exitCode": null
+  }
+}

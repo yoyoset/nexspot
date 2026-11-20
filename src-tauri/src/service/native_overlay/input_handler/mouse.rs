@@ -1,6 +1,6 @@
+use crate::service::native_overlay::interaction::InteractionHandler;
 use crate::service::native_overlay::render::toolbar;
 use crate::service::native_overlay::state;
-use crate::service::native_overlay::interaction::InteractionHandler;
 use std::sync::{Arc, RwLock};
 
 pub fn handle_mouse_down(
@@ -34,11 +34,11 @@ pub fn handle_mouse_down(
         Ok(s) => s,
         Err(_) => return false,
     };
-    
+
     for obj in &mut state.objects {
         obj.is_editing_text = false;
     }
-    
+
     InteractionHandler::handle_mouse_down(&mut state, toolbar, x, y);
     true
 }
@@ -58,10 +58,7 @@ pub fn handle_mouse_move(
     // Property dragging (Slider)
     let (enable_advanced, engine) = {
         let state = state_arc.read().unwrap();
-        (
-            state.enable_advanced_effects,
-            state.capture_engine,
-        )
+        (state.enable_advanced_effects, state.capture_engine)
     };
     if let Some(change) = toolbar.handle_property_move(x, y, enable_advanced, engine) {
         if let Ok(mut state) = state_arc.write() {
@@ -135,10 +132,16 @@ pub fn handle_mouse_up(
 
     let (enable_advanced, current_is_filled, engine) = {
         let state = state_arc.read().unwrap();
-        (state.enable_advanced_effects, state.current_is_filled, state.capture_engine)
+        (
+            state.enable_advanced_effects,
+            state.current_is_filled,
+            state.capture_engine,
+        )
     };
 
-    if let Some(change) = toolbar.handle_property_click(x, y, enable_advanced, current_is_filled, engine) {
+    if let Some(change) =
+        toolbar.handle_property_click(x, y, enable_advanced, current_is_filled, engine)
+    {
         if let Ok(mut state) = state_arc.write() {
             state.apply_property_change(change);
             return (None, true);
@@ -180,11 +183,7 @@ pub fn handle_mouse_up(
     (None, true)
 }
 
-pub fn handle_double_click(
-    state_arc: &Arc<RwLock<state::OverlayState>>,
-    x: i32,
-    y: i32,
-) -> bool {
+pub fn handle_double_click(state_arc: &Arc<RwLock<state::OverlayState>>, x: i32, y: i32) -> bool {
     let mut state = match state_arc.write() {
         Ok(s) => s,
         Err(_) => return false,

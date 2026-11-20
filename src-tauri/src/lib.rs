@@ -7,7 +7,7 @@ use crate::service::logger::{self, LoggerState};
 use crate::service::native_overlay::OverlayManager;
 use crate::service::pin::PinState;
 pub use app_state::AppState;
-use std::sync::{Mutex, RwLock, Arc};
+use std::sync::{Arc, Mutex, RwLock};
 #[cfg(target_os = "windows")]
 use tauri::{Emitter, Manager};
 
@@ -17,14 +17,14 @@ pub fn run() {
     {
         let default_hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |info| {
-            let msg = format!(
-                "[{:?}] PANIC: {}\n",
-                std::time::SystemTime::now(),
-                info
-            );
+            let msg = format!("[{:?}] PANIC: {}\n", std::time::SystemTime::now(), info);
             let path = std::env::temp_dir().join("nexspot_panic.log");
             use std::io::Write;
-            if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&path)
+            {
                 let _ = f.write_all(msg.as_bytes());
             }
             eprintln!("{}", msg);
@@ -64,23 +64,23 @@ pub fn run() {
         .setup(|app| {
             let logger_state = LoggerState::new(app.handle());
             let mut config_state = ConfigState::new(app.handle());
-            
+
             // Initialize Activity Feed Persistence
-            let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::current_dir().unwrap());
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .unwrap_or_else(|_| std::env::current_dir().unwrap());
             let activity_state = crate::service::activity::ActivityState::new(app_data_dir);
 
             let font_family = config_state.config.font_family.clone();
             let vello_enabled = config_state.config.vello_enabled;
-            let overlay_manager = OverlayManager::new(
-                app.handle().clone(),
-                font_family,
-                vello_enabled,
-            )
-            .expect("Failed to init OverlayManager");
+            let overlay_manager =
+                OverlayManager::new(app.handle().clone(), font_family, vello_enabled)
+                    .expect("Failed to init OverlayManager");
             let hotkey_map = config_state.register_all();
 
             let _ = logger_state.init();
-            log::info!("==== Nexspot Startup (v0.2.1) ====");
+            log::info!("==== NexSpot Startup (v{}) ====", env!("CARGO_PKG_VERSION"));
             log::info!("GPU: RTX 3060 detected? Check Vello status...");
 
             let app_state = AppState {
@@ -97,7 +97,10 @@ pub fn run() {
             // Now set the user data pointer for the Win32 window
             let state = app.state::<AppState>();
             {
-                let mut overlay = state.overlay_manager.lock().unwrap_or_else(|e| e.into_inner());
+                let mut overlay = state
+                    .overlay_manager
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 let ptr = &mut *overlay as *mut OverlayManager;
                 overlay.set_user_data(ptr);
             }
@@ -115,7 +118,10 @@ pub fn run() {
                 {
                     if let Ok(hwnd) = window.hwnd() {
                         let config = app.state::<crate::AppState>();
-                        let config_guard = config.config_state.lock().unwrap_or_else(|e| e.into_inner());
+                        let config_guard = config
+                            .config_state
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner());
                         let theme = config_guard.config.theme.clone();
 
                         let is_dark = if theme == "system" {
@@ -189,9 +195,11 @@ pub fn run() {
             crate::service::paddle_ocr::check_paddle_update,
             crate::service::paddle_ocr::download_paddle_component,
             crate::service::ocr::get_last_ocr_result,
+            crate::service::ocr::save_ocr_text_to,
             crate::service::native_overlay::scrolling::start_scrolling,
             crate::service::native_overlay::scrolling::stop_scrolling,
             crate::service::native_overlay::scrolling::get_last_scrolled_image,
+            crate::service::native_overlay::scrolling::get_last_scrolling_result,
             crate::service::native_overlay::scrolling::save_scrolled_image_to,
             crate::service::native_overlay::scrolling::copy_image_to_clipboard,
             commands::get_config,

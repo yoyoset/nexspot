@@ -42,8 +42,12 @@ pub fn update_toolbar_layout(
     let mut y = selection.bottom + 10;
 
     // Clamp X to window
-    if x < window_x { x = window_x; }
-    if x + total_width > window_x + window_width { x = window_x + window_width - total_width; }
+    if x < window_x {
+        x = window_x;
+    }
+    if x + total_width > window_x + window_width {
+        x = window_x + window_width - total_width;
+    }
 
     // Check Vertical constraints
     if y + total_height > window_y + window_height {
@@ -70,38 +74,63 @@ pub fn update_toolbar_layout(
             bottom: start_y + button_size,
         };
         cur_x += button_size + spacing;
-        if btn.has_divider { cur_x += spacing; }
+        if btn.has_divider {
+            cur_x += spacing;
+        }
     }
-
 
     // --- 3. Property Bar Positioning ---
     if let Some(tool) = current_tool {
         *property_bar_visible = true;
         let tool_enum = tool_type_to_drawing_tool(tool);
-        
-        let (item_step, color_step, pb_hpadding, group_gap, slider_width, pb_h) = if _engine == crate::service::native_overlay::state::CaptureEngine::Gdi {
+
+        let (item_step, color_step, pb_hpadding, group_gap, slider_width, pb_h) = if _engine
+            == crate::service::native_overlay::state::CaptureEngine::Gdi
+        {
             use super::constants::gdi::*;
-            (ITEM_STEP as i32, COLOR_ITEM_STEP as i32, PB_HPADDING as i32, GROUP_GAP as i32, 80 /* SLIDER_WIDTH */, PB_HEIGHT)
+            (
+                ITEM_STEP as i32,
+                COLOR_ITEM_STEP as i32,
+                PB_HPADDING as i32,
+                GROUP_GAP as i32,
+                80, /* SLIDER_WIDTH */
+                PB_HEIGHT,
+            )
         } else {
             use crate::service::native_overlay::render::vello_engine::renderer::ui::property_bar::constants::*;
-            ((ITEM_SIZE + ITEM_GAP) as i32, (COLOR_ITEM_SIZE + COLOR_ITEM_GAP) as i32, PB_HPADDING as i32, GROUP_GAP as i32, SLIDER_WIDTH as i32, 40)
+            (
+                (ITEM_SIZE + ITEM_GAP) as i32,
+                (COLOR_ITEM_SIZE + COLOR_ITEM_GAP) as i32,
+                PB_HPADDING as i32,
+                GROUP_GAP as i32,
+                SLIDER_WIDTH as i32,
+                40,
+            )
         };
 
         let mut pb_w = pb_hpadding * 2;
 
         if tool_enum == crate::service::native_overlay::state::DrawingTool::Text {
             // Tight accumulation: (count-1)*step + width
-            pb_w += (2 * item_step) + 36 /* ITEM_WIDTH */; 
-            if _engine == crate::service::native_overlay::state::CaptureEngine::Gdi { pb_w += 2; } // Compact Divider
+            pb_w += (2 * item_step) + 36 /* ITEM_WIDTH */;
+            if _engine == crate::service::native_overlay::state::CaptureEngine::Gdi {
+                pb_w += 2;
+            } // Compact Divider
         } else if tool_enum != crate::service::native_overlay::state::DrawingTool::None {
             let mut count = 3;
-            if matches!(tool_enum, crate::service::native_overlay::state::DrawingTool::Rect | crate::service::native_overlay::state::DrawingTool::Ellipse) {
+            if matches!(
+                tool_enum,
+                crate::service::native_overlay::state::DrawingTool::Rect
+                    | crate::service::native_overlay::state::DrawingTool::Ellipse
+            ) {
                 count = 4;
             }
             pb_w += (count - 1) * item_step + 36 /* ITEM_WIDTH */;
-            
+
             if tool_enum != crate::service::native_overlay::state::DrawingTool::Mosaic {
-                 if _engine == crate::service::native_overlay::state::CaptureEngine::Gdi { pb_w += 2; } 
+                if _engine == crate::service::native_overlay::state::CaptureEngine::Gdi {
+                    pb_w += 2;
+                }
             }
         }
 
@@ -113,7 +142,10 @@ pub fn update_toolbar_layout(
             pb_w += (7 * color_step) + 24 /* COLOR_ITEM_SIZE */;
         }
 
-        if enable_advanced_effects && _engine != crate::service::native_overlay::state::CaptureEngine::Gdi && tool_enum != crate::service::native_overlay::state::DrawingTool::Mosaic {
+        if enable_advanced_effects
+            && _engine != crate::service::native_overlay::state::CaptureEngine::Gdi
+            && tool_enum != crate::service::native_overlay::state::DrawingTool::Mosaic
+        {
             pb_w += group_gap + 10 + slider_width + 10 + 8 + slider_width + 10;
         }
 
@@ -121,8 +153,12 @@ pub fn update_toolbar_layout(
         let pb_y = y - pb_h - 14;
 
         // --- Clamp to Window Boundaries ---
-        if pb_x < window_x { pb_x = window_x; }
-        if pb_x + pb_w > window_x + window_width { pb_x = window_x + window_width - pb_w; }
+        if pb_x < window_x {
+            pb_x = window_x;
+        }
+        if pb_x + pb_w > window_x + window_width {
+            pb_x = window_x + window_width - pb_w;
+        }
 
         *property_bar_rect = RECT {
             left: pb_x,

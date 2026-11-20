@@ -1,7 +1,7 @@
 use crate::service::native_overlay::render::toolbar::types::ToolbarButton;
 
-pub mod tools;
 pub mod actions;
+pub mod tools;
 
 pub fn draw_button_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active: bool) {
     use crate::service::native_overlay::render::toolbar::types::ToolType;
@@ -17,7 +17,13 @@ pub fn draw_button_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active
         ToolType::Mosaic | ToolType::Number | ToolType::Ocr | ToolType::Scrolling => {
             tools::draw_tool_icon(scene, btn, is_active);
         }
-        ToolType::Undo | ToolType::Save | ToolType::SaveAs | ToolType::Cancel | ToolType::Pin | ToolType::Copy | ToolType::More => {
+        ToolType::Undo
+        | ToolType::Save
+        | ToolType::SaveAs
+        | ToolType::Cancel
+        | ToolType::Pin
+        | ToolType::Copy
+        | ToolType::More => {
             actions::draw_action_icon(scene, btn, is_active);
         }
     }

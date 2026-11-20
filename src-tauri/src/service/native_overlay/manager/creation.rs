@@ -3,16 +3,12 @@ use crate::service::native_overlay::render::toolbar;
 use crate::service::native_overlay::state::{self, OverlayState};
 use crate::service::win32;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Instant;
 use tauri::{AppHandle, Manager};
 
 impl OverlayManager {
-    pub fn new(
-        app: AppHandle,
-        font_family: String,
-        vello_enabled: bool,
-    ) -> anyhow::Result<Self> {
+    pub fn new(app: AppHandle, font_family: String, vello_enabled: bool) -> anyhow::Result<Self> {
         let state = Arc::new(RwLock::new(OverlayState::default()));
         {
             let mut s = state.write().unwrap_or_else(|e| e.into_inner());
@@ -29,13 +25,13 @@ impl OverlayManager {
         let monitors = win32::monitor::enumerate_monitors()?;
         for monitor in monitors {
             let monitor_id = monitor.hmonitor.to_string();
-            
+
             // 1. Create DEDICATED GDI overlay window for this monitor
             let gdi_hwnd = win32::window::create_overlay_window(
                 &format!("HyperLensOverlayGDI_{}", monitor_id),
-                &format!("HyperLens GDI - {}", monitor.friendly_name)
+                &format!("HyperLens GDI - {}", monitor.friendly_name),
             )?;
-            
+
             // Fix position to monitor top-left immediately
             let _ = win32::window::set_window_pos(
                 &gdi_hwnd,
@@ -43,17 +39,22 @@ impl OverlayManager {
                 monitor.rect.top,
                 monitor.rect.right - monitor.rect.left,
                 monitor.rect.bottom - monitor.rect.top,
-                windows::Win32::UI::WindowsAndMessaging::SWP_HIDEWINDOW | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
+                windows::Win32::UI::WindowsAndMessaging::SWP_HIDEWINDOW
+                    | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
             );
-            
-            log::info!("[Advanced] Created GDI HWND for monitor {}: {:?}", monitor_id, gdi_hwnd.0);
+
+            log::info!(
+                "[Advanced] Created GDI HWND for monitor {}: {:?}",
+                monitor_id,
+                gdi_hwnd.0
+            );
             gdi_hwnds.insert(monitor_id.clone(), win32::SendHWND(gdi_hwnd.0));
 
             // 2. Create DEDICATED Vello overlay window for this monitor
             if vello_enabled {
                 match win32::window::create_overlay_window(
                     &format!("HyperLensOverlayVello_{}", monitor_id),
-                    &format!("HyperLens Vello - {}", monitor.friendly_name)
+                    &format!("HyperLens Vello - {}", monitor.friendly_name),
                 ) {
                     Ok(h) => {
                         // Fix position to monitor top-left immediately
@@ -63,14 +64,23 @@ impl OverlayManager {
                             monitor.rect.top,
                             monitor.rect.right - monitor.rect.left,
                             monitor.rect.bottom - monitor.rect.top,
-                            windows::Win32::UI::WindowsAndMessaging::SWP_HIDEWINDOW | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE
+                            windows::Win32::UI::WindowsAndMessaging::SWP_HIDEWINDOW
+                                | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
                         );
-                        
-                        log::info!("[Advanced] Created Vello HWND for monitor {}: {:?}", monitor_id, h.0);
+
+                        log::info!(
+                            "[Advanced] Created Vello HWND for monitor {}: {:?}",
+                            monitor_id,
+                            h.0
+                        );
                         vello_hwnds.insert(monitor_id, win32::SendHWND(h.0));
                     }
                     Err(e) => {
-                        log::error!("Failed to create Vello HWND for monitor {}: {:?}", monitor_id, e);
+                        log::error!(
+                            "Failed to create Vello HWND for monitor {}: {:?}",
+                            monitor_id,
+                            e
+                        );
                     }
                 }
             }

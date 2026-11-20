@@ -1,0 +1,294 @@
+{
+  "schema": "nexspot.commercial-closure-plan.v1",
+  "generatedAt": "2026-07-10T05:20:40.663Z",
+  "version": "0.3.0",
+  "decisions": {
+    "internalTrialReady": true,
+    "smallCommercialPilotReady": true,
+    "publicStableReady": false
+  },
+  "artifactHashes": {
+    "exe": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+    "nsisInstaller": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+  },
+  "counts": {
+    "pendingRequired": 23,
+    "failedRequired": 0,
+    "openP0": 4,
+    "openP1": 1,
+    "unsignedArtifacts": 2
+  },
+  "nextPhases": [
+    {
+      "phase": "Real-device QA",
+      "exitCriteria": "All required ENV/CAP/OCR/SCR rows are Passed with repository evidence files and no failed required rows.",
+      "commands": [
+        "node scripts\\qa-evidence-pack.mjs --out-dir docs\\qa-runs\\<machine-or-run-label>",
+        "node scripts\\qa-merge-results.mjs --results docs\\qa-runs\\<machine-or-run-label>\\results-template.json",
+        "node scripts\\qa-merge-results.mjs --results docs\\qa-runs\\<machine-or-run-label>\\results-template.json --apply",
+        "npm.cmd run qa:manual:gate"
+      ]
+    },
+    {
+      "phase": "Signing",
+      "exitCriteria": "EXE and NSIS installer are Authenticode signed, signer subject/thumbprint are pinned, and signing readiness is public-stable ready.",
+      "commands": [
+        "node scripts\\signing-readiness.mjs --write-evidence docs\\18-SIGNING-READINESS.json",
+        "npm.cmd run qa:manual:gate:strict"
+      ]
+    },
+    {
+      "phase": "Final release evidence",
+      "exitCriteria": "Release evidence, pilot manifest, and commercial readiness all match current artifact hashes with public stable Go.",
+      "commands": [
+        "npm.cmd run release:evidence",
+        "node scripts\\pilot-distribution-manifest.mjs --write-manifest docs\\19-PILOT-DISTRIBUTION-MANIFEST.json",
+        "node scripts\\commercial-readiness.mjs --strict --write-evidence docs\\20-COMMERCIAL-READINESS.json"
+      ]
+    }
+  ],
+  "openIssues": [
+    {
+      "id": "QA-001",
+      "severity": "P0",
+      "area": "Vello OCR",
+      "status": "Open",
+      "owner": "QA + Engineering",
+      "closeCondition": "Pass Vello OCR on real Windows devices without overlay artifacts, with no-text/error/export states verified.",
+      "relatedMatrixIds": [
+        "OCR-02",
+        "OCR-03",
+        "OCR-04",
+        "OCR-05",
+        "CAP-06"
+      ],
+      "pendingRows": [
+        {
+          "id": "OCR-02",
+          "title": "Vello OCR on plain browser text"
+        },
+        {
+          "id": "OCR-03",
+          "title": "OCR on document text at 150% DPI"
+        },
+        {
+          "id": "OCR-04",
+          "title": "OCR no-text area shows no-text guidance and disables copy/export"
+        },
+        {
+          "id": "OCR-05",
+          "title": "OCR export creates a readable `.txt` file when text exists"
+        },
+        {
+          "id": "CAP-06",
+          "title": "Toolbar icon size, color, hover, active, cancel states in Vello"
+        }
+      ],
+      "evidenceNeeded": [
+        "OCR-02: Vello OCR on plain browser text",
+        "OCR-03: OCR on document text at 150% DPI",
+        "OCR-04: OCR no-text area shows no-text guidance and disables copy/export",
+        "OCR-05: OCR export creates a readable `.txt` file when text exists",
+        "CAP-06: Toolbar icon size, color, hover, active, cancel states in Vello"
+      ]
+    },
+    {
+      "id": "QA-002",
+      "severity": "P0",
+      "area": "Scrolling capture",
+      "status": "Open",
+      "owner": "QA + Engineering",
+      "closeCondition": "Pass Chrome, Edge, Electron container, native list, Esc stop, and image-continuity checks with attached output images.",
+      "relatedMatrixIds": [
+        "SCR-01",
+        "SCR-02",
+        "SCR-03",
+        "SCR-04",
+        "SCR-05",
+        "SCR-06"
+      ],
+      "pendingRows": [
+        {
+          "id": "SCR-01",
+          "title": "Chrome page scrolling capture auto-scrolls and opens preview"
+        },
+        {
+          "id": "SCR-02",
+          "title": "Edge page scrolling capture auto-scrolls and opens preview"
+        },
+        {
+          "id": "SCR-03",
+          "title": "Electron app scrolling container can be captured or fails gracefully"
+        },
+        {
+          "id": "SCR-04",
+          "title": "Native Windows list can be captured or stops gracefully when unsupported"
+        },
+        {
+          "id": "SCR-05",
+          "title": "`Esc` stops active scrolling capture and reports manual-stop reason"
+        },
+        {
+          "id": "SCR-06",
+          "title": "Scrolling result has no large repeated blocks, blank regions, or obvious seams"
+        }
+      ],
+      "evidenceNeeded": [
+        "SCR-01: Chrome page scrolling capture auto-scrolls and opens preview",
+        "SCR-02: Edge page scrolling capture auto-scrolls and opens preview",
+        "SCR-03: Electron app scrolling container can be captured or fails gracefully",
+        "SCR-04: Native Windows list can be captured or stops gracefully when unsupported",
+        "SCR-05: `Esc` stops active scrolling capture and reports manual-stop reason",
+        "SCR-06: Scrolling result has no large repeated blocks, blank regions, or obvious seams"
+      ]
+    },
+    {
+      "id": "QA-003",
+      "severity": "P0",
+      "area": "Multi-display and DPI",
+      "status": "Open",
+      "owner": "QA",
+      "closeCondition": "Pass screenshot, OCR, save, and copy checks at required DPI/display configurations.",
+      "relatedMatrixIds": [
+        "ENV-03",
+        "ENV-05",
+        "ENV-06",
+        "ENV-08",
+        "CAP-01",
+        "CAP-02",
+        "CAP-03",
+        "CAP-04",
+        "OCR-03"
+      ],
+      "pendingRows": [
+        {
+          "id": "ENV-03",
+          "title": "Windows 11, 150% DPI"
+        },
+        {
+          "id": "ENV-05",
+          "title": "Dual display, same DPI"
+        },
+        {
+          "id": "ENV-06",
+          "title": "Dual display, mixed DPI"
+        },
+        {
+          "id": "ENV-08",
+          "title": "Integrated GPU"
+        },
+        {
+          "id": "CAP-01",
+          "title": "GDI selection screenshot, copy to clipboard"
+        },
+        {
+          "id": "CAP-02",
+          "title": "GDI selection screenshot, save to file"
+        },
+        {
+          "id": "CAP-03",
+          "title": "Vello selection screenshot, copy to clipboard"
+        },
+        {
+          "id": "CAP-04",
+          "title": "Vello selection screenshot, save to file"
+        },
+        {
+          "id": "OCR-03",
+          "title": "OCR on document text at 150% DPI"
+        }
+      ],
+      "evidenceNeeded": [
+        "ENV-03: Windows 11, 150% DPI",
+        "ENV-05: Dual display, same DPI",
+        "ENV-06: Dual display, mixed DPI",
+        "ENV-08: Integrated GPU",
+        "CAP-01: GDI selection screenshot, copy to clipboard",
+        "CAP-02: GDI selection screenshot, save to file",
+        "CAP-03: Vello selection screenshot, copy to clipboard",
+        "CAP-04: Vello selection screenshot, save to file",
+        "OCR-03: OCR on document text at 150% DPI"
+      ]
+    },
+    {
+      "id": "QA-004",
+      "severity": "P0",
+      "area": "Distribution trust",
+      "status": "Open",
+      "owner": "Release",
+      "closeCondition": "`docs/18-SIGNING-READINESS.json` reports public-stable ready with valid signatures, approved signer identity, and matching current artifact hashes.",
+      "relatedMatrixIds": [
+        "REL-06"
+      ],
+      "pendingRows": [],
+      "evidenceNeeded": [
+        "REL-06: Unsigned installer warning is documented and acceptable for pilot scope"
+      ]
+    },
+    {
+      "id": "QA-005",
+      "severity": "P1",
+      "area": "Capture toolbar consistency",
+      "status": "Open",
+      "owner": "QA + Design",
+      "closeCondition": "Confirm GDI and Vello toolbar icon size, active, hover, cancel, and color states are visually consistent.",
+      "relatedMatrixIds": [
+        "CAP-05",
+        "CAP-06"
+      ],
+      "pendingRows": [
+        {
+          "id": "CAP-05",
+          "title": "Toolbar icon size, color, hover, active, cancel states in GDI"
+        },
+        {
+          "id": "CAP-06",
+          "title": "Toolbar icon size, color, hover, active, cancel states in Vello"
+        }
+      ],
+      "evidenceNeeded": [
+        "CAP-05: Toolbar icon size, color, hover, active, cancel states in GDI",
+        "CAP-06: Toolbar icon size, color, hover, active, cancel states in Vello"
+      ]
+    }
+  ],
+  "signingBlockers": [
+    "Release EXE Authenticode status is NotSigned.",
+    "NSIS installer Authenticode status is NotSigned.",
+    "NEXSPOT_SIGNING_SUBJECT is not set; signer identity is not pinned for public-stable verification.",
+    "NEXSPOT_SIGNING_THUMBPRINT is not set; certificate thumbprint is not pinned for public-stable verification."
+  ],
+  "publicStableBlockers": [
+    "manual matrix pending: ENV-01",
+    "manual matrix pending: ENV-02",
+    "manual matrix pending: ENV-03",
+    "manual matrix pending: ENV-05",
+    "manual matrix pending: ENV-06",
+    "manual matrix pending: ENV-08",
+    "manual matrix pending: CAP-01",
+    "manual matrix pending: CAP-02",
+    "manual matrix pending: CAP-03",
+    "manual matrix pending: CAP-04",
+    "manual matrix pending: CAP-05",
+    "manual matrix pending: CAP-06",
+    "manual matrix pending: OCR-01",
+    "manual matrix pending: OCR-02",
+    "manual matrix pending: OCR-03",
+    "manual matrix pending: OCR-04",
+    "manual matrix pending: OCR-05",
+    "manual matrix pending: SCR-01",
+    "manual matrix pending: SCR-02",
+    "manual matrix pending: SCR-03",
+    "manual matrix pending: SCR-04",
+    "manual matrix pending: SCR-05",
+    "manual matrix pending: SCR-06",
+    "open P0 blocker: QA-001",
+    "open P0 blocker: QA-002",
+    "open P0 blocker: QA-003",
+    "open P0 blocker: QA-004",
+    "open P1 polish blocker: QA-005",
+    "artifact not signed: exe (NotSigned)",
+    "artifact not signed: nsisInstaller (NotSigned)",
+    "signing readiness: signing readiness is not public-stable ready"
+  ]
+}

@@ -1,8 +1,6 @@
 import { AnimatePresence } from "framer-motion";
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import SettingsPanel from "./components/Settings/SettingsPanel";
-import Dashboard from "./components/Dashboard/Dashboard";
 import StartupErrorToast from "./components/Overlay/StartupErrorToast";
 import GlobalHUD from "./components/Overlay/GlobalHUD";
 import { TauriEventListener } from "./components/Overlay/TauriEventListener";
@@ -10,16 +8,23 @@ import TitleBar from "./components/Navigation/TitleBar";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
-import PinCollectionWindow from "./components/Pin/PinCollectionWindow";
 import Navigator from "./components/Navigation/Navigator";
 import { AppTab } from "./types/navigation";
-import ActivityHub from "./components/Dashboard/ActivityHub";
-import WorkflowModal from "./components/Workflows/WorkflowModal";
 import EngineErrorModal from "./components/Overlay/EngineErrorModal";
-import ScrollingPreview from "./components/Overlay/ScrollingPreview";
-import OCRResultWindow from "./components/Overlay/OCRResultWindow";
 import { Workflow } from "./store/useAppStore";
 import { useConfig } from "./hooks/useConfig";
+
+const ActivityHub = React.lazy(() => import("./components/Dashboard/ActivityHub"));
+const Dashboard = React.lazy(() => import("./components/Dashboard/Dashboard"));
+const OCRResultWindow = React.lazy(() => import("./components/Overlay/OCRResultWindow"));
+const PinCollectionWindow = React.lazy(() => import("./components/Pin/PinCollectionWindow"));
+const ScrollingPreview = React.lazy(() => import("./components/Overlay/ScrollingPreview"));
+const SettingsPanel = React.lazy(() => import("./components/Settings/SettingsPanel"));
+const WorkflowModal = React.lazy(() => import("./components/Workflows/WorkflowModal"));
+
+function LazyBoundary({ children }: { children: React.ReactNode }) {
+    return <Suspense fallback={null}>{children}</Suspense>;
+}
 
 function App() {
     const {
@@ -124,7 +129,9 @@ function App() {
     if (isPinCollection) {
         return (
             <main className="w-full h-full relative overflow-hidden bg-transparent">
-                <PinCollectionWindow />
+                <LazyBoundary>
+                    <PinCollectionWindow />
+                </LazyBoundary>
                 <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
             </main>
         );
@@ -133,7 +140,9 @@ function App() {
     if (isScrollingPreview) {
         return (
             <main className="w-full h-full relative overflow-hidden bg-transparent">
-                <ScrollingPreview />
+                <LazyBoundary>
+                    <ScrollingPreview />
+                </LazyBoundary>
                 <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
             </main>
         );
@@ -142,7 +151,9 @@ function App() {
     if (isOcrResult) {
         return (
             <main className="w-full h-full relative overflow-hidden bg-transparent">
-                <OCRResultWindow />
+                <LazyBoundary>
+                    <OCRResultWindow />
+                </LazyBoundary>
                 <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
             </main>
         );
@@ -163,21 +174,23 @@ function App() {
             />
 
             <div className="flex-1 h-full relative overflow-hidden pointer-events-auto">
-                {activeTab === 'dashboard' && (
-                    <div className="absolute inset-0">
-                        <Dashboard onNavigateToWorkflows={handleEditWorkflow} />
-                    </div>
-                )}
-                {activeTab === 'activity' && (
-                    <div className="absolute inset-0">
-                        <ActivityHub />
-                    </div>
-                )}
-                {activeTab === 'settings' && (
-                    <div className="absolute inset-0">
-                        <SettingsPanel />
-                    </div>
-                )}
+                <LazyBoundary>
+                    {activeTab === 'dashboard' && (
+                        <div className="absolute inset-0">
+                            <Dashboard onNavigateToWorkflows={handleEditWorkflow} />
+                        </div>
+                    )}
+                    {activeTab === 'activity' && (
+                        <div className="absolute inset-0">
+                            <ActivityHub />
+                        </div>
+                    )}
+                    {activeTab === 'settings' && (
+                        <div className="absolute inset-0">
+                            <SettingsPanel />
+                        </div>
+                    )}
+                </LazyBoundary>
             </div>
             </div>
 
@@ -196,27 +209,31 @@ function App() {
             <GlobalHUD message={hud.message} type={hud.type} isVisible={hud.visible} />
 
             {/* Global Workflow/Preset Modal */}
-            <WorkflowModal
-                isOpen={workflowEditing.isOpen}
-                onClose={() => setWorkflowEditing(false)}
-                workflow={workflowEditing.workflow}
-                onSave={async (w) => {
-                    const latestConfig = useAppStore.getState().config;
-                    const currentWorkflows = latestConfig?.workflows || [];
-                    const exists = currentWorkflows.some(ex => ex.id === w.id);
+            {workflowEditing.isOpen && (
+                <LazyBoundary>
+                    <WorkflowModal
+                        isOpen={workflowEditing.isOpen}
+                        onClose={() => setWorkflowEditing(false)}
+                        workflow={workflowEditing.workflow}
+                        onSave={async (w) => {
+                            const latestConfig = useAppStore.getState().config;
+                            const currentWorkflows = latestConfig?.workflows || [];
+                            const exists = currentWorkflows.some(ex => ex.id === w.id);
 
-                    if (exists) {
-                        await updateWorkflow(w.id, w);
-                    } else {
-                        await addWorkflow(w);
-                    }
-                    useAppStore.getState().showHUD(t('hud.saved'), 'success');
-                }}
-                onDelete={async (id) => {
-                    await removeWorkflow(id);
-                }}
-                save_path={config?.save_path}
-            />
+                            if (exists) {
+                                await updateWorkflow(w.id, w);
+                            } else {
+                                await addWorkflow(w);
+                            }
+                            useAppStore.getState().showHUD(t('hud.saved'), 'success');
+                        }}
+                        onDelete={async (id) => {
+                            await removeWorkflow(id);
+                        }}
+                        save_path={config?.save_path}
+                    />
+                </LazyBoundary>
+            )}
         </main>
     );
 }

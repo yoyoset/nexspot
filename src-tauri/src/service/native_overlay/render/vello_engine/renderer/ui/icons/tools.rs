@@ -1,13 +1,26 @@
+use crate::service::native_overlay::render::toolbar::style;
 use crate::service::native_overlay::render::toolbar::types::{ToolType, ToolbarButton};
 use vello::kurbo::{Affine, BezPath, Cap, Circle, Join, Line, Rect, RoundedRect, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 
 /// lucide 风格描边：1.5px + 圆端帽/圆转角（设计基准 docs/design §C）
 fn lucide_stroke() -> Stroke {
-    Stroke::new(1.5).with_caps(Cap::Round).with_join(Join::Round)
+    Stroke::new(style::ICON_STROKE_VELLO)
+        .with_caps(Cap::Round)
+        .with_join(Join::Round)
 }
 
-pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active: bool) {
+fn icon_brush(tool: &ToolType, is_active: bool) -> Brush {
+    if is_active {
+        Brush::Solid(Color::WHITE)
+    } else if *tool == ToolType::Cancel {
+        Brush::Solid(style::rgba_to_vello(style::COLOR_BAD))
+    } else {
+        Brush::Solid(style::rgba_to_vello(style::COLOR_ICON_MUTED))
+    }
+}
+
+pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, is_active: bool) {
     let rect = Rect::new(
         btn.rect.left as f64,
         btn.rect.top as f64,
@@ -16,10 +29,10 @@ pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active:
     );
     let cx = rect.center().x;
     let cy = rect.center().y;
-    let sc = 1.3;
+    let sc = style::ICON_SCALE_VELLO;
 
     // 选中态按钮底为 accent 填充，图标恒为白（on-accent）
-    let brush = Brush::Solid(Color::WHITE);
+    let brush = icon_brush(&btn.tool, is_active);
     let stroke = lucide_stroke();
     let xf = Affine::translate((cx, cy)) * Affine::scale(sc);
 
@@ -92,7 +105,13 @@ pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active:
             lines.line_to((6.0, -2.0));
             lines.move_to((-6.0, 2.0));
             lines.line_to((6.0, 2.0));
-            scene.stroke(&Stroke::new(1.2).with_caps(Cap::Round), xf, &brush, None, &lines);
+            scene.stroke(
+                &Stroke::new(style::ICON_DETAIL_STROKE_VELLO - 0.1).with_caps(Cap::Round),
+                xf,
+                &brush,
+                None,
+                &lines,
+            );
         }
         // hash（#）
         ToolType::Number => {
@@ -128,7 +147,13 @@ pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active:
             lines.line_to((3.0, -1.8));
             lines.move_to((-3.0, 1.8));
             lines.line_to((1.5, 1.8));
-            scene.stroke(&Stroke::new(1.3).with_caps(Cap::Round), xf, &brush, None, &lines);
+            scene.stroke(
+                &Stroke::new(style::ICON_DETAIL_STROKE_VELLO).with_caps(Cap::Round),
+                xf,
+                &brush,
+                None,
+                &lines,
+            );
         }
         // 滚动长截图（顶部面板 + 向下箭头）
         ToolType::Scrolling => {
@@ -144,7 +169,13 @@ pub fn draw_tool_icon(scene: &mut vello::Scene, btn: &ToolbarButton, _is_active:
         }
         _ => {
             // 兜底：小圆点占位（不应到达）
-            scene.fill(Fill::NonZero, xf, &brush, None, &Circle::new((0.0, 0.0), 2.0));
+            scene.fill(
+                Fill::NonZero,
+                xf,
+                &brush,
+                None,
+                &Circle::new((0.0, 0.0), 2.0),
+            );
         }
     }
 }

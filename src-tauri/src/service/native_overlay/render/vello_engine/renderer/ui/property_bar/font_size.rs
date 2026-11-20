@@ -1,7 +1,7 @@
+use super::constants::*;
 use vello::kurbo::{Affine, Circle, Point, Rect, RoundedRect};
 use vello::peniko::Color;
 use vello::Scene;
-use super::constants::*;
 
 pub fn draw_font_size_selectors(
     scene: &mut Scene,

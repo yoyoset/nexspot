@@ -1,4 +1,4 @@
-use crate::service::native_overlay::snapping::{update_snap_lines, snap_coordinate};
+use crate::service::native_overlay::snapping::{snap_coordinate, update_snap_lines};
 use crate::service::native_overlay::state::{self, OverlayState};
 
 pub fn handle_mouse_down(

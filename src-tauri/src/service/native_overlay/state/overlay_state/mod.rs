@@ -1,7 +1,5 @@
 use super::drawing_object::DrawingObject;
-use super::types::{
-    CaptureEngine, CaptureMode, DrawingTool, HitZone, InteractionMode,
-};
+use super::types::{CaptureEngine, CaptureMode, DrawingTool, HitZone, InteractionMode};
 use windows::Win32::Foundation::RECT;
 
 mod data;
@@ -50,11 +48,13 @@ pub struct OverlayState {
     pub monitor_id: String,
     pub monitor_rect: RECT,
     pub restrict_to_monitor: Option<RECT>,
-    pub selection_pointer: Option<(i32, i32)>, 
+    pub selection_pointer: Option<(i32, i32)>,
 
     // Scrolling Capture
     pub is_scrolling: bool,
     pub scroll_stitched_path: Option<String>,
+    pub scroll_result_data:
+        Option<crate::service::native_overlay::scrolling::ScrollingCaptureResult>,
 
     // OCR Cache
     pub current_ocr_data: Option<crate::service::ocr::OcrResultData>,
@@ -115,6 +115,7 @@ impl Default for OverlayState {
             vello: VelloData::default(),
             is_scrolling: false,
             scroll_stitched_path: None,
+            scroll_result_data: None,
             current_ocr_data: None,
             monitors: Vec::new(),
             snapping_dirty: true,

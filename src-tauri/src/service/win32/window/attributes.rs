@@ -1,8 +1,10 @@
-use windows::Win32::Foundation::{HWND, POINT, SIZE, COLORREF};
-use windows::Win32::Graphics::Gdi::{AC_SRC_OVER, BLENDFUNCTION};
-use windows::Win32::UI::WindowsAndMessaging::{WS_EX_LAYERED, ULW_ALPHA, UpdateLayeredWindow, GetWindowLongW, SetWindowLongW, GWL_EXSTYLE};
-use crate::service::win32::gdi::SafeHDC;
 use super::types::SafeHWND;
+use crate::service::win32::gdi::SafeHDC;
+use windows::Win32::Foundation::{COLORREF, HWND, POINT, SIZE};
+use windows::Win32::Graphics::Gdi::{AC_SRC_OVER, BLENDFUNCTION};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetWindowLongW, SetWindowLongW, UpdateLayeredWindow, GWL_EXSTYLE, ULW_ALPHA, WS_EX_LAYERED,
+};
 
 pub fn update_layered_window(
     hwnd: &SafeHWND,

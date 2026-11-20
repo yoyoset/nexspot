@@ -1,0 +1,134 @@
+{
+  "schema": "nexspot.commercial-readiness.v1",
+  "generatedAt": "2026-07-10T05:20:40.564Z",
+  "version": "0.3.0",
+  "artifacts": {
+    "exe": {
+      "path": "src-tauri/target/release/nexspot.exe",
+      "bytes": 35648000,
+      "modifiedAt": "2026-07-10T05:17:04.108Z",
+      "modifiedAtLocal": "2026-07-10 13:17:04 Asia/Taipei",
+      "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+      "authenticode": {
+        "status": "NotSigned",
+        "subject": ""
+      },
+      "versionInfo": {
+        "fileVersion": "0.3.0",
+        "productVersion": "0.3.0",
+        "productName": "NexSpot",
+        "fileDescription": "NexSpot",
+        "originalFilename": ""
+      }
+    },
+    "nsisInstaller": {
+      "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+      "bytes": 9265367,
+      "modifiedAt": "2026-07-10T05:17:03.989Z",
+      "modifiedAtLocal": "2026-07-10 13:17:03 Asia/Taipei",
+      "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc",
+      "authenticode": {
+        "status": "NotSigned",
+        "subject": ""
+      },
+      "versionInfo": {
+        "fileVersion": "0.3.0",
+        "productVersion": "0.3.0",
+        "productName": "NexSpot",
+        "fileDescription": "NexSpot",
+        "originalFilename": ""
+      }
+    }
+  },
+  "decisions": {
+    "internalTrialReady": true,
+    "smallCommercialPilotReady": true,
+    "publicStableReady": false
+  },
+  "release": {
+    "releaseGatesPassed": true,
+    "commercialSourceGatePassed": true,
+    "releaseVerifyPassed": true,
+    "warnings": [
+      "release EXE Authenticode status: NotSigned.",
+      "NSIS installer Authenticode status: NotSigned.",
+      "Manual QA matrix required rows still pending: 23.",
+      "Smoke evidence main window title is not exposed; using main window handle as launch proof.",
+      "Manual gate still required: GUI matrix for Vello OCR, scrolling capture, multi-display/DPI.",
+      "Manual gate still required: code-signing and Windows warning prompt review."
+    ]
+  },
+  "manualQa": {
+    "pendingRequiredCount": 23,
+    "pendingRequired": [
+      "ENV-01",
+      "ENV-02",
+      "ENV-03",
+      "ENV-05",
+      "ENV-06",
+      "ENV-08",
+      "CAP-01",
+      "CAP-02",
+      "CAP-03",
+      "CAP-04",
+      "CAP-05",
+      "CAP-06",
+      "OCR-01",
+      "OCR-02",
+      "OCR-03",
+      "OCR-04",
+      "OCR-05",
+      "SCR-01",
+      "SCR-02",
+      "SCR-03",
+      "SCR-04",
+      "SCR-05",
+      "SCR-06"
+    ],
+    "failedRequired": [],
+    "openP0": [
+      "QA-001",
+      "QA-002",
+      "QA-003",
+      "QA-004"
+    ],
+    "openP1": [
+      "QA-005"
+    ],
+    "qaPackMatchesCurrent": true
+  },
+  "signing": {
+    "unsignedPilotReady": true,
+    "publicStableReady": false,
+    "unsignedArtifacts": [
+      {
+        "name": "exe",
+        "status": "NotSigned",
+        "path": "src-tauri/target/release/nexspot.exe",
+        "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e"
+      },
+      {
+        "name": "nsisInstaller",
+        "status": "NotSigned",
+        "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+        "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc"
+      }
+    ],
+    "blockers": [
+      "Release EXE Authenticode status is NotSigned.",
+      "NSIS installer Authenticode status is NotSigned.",
+      "NEXSPOT_SIGNING_SUBJECT is not set; signer identity is not pinned for public-stable verification.",
+      "NEXSPOT_SIGNING_THUMBPRINT is not set; certificate thumbprint is not pinned for public-stable verification."
+    ]
+  },
+  "pilotDistribution": {
+    "decisions": {
+      "internalTrial": "Go",
+      "smallCommercialPilot": "Go with unsigned notice",
+      "publicStableRelease": "No-Go"
+    },
+    "blockers": [],
+    "materialCount": 11
+  },
+  "missingInputs": []
+}

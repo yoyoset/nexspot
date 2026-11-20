@@ -2,7 +2,7 @@ use crate::service::config::{types::HotkeyAction, ConfigState};
 use crate::service::logger::LoggerState;
 use crate::service::native_overlay::OverlayManager;
 use std::collections::HashMap;
-use std::sync::{Mutex, RwLock, Arc};
+use std::sync::{Arc, Mutex, RwLock};
 
 pub struct AppState {
     pub overlay_manager: Arc<Mutex<OverlayManager>>,

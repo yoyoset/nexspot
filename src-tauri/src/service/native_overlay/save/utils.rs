@@ -8,7 +8,11 @@ pub fn notify_copied(app: &AppHandle) {
         .notification()
         .builder()
         .title(l10n::t(app, "notification.copied_title", "Copied"))
-        .body(l10n::t(app, "notification.copied_body", "Image copied to clipboard"))
+        .body(l10n::t(
+            app,
+            "notification.copied_body",
+            "Image copied to clipboard",
+        ))
         .show();
     use tauri::Emitter;
     let _ = app.emit("screenshot-copied", ());
@@ -29,7 +33,10 @@ pub fn save_pixels_to_file(
     let captures_dir = if let Some(cp) = folder {
         std::path::PathBuf::from(cp)
     } else {
-        let lock = app_state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+        let lock = app_state
+            .config_state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         lock.resolve_save_path(app)
     };
 
@@ -49,7 +56,8 @@ pub fn save_pixels_to_file(
         .config_state
         .lock()
         .unwrap_or_else(|e| e.into_inner())
-        .config.jpg_quality;
+        .config
+        .jpg_quality;
 
     let extension = format.to_lowercase();
     let result = if extension == "jpg" || extension == "jpeg" {
@@ -57,14 +65,27 @@ pub fn save_pixels_to_file(
         for c in pixels.chunks_exact(4) {
             rgb.extend_from_slice(&[c[0], c[1], c[2]]);
         }
-        std::fs::File::create(&file_path).map_err(|e| image::ImageError::IoError(e)).and_then(|file| {
-            let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(file, quality);
-            if let Some(buf) = image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(width, height, rgb) {
-                encoder.encode_image(&buf).map_err(|e| image::ImageError::Encoding(image::error::EncodingError::new(image::error::ImageFormatHint::Exact(image::ImageFormat::Jpeg), e)))
-            } else {
-                 Err(image::ImageError::Parameter(image::error::ParameterError::from_kind(image::error::ParameterErrorKind::DimensionMismatch)))
-            }
-        })
+        std::fs::File::create(&file_path)
+            .map_err(|e| image::ImageError::IoError(e))
+            .and_then(|file| {
+                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(file, quality);
+                if let Some(buf) =
+                    image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(width, height, rgb)
+                {
+                    encoder.encode_image(&buf).map_err(|e| {
+                        image::ImageError::Encoding(image::error::EncodingError::new(
+                            image::error::ImageFormatHint::Exact(image::ImageFormat::Jpeg),
+                            e,
+                        ))
+                    })
+                } else {
+                    Err(image::ImageError::Parameter(
+                        image::error::ParameterError::from_kind(
+                            image::error::ParameterErrorKind::DimensionMismatch,
+                        ),
+                    ))
+                }
+            })
     } else {
         image::save_buffer(&file_path, &pixels, width, height, image::ColorType::Rgba8)
     };
@@ -85,7 +106,11 @@ pub fn save_pixels_to_file(
             .title(l10n::t(app, "backend.notification.saved_title", "Saved"))
             .body(format!(
                 "{}: {}",
-                l10n::t(app, "backend.notification.saved_body", "Image saved locally"),
+                l10n::t(
+                    app,
+                    "backend.notification.saved_body",
+                    "Image saved locally"
+                ),
                 file_path.display()
             ))
             .show();

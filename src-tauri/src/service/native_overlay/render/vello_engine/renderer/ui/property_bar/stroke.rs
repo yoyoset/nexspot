@@ -1,8 +1,8 @@
+use super::constants::*;
 use crate::service::native_overlay::state::DrawingTool;
 use vello::kurbo::{Affine, Circle, Point, Rect, RoundedRect, Stroke};
 use vello::peniko::Color;
 use vello::Scene;
-use super::constants::*;
 
 pub fn draw_stroke_selectors(
     scene: &mut Scene,

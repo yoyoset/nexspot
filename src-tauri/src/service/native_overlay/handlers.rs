@@ -43,13 +43,18 @@ impl OverlayManager {
             let quick_save = {
                 use tauri::Manager;
                 let app_state = self.app.state::<crate::AppState>();
-                let config_guard = app_state.config_state.lock().unwrap_or_else(|e| e.into_inner());
+                let config_guard = app_state
+                    .config_state
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 config_guard.config.quick_save
             };
 
             if quick_save {
-                let _ = crate::service::native_overlay::save::save_selection(&self.state, &self.app);
-                let _ = crate::service::native_overlay::save::copy_to_clipboard(&self.state, &self.app);
+                let _ =
+                    crate::service::native_overlay::save::save_selection(&self.state, &self.app);
+                let _ =
+                    crate::service::native_overlay::save::copy_to_clipboard(&self.state, &self.app);
                 self.close_and_reset();
             } else {
                 let _ = self.save_clipboard();

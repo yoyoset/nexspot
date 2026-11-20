@@ -1,0 +1,60 @@
+{
+  "schema": "nexspot.signing-readiness.v1",
+  "generatedAt": "2026-07-10T05:19:59.565Z",
+  "version": "0.3.0",
+  "expectedSubject": null,
+  "expectedThumbprint": null,
+  "decisions": {
+    "unsignedPilotReady": true,
+    "publicStableReady": false
+  },
+  "artifacts": [
+    {
+      "key": "exe",
+      "label": "Release EXE",
+      "path": "src-tauri/target/release/nexspot.exe",
+      "exists": true,
+      "bytes": 35648000,
+      "modifiedAt": "2026-07-10T05:17:04.108Z",
+      "sha256": "86964f7b8466926b032a07c27c13f4faa1e4b752ac72cafdf62a93a98efecf4e",
+      "signature": {
+        "status": "NotSigned",
+        "subject": "",
+        "thumbprint": "",
+        "message": ""
+      },
+      "expectedSubjectMatches": null,
+      "expectedThumbprintMatches": null
+    },
+    {
+      "key": "nsisInstaller",
+      "label": "NSIS installer",
+      "path": "src-tauri/target/release/bundle/nsis/NexSpot_0.3.0_x64-setup.exe",
+      "exists": true,
+      "bytes": 9265367,
+      "modifiedAt": "2026-07-10T05:17:03.989Z",
+      "sha256": "e91da429727c923f028435900642211e3fadcc0c6af304d0e15fc049b18bacfc",
+      "signature": {
+        "status": "NotSigned",
+        "subject": "",
+        "thumbprint": "",
+        "message": ""
+      },
+      "expectedSubjectMatches": null,
+      "expectedThumbprintMatches": null
+    }
+  ],
+  "blockers": [
+    "Release EXE Authenticode status is NotSigned.",
+    "NSIS installer Authenticode status is NotSigned.",
+    "NEXSPOT_SIGNING_SUBJECT is not set; signer identity is not pinned for public-stable verification.",
+    "NEXSPOT_SIGNING_THUMBPRINT is not set; certificate thumbprint is not pinned for public-stable verification."
+  ],
+  "nextActions": [
+    "Acquire or select the production Authenticode code-signing certificate.",
+    "Sign both the release EXE and NSIS installer.",
+    "Set NEXSPOT_SIGNING_SUBJECT and NEXSPOT_SIGNING_THUMBPRINT for public-stable verification.",
+    "Rerun node scripts\\signing-readiness.mjs --write-evidence docs\\18-SIGNING-READINESS.json.",
+    "Rerun npm.cmd run qa:manual:gate and npm.cmd run release:evidence."
+  ]
+}

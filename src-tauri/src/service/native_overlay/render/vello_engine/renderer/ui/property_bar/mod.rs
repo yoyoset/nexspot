@@ -6,8 +6,8 @@ pub mod font_size;
 pub mod stroke;
 
 use crate::service::native_overlay::state::DrawingTool;
-use vello::Scene;
 use constants::*;
+use vello::Scene;
 
 pub fn draw_property_bar(
     scene: &mut Scene,
@@ -25,13 +25,18 @@ pub fn draw_property_bar(
 ) {
     // 1. Create a sub-scene for the content to measure its width
     let mut content_scene = Scene::new();
-    
+
     let mut offset_x = rect.left as f64 + PB_HPADDING;
 
     // 2. Group 1: Base Tool Params (Font Size or Stroke)
     let group1_start = offset_x;
     if tool == DrawingTool::Text {
-        font_size::draw_font_size_selectors(&mut content_scene, &mut offset_x, rect, current_font_size);
+        font_size::draw_font_size_selectors(
+            &mut content_scene,
+            &mut offset_x,
+            rect,
+            current_font_size,
+        );
     } else if tool != DrawingTool::None {
         stroke::draw_stroke_selectors(
             &mut content_scene,
@@ -42,12 +47,16 @@ pub fn draw_property_bar(
             current_is_filled,
         );
     }
-    
+
     let _ = group1_start;
 
     // 3. Group 2: Color Palette（组间仅留间距，不再画内框 — Studio 单一 pill）
     if tool != DrawingTool::Mosaic {
-        let group2_start = if offset_x > group1_start + 1.0 { offset_x + GROUP_GAP } else { offset_x };
+        let group2_start = if offset_x > group1_start + 1.0 {
+            offset_x + GROUP_GAP
+        } else {
+            offset_x
+        };
         offset_x = group2_start;
         colors::draw_color_palette(&mut content_scene, &mut offset_x, rect, current_color);
     }

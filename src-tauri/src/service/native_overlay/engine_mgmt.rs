@@ -13,7 +13,7 @@ impl OverlayManager {
             };
             state.capture_engine == state::CaptureEngine::Wgc
         };
-        
+
         if is_already_wgc {
             return Ok(());
         }
@@ -59,8 +59,8 @@ impl OverlayManager {
             // Provide any available vello hwnd for context probing (primary is best fallback)
             let mut first_vello_hwnd = None;
             for h in self.vello_hwnds.values() {
-               first_vello_hwnd = Some(h.clone());
-               break; 
+                first_vello_hwnd = Some(h.clone());
+                break;
             }
 
             (
@@ -100,7 +100,10 @@ impl OverlayManager {
             }
 
             // Capture initial frame for the SPECIFIC monitor
-            log::info!("[Advanced Mode] Capturing initial WGC frame for monitor {}...", target_id);
+            log::info!(
+                "[Advanced Mode] Capturing initial WGC frame for monitor {}...",
+                target_id
+            );
             let bg_img = match crate::service::win32::wgc::capture::capture_monitor_to_vello(
                 &target_id,
                 &target_friendly,
@@ -163,7 +166,8 @@ impl OverlayManager {
                             let s = mgr.state.read().unwrap_or_else(|e| e.into_inner());
                             (s.monitor_rect.left, s.monitor_rect.top)
                         };
-                        mgr.toolbar.update_layout(selection, mx, my, w, h, enable_advanced, engine);
+                        mgr.toolbar
+                            .update_layout(selection, mx, my, w, h, enable_advanced, engine);
                     } else {
                         mgr.toolbar.hide();
                     }

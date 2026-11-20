@@ -1,12 +1,12 @@
 # Handoff: NexSpot — UI 重设计（方向：Studio / 现代工作室）
 
 ## Overview
-NexSpot 是一款 Windows「微信截图级」即时截图 + 原生标注工具（Tauri v2：Rust/Win32 内核 + React 18 / TS / Tailwind v4 / Zustand 的 Webview）。本包是它**全部界面**在 **Studio（现代工作室）** 设计方向下的高保真重设计：主窗口三页、三个悬浮辅助窗、以及原生标注工具栏的视觉规格。
+NexSpot 是一款 Windows「微信截图级」即时截图 + 原生标注工具（Tauri v2：Rust/Win32 内核 + React 19 / TS / Tailwind v4 / Zustand 的 Webview）。本包是它**全部界面**在 **Studio（现代工作室）** 设计方向下的高保真重设计：主窗口三页、三个悬浮辅助窗、以及原生标注工具栏的视觉规格。
 
 设计方向定位：**Linear / Raycast 一脉的现代克制**——柔和圆角、以阴影与半透明玻璃制造层次（而非发丝线）、单一沉静的强调色。专业但不冷硬，呼应 Vello/Glass 渲染引擎的质感卖点。**本设计不含任何 AI 元素。**
 
 ## About the Design Files
-本包内 `prototype/` 下的文件是用 **HTML + React(CDN) + 原生 CSS 变量** 写成的**设计参考原型**，用来表达预期的外观与交互，**不是用来直接拷进生产环境的代码**。任务是：**在目标代码库的现有环境里（React 18 + TypeScript + Tailwind v4 + Zustand）按这些设计重新实现**，沿用其既有组件与约定。原型里没用 Tailwind（为了在单文件里稳定预览），但所有视觉值都已在 `tokens.css` 里映射成 Tailwind v4 token，可直接落地。图标在原型里用 lucide UMD，生产环境改用 **lucide-react**（图标名一致，kebab→PascalCase，如 `layout-dashboard` → `<LayoutDashboard/>`）。克制的动效可用 framer-motion。
+本包内 `prototype/` 下的文件是用 **HTML + React(CDN) + 原生 CSS 变量** 写成的**设计参考原型**，用来表达预期的外观与交互，**不是用来直接拷进生产环境的代码**。任务是：**在目标代码库的现有环境里（React 19 + TypeScript + Tailwind v4 + Zustand）按这些设计重新实现**，沿用其既有组件与约定。原型里没用 Tailwind（为了在单文件里稳定预览），但所有视觉值都已在 `tokens.css` 里映射成 Tailwind v4 token，可直接落地。图标在原型里用 lucide UMD，生产环境改用 **lucide-react**（图标名一致，kebab→PascalCase，如 `layout-dashboard` → `<LayoutDashboard/>`）。克制的动效可用 framer-motion。
 
 ## Fidelity
 **High-fidelity（hifi）。** 颜色、字号、间距、圆角、阴影、交互态都是最终值，请按 token 像素级还原。唯一的占位是图片内容区（截图缩略图 / 长图 / 源图），原型里用斜纹 placeholder 表示，生产环境填真实位图。

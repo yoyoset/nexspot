@@ -1,7 +1,7 @@
-use windows::Win32::UI::WindowsAndMessaging::*;
-use windows::core::PCWSTR;
 use super::types::SafeHWND;
 use super::wnd_proc::wnd_proc;
+use windows::core::PCWSTR;
+use windows::Win32::UI::WindowsAndMessaging::*;
 
 pub fn create_overlay_window(class_name: &str, title: &str) -> anyhow::Result<SafeHWND> {
     unsafe {
@@ -59,10 +59,11 @@ pub fn hide_window(hwnd: &SafeHWND) {
     }
 }
 
-pub fn show_window(
-    hwnd: &SafeHWND,
-    cmd_show: SHOW_WINDOW_CMD,
-) -> bool {
+pub fn is_window_visible(hwnd: &SafeHWND) -> bool {
+    unsafe { windows::Win32::UI::WindowsAndMessaging::IsWindowVisible(hwnd.0).as_bool() }
+}
+
+pub fn show_window(hwnd: &SafeHWND, cmd_show: SHOW_WINDOW_CMD) -> bool {
     unsafe { windows::Win32::UI::WindowsAndMessaging::ShowWindow(hwnd.0, cmd_show).into() }
 }
 

@@ -25,7 +25,7 @@ impl VelloToolRenderer for MosaicRenderer {
             let y = *gy as f64 * block_size;
 
             let rect = vello::kurbo::Rect::new(x, y, x + block_size, y + block_size);
-            
+
             let color = vello::peniko::Color::from_rgba8(
                 ((color_u32 >> 16) & 0xFF) as u8,
                 ((color_u32 >> 8) & 0xFF) as u8,

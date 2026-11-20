@@ -1,6 +1,6 @@
-use windows::Win32::Graphics::GdiPlus::*;
-use windows::Win32::Graphics::Gdi::*;
 use std::ops::Deref;
+use windows::Win32::Graphics::Gdi::*;
+use windows::Win32::Graphics::GdiPlus::*;
 
 #[derive(Debug)]
 pub struct GraphicsWrapper(pub *mut GpGraphics);
@@ -17,7 +17,7 @@ impl GraphicsWrapper {
         }
         std::result::Result::Ok(Self(graphics))
     }
-    
+
     pub fn get_hdc(&self) -> anyhow::Result<HDC> {
         let mut hdc = HDC::default();
         unsafe {
@@ -36,7 +36,9 @@ impl GraphicsWrapper {
 
     pub fn translate(&self, dx: f32, dy: f32) -> anyhow::Result<()> {
         unsafe {
-            if GdipTranslateWorldTransform(self.0, dx, dy, MatrixOrderPrepend) != windows::Win32::Graphics::GdiPlus::Ok {
+            if GdipTranslateWorldTransform(self.0, dx, dy, MatrixOrderPrepend)
+                != windows::Win32::Graphics::GdiPlus::Ok
+            {
                 return Err(anyhow::anyhow!("GdipTranslateWorldTransform failed"));
             }
         }
@@ -123,7 +125,9 @@ impl SafePenWrapper {
     fn actual_new(color: u32, width: f32) -> anyhow::Result<Self> {
         let mut pen = std::ptr::null_mut();
         unsafe {
-            if GdipCreatePen1(color, width, UnitPixel, &mut pen) != windows::Win32::Graphics::GdiPlus::Ok {
+            if GdipCreatePen1(color, width, UnitPixel, &mut pen)
+                != windows::Win32::Graphics::GdiPlus::Ok
+            {
                 return Err(anyhow::anyhow!("GdipCreatePen1 failed"));
             }
         }
@@ -150,7 +154,8 @@ impl SafeBrushWrapper {
     fn actual_new_solid(color: u32) -> anyhow::Result<Self> {
         let mut solid_brush = std::ptr::null_mut();
         unsafe {
-            if GdipCreateSolidFill(color, &mut solid_brush) != windows::Win32::Graphics::GdiPlus::Ok {
+            if GdipCreateSolidFill(color, &mut solid_brush) != windows::Win32::Graphics::GdiPlus::Ok
+            {
                 return Err(anyhow::anyhow!("GdipCreateSolidFill failed"));
             }
         }
@@ -177,7 +182,9 @@ impl SafeBitmapWrapper {
     fn actual_from_hbitmap(hbitmap: HBITMAP) -> anyhow::Result<Self> {
         let mut bitmap = std::ptr::null_mut();
         unsafe {
-            if GdipCreateBitmapFromHBITMAP(hbitmap, HPALETTE::default(), &mut bitmap) != windows::Win32::Graphics::GdiPlus::Ok {
+            if GdipCreateBitmapFromHBITMAP(hbitmap, HPALETTE::default(), &mut bitmap)
+                != windows::Win32::Graphics::GdiPlus::Ok
+            {
                 return Err(anyhow::anyhow!("GdipCreateBitmapFromHBITMAP failed"));
             }
         }

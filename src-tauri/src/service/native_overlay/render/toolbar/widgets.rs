@@ -29,7 +29,7 @@ pub fn draw_rounded_container(
     )?;
 
     // 2. Add Industrial Inner Highlight (1px top line, 8% white)
-    let highlight_color = 0x14FFFFFF; 
+    let highlight_color = 0x14FFFFFF;
     let highlight_pen = gdi::PenWrapper::new(highlight_color, 1.0)?;
     gdi::draw_line(
         graphics,
@@ -102,7 +102,11 @@ pub fn draw_icon_widget(
     size: f32,
 ) -> anyhow::Result<()> {
     // Designer's Tip: Use Zinc-300 instead of pure white for a softer, more premium look
-    let refined_color = if color == 0xFFFFFFFF { 0xFFD4D4D8 } else { color };
+    let refined_color = if color == 0xFFFFFFFF {
+        0xFFD4D4D8
+    } else {
+        color
+    };
     let brush = gdi::BrushWrapper::new_solid(refined_color)?;
     gdi::draw_text_centered(
         graphics,

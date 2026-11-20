@@ -74,7 +74,7 @@ impl DrawingToolRenderer for MosaicRenderer {
             let color_ref = crate::service::win32::gdi::to_colorref(color_argb);
             // get_brush expects u32 colorref bits usually, let's check if get_brush(color_ref.0) works
             let brush = cache.get_brush(color_ref.0)?;
-            
+
             unsafe {
                 for rect in rects {
                     windows::Win32::Graphics::Gdi::FillRect(hdc, &rect, brush.0);
@@ -86,4 +86,3 @@ impl DrawingToolRenderer for MosaicRenderer {
         Ok(())
     }
 }
-

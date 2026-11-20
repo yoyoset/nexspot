@@ -6,13 +6,15 @@ mod resize_selection;
 mod transform_object;
 
 use crate::service::native_overlay::render::toolbar::Toolbar;
-use crate::service::native_overlay::snapping::{update_snap_lines, snap_coordinate};
+use crate::service::native_overlay::snapping::{snap_coordinate, update_snap_lines};
 use crate::service::native_overlay::state::{InteractionMode, OverlayState};
 
 pub fn handle_mouse_move(state: &mut OverlayState, toolbar: &mut Toolbar, x: i32, y: i32) {
     // 0. Handle Property Drag (Opacity/Glow)
     if toolbar.is_dragging_opacity || toolbar.is_dragging_glow {
-        if let Some(change) = toolbar.handle_property_move(x, y, state.enable_advanced_effects, state.capture_engine) {
+        if let Some(change) =
+            toolbar.handle_property_move(x, y, state.enable_advanced_effects, state.capture_engine)
+        {
             match change {
                 crate::service::native_overlay::state::PropertyChange::Opacity(new_val) => {
                     if (new_val - state.current_opacity).abs() > 0.005 {
@@ -54,7 +56,7 @@ pub fn handle_mouse_move(state: &mut OverlayState, toolbar: &mut Toolbar, x: i32
     if !is_ctrl && state.snapping_dirty {
         update_snap_lines(state);
     }
-    
+
     let threshold = 25;
 
     match state.interaction_mode {

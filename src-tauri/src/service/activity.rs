@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 use std::fs;
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager, Emitter};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActivityEntry {
@@ -21,7 +21,7 @@ pub struct ActivityState {
 impl ActivityState {
     pub fn new(app_dir: PathBuf) -> Self {
         let storage_path = app_dir.join("activity.json");
-        
+
         // Ensure directory exists
         if let Some(parent) = storage_path.parent() {
             let _ = fs::create_dir_all(parent);
@@ -35,7 +35,7 @@ impl ActivityState {
         } else {
             Vec::new()
         };
-        
+
         Self {
             entries: Arc::new(Mutex::new(entries)),
             storage_path,
@@ -45,19 +45,22 @@ impl ActivityState {
     pub fn add_entry(&self, entry: ActivityEntry) {
         let mut entries = self.entries.lock().unwrap_or_else(|e| e.into_inner());
         entries.insert(0, entry);
-        
+
         // Pruning: Max 100 entries for efficiency
         if entries.len() > 100 {
             entries.truncate(100);
         }
-        
+
         if let Err(e) = self.save(&entries) {
             log::error!("Failed to save activity: {:?}", e);
         }
     }
 
     pub fn get_all(&self) -> Vec<ActivityEntry> {
-        self.entries.lock().unwrap_or_else(|e| e.into_inner()).clone()
+        self.entries
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     fn save(&self, entries: &Vec<ActivityEntry>) -> anyhow::Result<()> {
@@ -75,7 +78,12 @@ pub fn get_activity(app_handle: AppHandle) -> Vec<ActivityEntry> {
 }
 
 // Utility to add entry from anywhere
-pub fn log_activity(app_handle: &AppHandle, activity_type: &str, file_path: Option<String>, metadata: Option<String>) {
+pub fn log_activity(
+    app_handle: &AppHandle,
+    activity_type: &str,
+    file_path: Option<String>,
+    metadata: Option<String>,
+) {
     use uuid::Uuid;
     let entry = ActivityEntry {
         id: Uuid::new_v4().to_string(),

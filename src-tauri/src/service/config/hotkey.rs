@@ -1,5 +1,5 @@
-use super::ConfigError;
 use super::types::{AppConfig, HotkeyAction};
+use super::ConfigError;
 use global_hotkey::hotkey::HotKey;
 use global_hotkey::GlobalHotKeyManager;
 use std::collections::HashMap;
@@ -128,7 +128,6 @@ pub fn update_shortcut(
     }
 }
 
-
 pub fn add_workflow(
     manager: &GlobalHotKeyManager,
     config: &mut AppConfig,
@@ -189,7 +188,6 @@ pub fn remove_workflow(
     Ok(true)
 }
 
-
 pub fn register_all(
     manager: &GlobalHotKeyManager,
     config: &AppConfig,
@@ -234,5 +232,37 @@ pub fn unregister_all(manager: &GlobalHotKeyManager, config: &AppConfig) {
         if let Ok(hotkey) = normalize_hotkey(&w.shortcut).parse::<HotKey>() {
             let _ = manager.unregister(hotkey);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_hotkey_maps_frontend_aliases_to_backend_tokens() {
+        assert_eq!(normalize_hotkey("Ctrl + Alt + S"), "control+alt+KeyS");
+        assert_eq!(normalize_hotkey("Win+Shift+1"), "super+shift+Digit1");
+        assert_eq!(normalize_hotkey("esc"), "Escape");
+        assert_eq!(normalize_hotkey("F12"), "F12");
+        assert_eq!(normalize_hotkey("PrintScreen"), "PrintScreen");
+    }
+
+    #[test]
+    fn check_global_conflict_uses_normalized_shortcuts() {
+        let config = AppConfig::default();
+
+        assert_eq!(
+            check_global_conflict(&config, &normalize_hotkey("Alt+A"), "new_workflow"),
+            Some("Capture Selection".to_string())
+        );
+        assert_eq!(
+            check_global_conflict(&config, &normalize_hotkey("Alt+A"), "capture_default"),
+            None
+        );
+        assert_eq!(
+            check_global_conflict(&config, &normalize_hotkey("Control+Alt+P"), "new_workflow"),
+            None
+        );
     }
 }

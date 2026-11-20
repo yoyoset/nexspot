@@ -136,7 +136,10 @@ pub fn warmup(app: &AppHandle) {
         let (engine, lang) = {
             let state = app.state::<crate::app_state::AppState>();
             let cfg = state.config_state.lock().unwrap_or_else(|e| e.into_inner());
-            (cfg.config.ocr_engine.clone(), cfg.config.ocr_paddle_language.clone())
+            (
+                cfg.config.ocr_engine.clone(),
+                cfg.config.ocr_paddle_language.clone(),
+            )
         };
         if engine == "paddle" && is_installed(&app) {
             if let Err(e) = ensure_proc(&app, &lang) {
@@ -203,11 +206,19 @@ pub async fn check_paddle_update(app: AppHandle) -> Result<PaddleUpdateInfo, Str
     match fetch_latest().await {
         Ok((tag, _)) => {
             let has_update = current.as_deref() != Some(tag.as_str());
-            Ok(PaddleUpdateInfo { current, latest: Some(tag), has_update })
+            Ok(PaddleUpdateInfo {
+                current,
+                latest: Some(tag),
+                has_update,
+            })
         }
         Err(e) => {
             log::warn!("[OCR] check paddle update failed: {}", e);
-            Ok(PaddleUpdateInfo { current, latest: None, has_update: false })
+            Ok(PaddleUpdateInfo {
+                current,
+                latest: None,
+                has_update: false,
+            })
         }
     }
 }
@@ -242,7 +253,11 @@ async fn download_inner(app: &AppHandle) -> anyhow::Result<()> {
         .await?
         .error_for_status()?;
     let total = resp.content_length().unwrap_or(0);
-    let ext = if url.to_lowercase().ends_with(".7z") { "7z" } else { "zip" };
+    let ext = if url.to_lowercase().ends_with(".7z") {
+        "7z"
+    } else {
+        "zip"
+    };
     let tmp = std::env::temp_dir().join(format!("nexspot_paddle_{}.{}", tag, ext));
     {
         use std::io::Write;
@@ -337,8 +352,14 @@ fn ensure_proc(app: &AppHandle, language: &str) -> anyhow::Result<()> {
     }
 
     let mut child = cmd.spawn()?;
-    let stdin = child.stdin.take().ok_or_else(|| anyhow::anyhow!("no stdin"))?;
-    let stdout = child.stdout.take().ok_or_else(|| anyhow::anyhow!("no stdout"))?;
+    let stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| anyhow::anyhow!("no stdin"))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow::anyhow!("no stdout"))?;
     let mut reader = BufReader::new(stdout);
 
     // 等待初始化完成标记（首次加载模型可能数秒）
@@ -374,7 +395,9 @@ pub fn run_ocr(app: &AppHandle, png_bytes: &[u8], language: &str) -> anyhow::Res
     ensure_proc(app, language)?;
 
     let mut slot = proc_slot().lock().unwrap_or_else(|e| e.into_inner());
-    let p = slot.as_mut().ok_or_else(|| anyhow::anyhow!("paddle proc lost"))?;
+    let p = slot
+        .as_mut()
+        .ok_or_else(|| anyhow::anyhow!("paddle proc lost"))?;
 
     let b64 = base64::engine::general_purpose::STANDARD.encode(png_bytes);
     let req = serde_json::json!({ "image_base64": b64 }).to_string();
@@ -410,7 +433,8 @@ pub fn run_ocr(app: &AppHandle, png_bytes: &[u8], language: &str) -> anyhow::Res
                 .unwrap_or_default()
                 .to_string();
             // box: [[x,y];4] 四角点 → 取外接矩形
-            let (mut min_x, mut min_y, mut max_x, mut max_y) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
+            let (mut min_x, mut min_y, mut max_x, mut max_y) =
+                (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
             if let Some(quad) = item.get("box").and_then(|b| b.as_array()) {
                 for pt in quad {
                     if let Some(xy) = pt.as_array() {
@@ -451,5 +475,8 @@ pub fn run_ocr(app: &AppHandle, png_bytes: &[u8], language: &str) -> anyhow::Res
         lines,
         full_text,
         engine: "PaddleOCR".to_string(),
+        status: "ok".to_string(),
+        message: String::new(),
+        metadata: None,
     })
 }
